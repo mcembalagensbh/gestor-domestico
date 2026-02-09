@@ -1,1176 +1,842 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestor Doméstico</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
---primary:#3498db;--danger:#e74c3c;--warning:#f39c12;--dark:#2c3e50;--light:#ecf0f1;
---gray:#95a5a6;--success:#2ecc71;--border:#dfe6e9;--card-shadow:0 2px 4px rgba(0,0,0,0.1);
---hover-shadow:0 4px 8px rgba(0,0,0,0.1);--star:#ffd700;}
-body{
-font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;
-background:#f8f9fa;min-height:100vh;color:var(--dark);padding:0;position:relative;overflow-x:hidden;-webkit-tap-highlight-color:transparent;}
-.container{max-width:100%;margin:0 auto;padding:0;}
-.header{
-background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:12px 15px;text-align:center;
-box-shadow:0 1px 3px rgba(0,0,0,0.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(10px);}
-.header h1{font-size:1.1em;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;}
-.calendar-container{background:white;padding:12px 10px;border-bottom:1px solid #eee;box-shadow:var(--card-shadow);}
-.calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 5px;}
-.calendar-month{font-weight:700;font-size:1em;color:var(--dark);}
-.calendar-nav button{background:none;border:none;color:var(--primary);font-size:1.2em;cursor:pointer;padding:5px 10px;border-radius:5px;}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;border:1px solid #e0e0e0;border-radius:8px;padding:8px;background:#fff;}
-.calendar-day{text-align:center;padding:8px 4px;border-radius:6px;font-size:0.85em;position:relative;cursor:pointer;transition:all 0.2s;border:1px solid #f0f0f0;}
-.calendar-day:hover{background:#f8f9fa;}
-.calendar-day.today{background:linear-gradient(135deg,var(--primary),#2980b9);color:white;font-weight:700;border-color:var(--primary);}
-.calendar-day.selected{background:#e8f4fc;color:var(--primary);font-weight:700;border:2px solid var(--primary);}
-.day-number{font-weight:600;margin-bottom:2px;}
-.contas-count{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;font-size:0.65em;font-weight:700;display:flex;align-items:center;justify-content:center;}
-.contas-count.future{background:var(--success);color:white;}
-.contas-count.past{background:var(--danger);color:white;}
-.event-star{position:absolute;bottom:2px;right:2px;color:var(--star);font-size:0.8em;}
-.filters-container{padding:10px 12px;background:white;border-bottom:1px solid #eee;position:sticky;top:50px;z-index:99;box-shadow:var(--card-shadow);}
-.filter-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
-.filter-btn{
-padding:10px 12px;border:none;border-radius:8px;font-size:0.82em;background:#f8f9fa;color:var(--dark);cursor:pointer;font-weight:600;
-transition:all 0.2s ease;flex-shrink:0;min-width:100px;border:1.5px solid #e0e0e0;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;}
-.filter-btn:hover{background:#e9ecef;}
-.filter-btn.active{background:linear-gradient(135deg,var(--primary),#2980b9);color:white;border-color:var(--primary);}
-.filter-indicator{background:white;padding:10px 12px;text-align:center;font-size:0.85em;color:var(--dark);border-bottom:1px solid #eee;font-weight:600;box-shadow:var(--card-shadow);}
-.month-name{color:var(--primary);font-weight:700;}
-.loading{text-align:center;padding:40px 15px;color:var(--gray);font-size:0.95em;background:white;margin:10px;border-radius:10px;box-shadow:var(--card-shadow);}
-.loading-spinner{font-size:1.8em;margin-bottom:12px;color:var(--primary);animation:spin 1s linear infinite;}
-@keyframes spin{100%{transform:rotate(360deg);}}
-.contas-container{padding:10px 8px;padding-bottom:70px;}
-.contas-list{background:white;border-radius:10px;overflow:hidden;box-shadow:var(--card-shadow);margin-bottom:10px;}
-.conta-item{
-padding:14px 12px;border-bottom:1px solid #f5f5f5;transition:all 0.2s ease;cursor:pointer;border-left:4px solid var(--primary);position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0.1);}
-.conta-item:active{background-color:#f0f0f0;transform:scale(0.995);}
-.conta-item:last-child{border-bottom:none;}
-.conta-item.vencida{border-left-color:var(--danger);}
-.conta-item.pendente{border-left-color:var(--warning);}
-.conta-item.paga{border-left-color:var(--success);}
-.conta-item.evento{border-left-color:#9b59b6;}
-.conta-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
-.conta-info{flex:1;min-width:0;}
-.conta-descricao{font-weight:600;font-size:0.93em;margin-bottom:4px;color:var(--dark);line-height:1.2;}
-.conta-detalhes{font-size:0.78em;color:var(--gray);margin-bottom:4px;}
-.conta-mes{
-font-size:0.72em;color:var(--primary);background:#e8f4fc;padding:3px 8px;border-radius:10px;display:inline-block;margin-bottom:6px;font-weight:600;border:1px solid #d1ecf1;}
-.conta-vencimento-info{font-size:0.75em;margin-top:4px;padding:4px 8px;border-radius:6px;display:inline-block;font-weight:500;}
-.vencimento-pendente{color:var(--warning);background:#fff3cd;}
-.vencimento-vencido{color:var(--danger);background:#f8d7da;}
-.vencimento-pago{color:var(--success);background:#d4edda;}
-.conta-valor{font-weight:700;font-size:0.95em;text-align:right;margin-bottom:6px;color:var(--dark);}
-.conta-status{padding:5px 10px;border-radius:12px;font-size:0.72em;font-weight:700;display:inline-block;min-width:70px;text-align:center;letter-spacing:0.3px;}
-.status-pendente{background:#fff3cd;color:#856404;}
-.status-vencida{background:#f8d7da;color:#721c24;}
-.status-paga{background:#d4edda;color:#155724;}
-.status-evento{background:#e8d4f7;color:#5b2c6f;}
-.empty-state{text-align:center;padding:40px 15px;color:var(--gray);font-style:italic;background:white;border-radius:10px;margin:10px;box-shadow:var(--card-shadow);}
-.refresh-btn{
-position:fixed;bottom:20px;right:20px;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#2980b9);
-color:white;border:none;box-shadow:0 4px 12px rgba(52,152,219,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2em;z-index:100;transition:all 0.2s ease;}
-.refresh-btn:active{transform:scale(0.9);}
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.6);z-index:1000;animation:fadeIn 0.2s ease;}
-.modal-container{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:90%;max-width:400px;max-height:85vh;z-index:1001;animation:slideIn 0.2s ease;}
-@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-@keyframes slideIn{from{opacity:0;transform:translate(-50%,-55%);}to{opacity:1;transform:translate(-50%,-50%);}}
-.modal-content{background-color:white;border-radius:12px;padding:20px;max-height:85vh;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);}
-.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;padding-bottom:15px;border-bottom:1px solid var(--border);}
-.modal-title{font-size:1.1rem;font-weight:700;color:var(--dark);display:flex;align-items:center;gap:8px;}
-.close-modal{background:none;border:none;font-size:28px;cursor:pointer;color:var(--gray);transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
-.close-modal:active{color:var(--danger);background:#f8f9fa;}
-.form-group{margin-bottom:15px;}
-.form-group label{display:block;margin-bottom:8px;font-weight:600;color:var(--dark);font-size:0.9em;display:flex;align-items:center;gap:6px;}
-.form-control{width:100%;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:1em;transition:all 0.2s;font-family:inherit;}
-.form-control:focus{outline:none;border-color:var(--primary);}
-.btn{padding:12px;border:none;border-radius:8px;cursor:pointer;font-weight:700;transition:all 0.2s;font-size:0.95em;display:flex;align-items:center;justify-content:center;gap:8px;}
-.btn-primary{background:linear-gradient(135deg,var(--primary) 0%,#2980b9 100%);color:white;}
-.btn-success{background:linear-gradient(135deg,var(--success) 0%,#27ae60 100%);color:white;}
-.btn-secondary{background:linear-gradient(135deg,var(--gray) 0%,#7f8c8d 100%);color:white;}
-.btn:active:not(:disabled){transform:translateY(1px);}
-.btn:disabled{opacity:0.5;cursor:not-allowed;}
-.conta-info-card{background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:15px;border-left:4px solid var(--primary);border:1px solid #e9ecef;}
-.conta-info-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:0.85em;padding-bottom:6px;border-bottom:1px dashed #e9ecef;}
-.conta-info-row:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
-.conta-info-label{color:var(--gray);font-weight:600;}
-.conta-info-value{font-weight:700;color:var(--dark);text-align:right;max-width:60%;word-break:break-word;font-size:0.9em;}
-.loading-indicator{display:inline-block;width:18px;height:18px;border:2px solid #f3f3f3;border-top:2px solid var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-right:8px;}
-.sync-indicator{
-position:fixed;bottom:20px;left:20px;background:var(--success);color:white;padding:10px 15px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2);
-display:none;align-items:center;gap:10px;z-index:1001;animation:slideInLeft 0.2s;font-weight:600;border:1px solid white;}
-.sync-indicator.error{background:var(--danger);}
-.sync-indicator.info{background:var(--primary);}
-@keyframes slideInLeft{from{transform:translateX(-100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
-.zero-option{display:flex;align-items:center;gap:8px;margin-top:8px;}
-.zero-btn{padding:8px 12px;background:#f8f9fa;border:2px solid #dee2e6;border-radius:6px;cursor:pointer;font-size:0.85em;color:var(--dark);transition:all 0.2s;}
-.zero-btn:active{background:#e9ecef;}
-.zero-btn.active{background:#fff3cd;border-color:var(--warning);color:#856404;font-weight:600;}
-.ultima-parcela-info{font-size:0.7em;color:var(--gray);background:#f1f3f4;padding:2px 6px;border-radius:5px;margin-top:3px;display:inline-block;border:1px solid #dadce0;}
-.ultima-parcela-expirada{color:var(--danger);background:#fce8e6;border-color:#f5c6cb;}
-.confirmacao-success{text-align:center;padding:30px 20px;}
-.confirmacao-success i{font-size:3em;color:var(--success);margin-bottom:15px;}
-.confirmacao-success h3{color:var(--dark);margin-bottom:20px;font-size:1.2em;}
-.lista-container{padding:10px;}
-.lista-item{display:flex;align-items:center;padding:12px;border-bottom:1px solid #eee;background:white;border-radius:8px;margin-bottom:8px;box-shadow:var(--card-shadow);}
-.lista-item.comprado{opacity:0.6;text-decoration:line-through;background:#f8f9fa;}
-.lista-checkbox{width:24px;height:24px;margin-right:12px;border:2px solid var(--primary);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.lista-checkbox.checked{background:var(--primary);color:white;}
-.lista-text{flex:1;font-size:0.9em;}
-.lista-quantidade{background:#e8f4fc;padding:2px 8px;border-radius:10px;font-size:0.8em;margin-right:8px;font-weight:600;}
-.saldos-container{background:white;border-radius:10px;padding:15px;margin-bottom:15px;box-shadow:var(--card-shadow);}
-.saldo-item{display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee;align-items:center;}
-.saldo-item:last-child{border-bottom:none;}
-.saldo-nome{font-weight:600;font-size:0.9em;}
-.saldo-valor{font-weight:700;font-size:1em;color:var(--dark);}
-.saldo-data{font-size:0.7em;color:var(--gray);text-align:right;}
-.historico-title{font-weight:600;margin:15px 0 10px 0;color:var(--dark);}
-.historico-item{font-size:0.8em;padding:8px 0;border-bottom:1px dashed #eee;color:var(--gray);}
-.historico-item:last-child{border-bottom:none;}
-.editar-saldo-btn{position:absolute;right:10px;background:none;border:none;color:var(--primary);cursor:pointer;}
-.auth-container{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:white;z-index:2000;align-items:center;justify-content:center;}
-.auth-box{background:white;padding:30px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-width:400px;width:90%;}
-.auth-title{text-align:center;margin-bottom:25px;font-size:1.3em;color:var(--dark);}
-.auth-input{margin-bottom:15px;}
-.auth-btn{width:100%;}
-.auth-toggle{text-align:center;margin-top:20px;font-size:0.9em;color:var(--gray);}
-.auth-toggle a{color:var(--primary);text-decoration:none;font-weight:600;}
-@media(max-width:360px){
-.header h1{font-size:1em;}
-.filter-btn{font-size:0.75em;padding:8px;min-width:90px;}
-.calendar-day{padding:6px 3px;font-size:0.75em;}
-}
-</style>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor Doméstico</title>
+    <style>
+        /* Todos os estilos CSS permanecem os mesmos do código anterior */
+        *{box-sizing:border-box;margin:0;padding:0;}
+        :root{
+            --primary:#3498db;--danger:#e74c3c;--warning:#f39c12;--dark:#2c3e50;--light:#ecf0f1;
+            --gray:#95a5a6;--success:#2ecc71;--border:#dfe6e9;--card-shadow:0 2px 4px rgba(0,0,0,0.1);
+            --hover-shadow:0 4px 8px rgba(0,0,0,0.1);--star:#ffd700;}
+        body{
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;
+            background:#f8f9fa;min-height:100vh;color:var(--dark);padding:0;position:relative;overflow-x:hidden;-webkit-tap-highlight-color:transparent;}
+        .container{max-width:100%;margin:0 auto;padding:0;}
+        .header{
+            background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:12px 15px;text-align:center;
+            box-shadow:0 1px 3px rgba(0,0,0,0.1);position:sticky;top:0;z-index:100;backdrop-filter:blur(10px);}
+        .header h1{font-size:1.1em;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;}
+        .calendar-container{background:white;padding:12px 10px;border-bottom:1px solid #eee;box-shadow:var(--card-shadow);}
+        .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 5px;}
+        .calendar-month{font-weight:700;font-size:1em;color:var(--dark);}
+        .calendar-nav button{background:none;border:none;color:var(--primary);font-size:1.2em;cursor:pointer;padding:5px 10px;border-radius:5px;}
+        .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;border:1px solid #e0e0e0;border-radius:8px;padding:8px;background:#fff;}
+        .calendar-day{text-align:center;padding:8px 4px;border-radius:6px;font-size:0.85em;position:relative;cursor:pointer;transition:all 0.2s;border:1px solid #f0f0f0;}
+        .calendar-day:hover{background:#f8f9fa;}
+        .calendar-day.today{background:linear-gradient(135deg,var(--primary),#2980b9);color:white;font-weight:700;border-color:var(--primary);}
+        .calendar-day.selected{background:#e8f4fc;color:var(--primary);font-weight:700;border:2px solid var(--primary);}
+        .day-number{font-weight:600;margin-bottom:2px;}
+        .contas-count{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;font-size:0.65em;font-weight:700;display:flex;align-items:center;justify-content:center;}
+        .contas-count.future{background:var(--success);color:white;}
+        .contas-count.past{background:var(--danger);color:white;}
+        .event-star{position:absolute;bottom:2px;right:2px;color:var(--star);font-size:0.8em;}
+        .filters-container{padding:10px 12px;background:white;border-bottom:1px solid #eee;position:sticky;top:50px;z-index:99;box-shadow:var(--card-shadow);}
+        .filter-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+        .filter-btn{
+            padding:10px 12px;border:none;border-radius:8px;font-size:0.82em;background:#f8f9fa;color:var(--dark);cursor:pointer;font-weight:600;
+            transition:all 0.2s ease;flex-shrink:0;min-width:100px;border:1.5px solid #e0e0e0;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;}
+        .filter-btn:hover{background:#e9ecef;}
+        .filter-btn.active{background:linear-gradient(135deg,var(--primary),#2980b9);color:white;border-color:var(--primary);}
+        .filter-indicator{background:white;padding:10px 12px;text-align:center;font-size:0.85em;color:var(--dark);border-bottom:1px solid #eee;font-weight:600;box-shadow:var(--card-shadow);}
+        .month-name{color:var(--primary);font-weight:700;}
+        .loading{text-align:center;padding:40px 15px;color:var(--gray);font-size:0.95em;background:white;margin:10px;border-radius:10px;box-shadow:var(--card-shadow);}
+        .loading-spinner{font-size:1.8em;margin-bottom:12px;color:var(--primary);animation:spin 1s linear infinite;}
+        @keyframes spin{100%{transform:rotate(360deg);}}
+        .contas-container{padding:10px 8px;padding-bottom:70px;}
+        .contas-list{background:white;border-radius:10px;overflow:hidden;box-shadow:var(--card-shadow);margin-bottom:10px;}
+        .conta-item{
+            padding:14px 12px;border-bottom:1px solid #f5f5f5;transition:all 0.2s ease;cursor:pointer;border-left:4px solid var(--primary);position:relative;-webkit-tap-highlight-color:rgba(0,0,0,0.1);}
+        .conta-item:active{background-color:#f0f0f0;transform:scale(0.995);}
+        .conta-item:last-child{border-bottom:none;}
+        .conta-item.vencida{border-left-color:var(--danger);}
+        .conta-item.pendente{border-left-color:var(--warning);}
+        .conta-item.paga{border-left-color:var(--success);}
+        .conta-item.evento{border-left-color:#9b59b6;}
+        .conta-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+        .conta-info{flex:1;min-width:0;}
+        .conta-descricao{font-weight:600;font-size:0.93em;margin-bottom:4px;color:var(--dark);line-height:1.2;}
+        .conta-detalhes{font-size:0.78em;color:var(--gray);margin-bottom:4px;}
+        .conta-mes{
+            font-size:0.72em;color:var(--primary);background:#e8f4fc;padding:3px 8px;border-radius:10px;display:inline-block;margin-bottom:6px;font-weight:600;border:1px solid #d1ecf1;}
+        .conta-vencimento-info{font-size:0.75em;margin-top:4px;padding:4px 8px;border-radius:6px;display:inline-block;font-weight:500;}
+        .vencimento-pendente{color:var(--warning);background:#fff3cd;}
+        .vencimento-vencido{color:var(--danger);background:#f8d7da;}
+        .vencimento-pago{color:var(--success);background:#d4edda;}
+        .conta-valor{font-weight:700;font-size:0.95em;text-align:right;margin-bottom:6px;color:var(--dark);}
+        .conta-status{padding:5px 10px;border-radius:12px;font-size:0.72em;font-weight:700;display:inline-block;min-width:70px;text-align:center;letter-spacing:0.3px;}
+        .status-pendente{background:#fff3cd;color:#856404;}
+        .status-vencida{background:#f8d7da;color:#721c24;}
+        .status-paga{background:#d4edda;color:#155724;}
+        .status-evento{background:#e8d4f7;color:#5b2c6f;}
+        .empty-state{text-align:center;padding:40px 15px;color:var(--gray);font-style:italic;background:white;border-radius:10px;margin:10px;box-shadow:var(--card-shadow);}
+        .refresh-btn{
+            position:fixed;bottom:20px;right:20px;width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#2980b9);
+            color:white;border:none;box-shadow:0 4px 12px rgba(52,152,219,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2em;z-index:100;transition:all 0.2s ease;}
+        .refresh-btn:active{transform:scale(0.9);}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.6);z-index:1000;animation:fadeIn 0.2s ease;}
+        .modal-container{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:90%;max-width:400px;max-height:85vh;z-index:1001;animation:slideIn 0.2s ease;}
+        @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+        @keyframes slideIn{from{opacity:0;transform:translate(-50%,-55%);}to{opacity:1;transform:translate(-50%,-50%);}}
+        .modal-content{background-color:white;border-radius:12px;padding:20px;max-height:85vh;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;padding-bottom:15px;border-bottom:1px solid var(--border);}
+        .modal-title{font-size:1.1rem;font-weight:700;color:var(--dark);display:flex;align-items:center;gap:8px;}
+        .close-modal{background:none;border:none;font-size:28px;cursor:pointer;color:var(--gray);transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
+        .close-modal:active{color:var(--danger);background:#f8f9fa;}
+        .form-group{margin-bottom:15px;}
+        .form-group label{display:block;margin-bottom:8px;font-weight:600;color:var(--dark);font-size:0.9em;display:flex;align-items:center;gap:6px;}
+        .form-control{width:100%;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:1em;transition:all 0.2s;font-family:inherit;}
+        .form-control:focus{outline:none;border-color:var(--primary);}
+        .btn{padding:12px;border:none;border-radius:8px;cursor:pointer;font-weight:700;transition:all 0.2s;font-size:0.95em;display:flex;align-items:center;justify-content:center;gap:8px;}
+        .btn-primary{background:linear-gradient(135deg,var(--primary) 0%,#2980b9 100%);color:white;}
+        .btn-success{background:linear-gradient(135deg,var(--success) 0%,#27ae60 100%);color:white;}
+        .btn-secondary{background:linear-gradient(135deg,var(--gray) 0%,#7f8c8d 100%);color:white;}
+        .btn:active:not(:disabled){transform:translateY(1px);}
+        .btn:disabled{opacity:0.5;cursor:not-allowed;}
+        .conta-info-card{background:#f8f9fa;border-radius:8px;padding:15px;margin-bottom:15px;border-left:4px solid var(--primary);border:1px solid #e9ecef;}
+        .conta-info-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:0.85em;padding-bottom:6px;border-bottom:1px dashed #e9ecef;}
+        .conta-info-row:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+        .conta-info-label{color:var(--gray);font-weight:600;}
+        .conta-info-value{font-weight:700;color:var(--dark);text-align:right;max-width:60%;word-break:break-word;font-size:0.9em;}
+        .loading-indicator{display:inline-block;width:18px;height:18px;border:2px solid #f3f3f3;border-top:2px solid var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin-right:8px;}
+        .sync-indicator{
+            position:fixed;bottom:20px;left:20px;background:var(--success);color:white;padding:10px 15px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2);
+            display:none;align-items:center;gap:10px;z-index:1001;animation:slideInLeft 0.2s;font-weight:600;border:1px solid white;}
+        .sync-indicator.error{background:var(--danger);}
+        .sync-indicator.info{background:var(--primary);}
+        @keyframes slideInLeft{from{transform:translateX(-100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+        .zero-option{display:flex;align-items:center;gap:8px;margin-top:8px;}
+        .zero-btn{padding:8px 12px;background:#f8f9fa;border:2px solid #dee2e6;border-radius:6px;cursor:pointer;font-size:0.85em;color:var(--dark);transition:all 0.2s;}
+        .zero-btn:active{background:#e9ecef;}
+        .zero-btn.active{background:#fff3cd;border-color:var(--warning);color:#856404;font-weight:600;}
+        .ultima-parcela-info{font-size:0.7em;color:var(--gray);background:#f1f3f4;padding:2px 6px;border-radius:5px;margin-top:3px;display:inline-block;border:1px solid #dadce0;}
+        .ultima-parcela-expirada{color:var(--danger);background:#fce8e6;border-color:#f5c6cb;}
+        .confirmacao-success{text-align:center;padding:30px 20px;}
+        .confirmacao-success i{font-size:3em;color:var(--success);margin-bottom:15px;}
+        .confirmacao-success h3{color:var(--dark);margin-bottom:20px;font-size:1.2em;}
+        .lista-container{padding:10px;}
+        .lista-item{display:flex;align-items:center;padding:12px;border-bottom:1px solid #eee;background:white;border-radius:8px;margin-bottom:8px;box-shadow:var(--card-shadow);}
+        .lista-item.comprado{opacity:0.6;text-decoration:line-through;background:#f8f9fa;}
+        .lista-checkbox{width:24px;height:24px;margin-right:12px;border:2px solid var(--primary);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+        .lista-checkbox.checked{background:var(--primary);color:white;}
+        .lista-text{flex:1;font-size:0.9em;}
+        .lista-quantidade{background:#e8f4fc;padding:2px 8px;border-radius:10px;font-size:0.8em;margin-right:8px;font-weight:600;}
+        .saldos-container{background:white;border-radius:10px;padding:15px;margin-bottom:15px;box-shadow:var(--card-shadow);}
+        .saldo-item{display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid #eee;align-items:center;}
+        .saldo-item:last-child{border-bottom:none;}
+        .saldo-nome{font-weight:600;font-size:0.9em;}
+        .saldo-valor{font-weight:700;font-size:1em;color:var(--dark);}
+        .saldo-data{font-size:0.7em;color:var(--gray);text-align:right;}
+        .historico-title{font-weight:600;margin:15px 0 10px 0;color:var(--dark);}
+        .historico-item{font-size:0.8em;padding:8px 0;border-bottom:1px dashed #eee;color:var(--gray);}
+        .historico-item:last-child{border-bottom:none;}
+        .editar-saldo-btn{position:absolute;right:10px;background:none;border:none;color:var(--primary);cursor:pointer;}
+        .auth-container{display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:white;z-index:2000;align-items:center;justify-content:center;}
+        .auth-box{background:white;padding:30px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-width:400px;width:90%;}
+        .auth-title{text-align:center;margin-bottom:25px;font-size:1.3em;color:var(--dark);}
+        .auth-input{margin-bottom:15px;}
+        .auth-btn{width:100%;}
+        .auth-toggle{text-align:center;margin-top:20px;font-size:0.9em;color:var(--gray);}
+        .auth-toggle a{color:var(--primary);text-decoration:none;font-weight:600;}
+        @media(max-width:360px){
+            .header h1{font-size:1em;}
+            .filter-btn{font-size:0.75em;padding:8px;min-width:90px;}
+            .calendar-day{padding:6px 3px;font-size:0.75em;}
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<div class="auth-container" id="authContainer">
-<div class="auth-box">
-<h2 class="auth-title"><i class="fas fa-home"></i> Gestor Doméstico</h2>
-<div id="loginForm">
-<div class="form-group">
-<label><i class="fas fa-envelope"></i> Email</label>
-<input type="email" id="loginEmail" class="form-control" placeholder="seu@email.com">
-</div>
-<div class="form-group">
-<label><i class="fas fa-lock"></i> Senha</label>
-<input type="password" id="loginPassword" class="form-control" placeholder="Sua senha">
-</div>
-<button class="btn btn-primary auth-btn" onclick="login()">
-<i class="fas fa-sign-in-alt"></i> Entrar
-</button>
-<div class="auth-toggle">
-Não tem conta? <a href="#" onclick="showRegister()">Registrar</a>
-</div>
-</div>
-<div id="registerForm" style="display:none;">
-<div class="form-group">
-<label><i class="fas fa-user"></i> Nome</label>
-<input type="text" id="registerName" class="form-control" placeholder="Seu nome">
-</div>
-<div class="form-group">
-<label><i class="fas fa-envelope"></i> Email</label>
-<input type="email" id="registerEmail" class="form-control" placeholder="seu@email.com">
-</div>
-<div class="form-group">
-<label><i class="fas fa-lock"></i> Senha</label>
-<input type="password" id="registerPassword" class="form-control" placeholder="Mínimo 6 caracteres">
-</div>
-<button class="btn btn-success auth-btn" onclick="register()">
-<i class="fas fa-user-plus"></i> Criar Conta
-</button>
-<div class="auth-toggle">
-Já tem conta? <a href="#" onclick="showLogin()">Entrar</a>
-</div>
-</div>
-</div>
-</div>
-<div class="container" id="mainContainer" style="display:none;">
-<div class="header">
-<h1><i class="fas fa-home"></i> Gestor Doméstico</h1>
-<button onclick="logout()" style="position:absolute;right:15px;top:50%;transform:translateY(-50%);background:none;border:none;color:white;cursor:pointer;">
-<i class="fas fa-sign-out-alt"></i>
-</button>
-</div>
-<div class="calendar-container">
-<div class="calendar-header">
-<div class="calendar-month" id="calendarMonth"></div>
-<div class="calendar-nav">
-<button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
-<button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
-</div>
-</div>
-<div class="calendar-grid" id="calendarGrid"></div>
-</div>
-<div class="filters-container">
-<div class="filter-row">
-<button class="filter-btn active" data-filter="contas"><i class="fas fa-file-invoice-dollar"></i> Contas</button>
-<button class="filter-btn" data-filter="eventos"><i class="fas fa-calendar-alt"></i> Eventos</button>
-<button class="filter-btn" data-filter="lista"><i class="fas fa-shopping-cart"></i> Lista</button>
-<button class="filter-btn" data-filter="pedir"><i class="fas fa-plus-circle"></i> Pedir</button>
-<button class="filter-btn" data-filter="saldos"><i class="fas fa-wallet"></i> Saldos</button>
-</div>
-</div>
-<div class="filter-indicator"><span id="currentFilterText">Contas do Mês</span></div>
-<div class="loading" id="loading"><div class="loading-spinner"><i class="fas fa-spinner"></i></div><div style="margin-top:12px;">Carregando...</div></div>
-<div id="contentContainer" style="display:none;">
-<div class="contas-container">
-<div class="filter-info" id="filterInfo"></div>
-<div class="contas-list" id="contasList"></div>
-</div>
-</div>
-<button class="refresh-btn" id="refreshBtn" style="display:none;"><i class="fas fa-sync-alt"></i></button>
-</div>
-<div class="modal-overlay" id="main-modal">
-<div class="modal-container">
-<div class="modal-content" id="modalContent"></div>
-</div>
-</div>
-<script>
-// ============================================
-// 🔧 CONFIGURAÇÕES SUPABASE
-// ============================================
-
-// SUAS CREDENCIAIS SUPABASE (serão configuradas no passo a passo)
-const SUPABASE_URL = 'https://zngojwlfsdjmsxhgpize.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_2PMpz6EaV9nmzlxMDdkyBQ_N_QdjIT_';
-
-// Outras configurações
-const VALOR_SEM_PAGAMENTO = 0.01;
-
-// ============================================
-// 📦 INICIALIZAÇÃO DO SUPABASE
-// ============================================
-
-let supabase = null;
-let currentUser = null;
-
-async function initSupabase() {
-    try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        // Verificar sessão atual
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (session) {
-            currentUser = session.user;
-            showMainApp();
-            return true;
-        }
-        
-        return false;
-    } catch (error) {
-        console.error('Erro ao inicializar Supabase:', error);
-        return false;
-    }
-}
-
-// ============================================
-// 🔐 FUNÇÕES DE AUTENTICAÇÃO
-// ============================================
-
-async function login() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    
-    if (!email || !password) {
-        showNotification('Preencha email e senha', 'error');
-        return;
-    }
-    
-    try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-        
-        if (error) throw error;
-        
-        currentUser = data.user;
-        showMainApp();
-        showNotification('Login realizado com sucesso!', 'success');
-        
-    } catch (error) {
-        console.error('Erro no login:', error.message);
-        showNotification(error.message || 'Erro no login', 'error');
-    }
-}
-
-async function register() {
-    const name = document.getElementById('registerName').value;
-    const email = document.getElementById('registerEmail').value;
-    const password = document.getElementById('registerPassword').value;
-    
-    if (!name || !email || !password) {
-        showNotification('Preencha todos os campos', 'error');
-        return;
-    }
-    
-    if (password.length < 6) {
-        showNotification('Senha deve ter pelo menos 6 caracteres', 'error');
-        return;
-    }
-    
-    try {
-        const { data, error } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-                data: {
-                    name: name,
-                    created_at: new Date().toISOString()
-                }
-            }
-        });
-        
-        if (error) throw error;
-        
-        showNotification('Conta criada com sucesso! Verifique seu email.', 'success');
-        showLogin();
-        
-    } catch (error) {
-        console.error('Erro no registro:', error.message);
-        showNotification(error.message || 'Erro ao criar conta', 'error');
-    }
-}
-
-async function logout() {
-    try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        
-        currentUser = null;
-        showAuthScreen();
-        showNotification('Logout realizado', 'info');
-        
-    } catch (error) {
-        console.error('Erro no logout:', error.message);
-        showNotification('Erro ao fazer logout', 'error');
-    }
-}
-
-function showLogin() {
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('registerForm').style.display = 'none';
-}
-
-function showRegister() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('registerForm').style.display = 'block';
-}
-
-function showAuthScreen() {
-    document.getElementById('authContainer').style.display = 'flex';
-    document.getElementById('mainContainer').style.display = 'none';
-}
-
-function showMainApp() {
-    document.getElementById('authContainer').style.display = 'none';
-    document.getElementById('mainContainer').style.display = 'block';
-    initApp();
-}
-
-// ============================================
-// 📊 FUNÇÕES DO APLICATIVO (Supabase)
-// ============================================
-
-// ESTADO GLOBAL
-let currentMonthOffset = 0;
-let currentFilter = 'contas';
-let selectedDay = null;
-let calendarCurrentDate = new Date();
-let contasAtuais = [];
-let eventosAtuais = [];
-let listaAtual = [];
-let saldosAtuais = [];
-let historicoSaldos = [];
-
-// ELEMENTOS DOM
-const loadingEl = document.getElementById('loading');
-const contentContainerEl = document.getElementById('contentContainer');
-const contasListEl = document.getElementById('contasList');
-const mainModal = document.getElementById('main-modal');
-const calendarMonthEl = document.getElementById('calendarMonth');
-const calendarGridEl = document.getElementById('calendarGrid');
-const prevMonthBtnCal = document.getElementById('prevMonth');
-const nextMonthBtnCal = document.getElementById('nextMonth');
-const modalContent = document.getElementById('modalContent');
-const currentFilterText = document.getElementById('currentFilterText');
-
-// FUNÇÕES BÁSICAS
-function formatCurrency(value) { 
-    return 'R$ ' + (isNaN(value) ? 0 : value).toFixed(2).replace('.', ','); 
-}
-
-function parseCurrency(value) {
-    if (!value && value !== 0) return 0;
-    const cleaned = value.toString().replace(/[^\d,-]/g, '').replace(',', '.').replace(/\.(?=.*\.)/g, '');
-    return parseFloat(cleaned) || 0;
-}
-
-function formatCurrencyInput(value) {
-    let cleaned = value.replace(/[^\d,.]/g, '').replace('.', ',');
-    const parts = cleaned.split(',');
-    if (parts.length > 2) cleaned = parts[0] + ',' + parts.slice(1).join('');
-    if (parts.length === 2) cleaned = parts[0] + ',' + parts[1].slice(0, 2);
-    return cleaned;
-}
-
-function getTargetDate(monthOffset) { 
-    const now = new Date(); 
-    return new Date(now.getFullYear(), now.getMonth() + monthOffset, 1); 
-}
-
-function getMonthName(date) {
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    return months[date.getMonth()];
-}
-
-function formatDate(date) {
-    const d = new Date(date);
-    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-}
-
-// ============================================
-// 📅 FUNÇÕES DE CONTAS
-// ============================================
-
-async function carregarContasMes() {
-    try {
-        loadingEl.style.display = 'block';
-        contentContainerEl.style.display = 'none';
-        currentFilterText.textContent = 'Contas do Mês';
-        
-        const targetDate = getTargetDate(currentMonthOffset);
-        const mes = targetDate.getMonth() + 1;
-        const ano = targetDate.getFullYear();
-        const mesAno = `${getMonthName(targetDate)}/${ano}`;
-        
-        document.getElementById('filterInfo').innerHTML = `Contas de ${mesAno}`;
-        
-        // Buscar contas do Supabase
-        const { data: contas, error } = await supabase
-            .from('contas')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .eq('mes', mes)
-            .eq('ano', ano)
-            .order('dia_vencimento', { ascending: true });
-        
-        if (error) throw error;
-        
-        contasAtuais = contas || [];
-        atualizarInterfaceContas(contasAtuais);
-        
-        // Atualizar calendário
-        updateCalendar();
-        
-    } catch (error) {
-        console.error('Erro ao carregar contas:', error);
-        contasListEl.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-exclamation-triangle"></i>
-                <div style="margin:10px 0;">Erro ao carregar contas</div>
-                <div style="font-size:0.8em;">${error.message}</div>
-                <button onclick="carregarContasMes()" class="btn btn-primary" style="margin-top:15px;">
-                    <i class="fas fa-sync-alt"></i> Tentar novamente
-                </button>
-            </div>
-        `;
-    } finally {
-        loadingEl.style.display = 'none';
-        contentContainerEl.style.display = 'block';
-    }
-}
-
-async function salvarPagamento(contaId, valor, status) {
-    try {
-        const { error } = await supabase
-            .from('contas')
-            .update({
-                valor_pago: parseCurrency(valor),
-                status: status,
-                atualizado_em: new Date().toISOString()
-            })
-            .eq('id', contaId)
-            .eq('user_id', currentUser.id);
-        
-        if (error) throw error;
-        
-        showNotification('Pagamento salvo com sucesso!', 'success');
-        return true;
-        
-    } catch (error) {
-        console.error('Erro ao salvar pagamento:', error);
-        showNotification('Erro ao salvar pagamento', 'error');
-        return false;
-    }
-}
-
-async function criarNovaConta(descricao, diaVencimento, valor, mes, ano, tipo) {
-    try {
-        const { error } = await supabase
-            .from('contas')
-            .insert({
-                user_id: currentUser.id,
-                descricao: descricao,
-                dia_vencimento: diaVencimento,
-                valor_original: parseCurrency(valor),
-                valor_pago: 0,
-                mes: mes,
-                ano: ano,
-                tipo: tipo || 'conta',
-                status: 'pendente',
-                criado_em: new Date().toISOString()
-            });
-        
-        if (error) throw error;
-        
-        showNotification('Conta criada com sucesso!', 'success');
-        return true;
-        
-    } catch (error) {
-        console.error('Erro ao criar conta:', error);
-        showNotification('Erro ao criar conta', 'error');
-        return false;
-    }
-}
-
-// ============================================
-// 📅 FUNÇÕES DE EVENTOS
-// ============================================
-
-async function carregarEventosMes() {
-    try {
-        const targetDate = getTargetDate(currentMonthOffset);
-        const mes = targetDate.getMonth() + 1;
-        const ano = targetDate.getFullYear();
-        
-        const { data: eventos, error } = await supabase
-            .from('eventos')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .eq('mes', mes)
-            .eq('ano', ano)
-            .order('dia', { ascending: true });
-        
-        if (error) throw error;
-        
-        eventosAtuais = eventos || [];
-        updateCalendar();
-        
-    } catch (error) {
-        console.error('Erro ao carregar eventos:', error);
-    }
-}
-
-async function criarNovoEvento(titulo, descricao, dia, mes, ano) {
-    try {
-        const { error } = await supabase
-            .from('eventos')
-            .insert({
-                user_id: currentUser.id,
-                titulo: titulo,
-                descricao: descricao,
-                dia: dia,
-                mes: mes,
-                ano: ano,
-                criado_em: new Date().toISOString()
-            });
-        
-        if (error) throw error;
-        
-        showNotification('Evento criado com sucesso!', 'success');
-        return true;
-        
-    } catch (error) {
-        console.error('Erro ao criar evento:', error);
-        showNotification('Erro ao criar evento', 'error');
-        return false;
-    }
-}
-
-// ============================================
-// 🛒 FUNÇÕES DE LISTA DE COMPRAS
-// ============================================
-
-async function carregarListaCompras() {
-    try {
-        const { data: lista, error } = await supabase
-            .from('lista_compras')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .order('comprado')
-            .order('criado_em', { ascending: false });
-        
-        if (error) throw error;
-        
-        listaAtual = lista || [];
-        abrirModalLista();
-        
-    } catch (error) {
-        console.error('Erro ao carregar lista:', error);
-        showNotification('Erro ao carregar lista', 'error');
-    }
-}
-
-async function adicionarItemLista(quantidade, descricao) {
-    try {
-        const { error } = await supabase
-            .from('lista_compras')
-            .insert({
-                user_id: currentUser.id,
-                quantidade: quantidade,
-                descricao: descricao,
-                comprado: false,
-                criado_em: new Date().toISOString()
-            });
-        
-        if (error) throw error;
-        
-        showNotification('Item adicionado à lista!', 'success');
-        return true;
-        
-    } catch (error) {
-        console.error('Erro ao adicionar item:', error);
-        showNotification('Erro ao adicionar item', 'error');
-        return false;
-    }
-}
-
-async function marcarItemComprado(itemId, comprado) {
-    try {
-        const { error } = await supabase
-            .from('lista_compras')
-            .update({
-                comprado: comprado,
-                atualizado_em: new Date().toISOString()
-            })
-            .eq('id', itemId)
-            .eq('user_id', currentUser.id);
-        
-        if (error) throw error;
-        
-        return true;
-        
-    } catch (error) {
-        console.error('Erro ao marcar item:', error);
-        return false;
-    }
-}
-
-// ============================================
-// 💰 FUNÇÕES DE SALDOS
-// ============================================
-
-async function carregarSaldos() {
-    try {
-        const { data: saldos, error } = await supabase
-            .from('saldos')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .order('data', { ascending: false });
-        
-        if (error) throw error;
-        
-        saldosAtuais = saldos || [];
-        historicoSaldos = saldosAtuais.slice(0, 12); // Últimos 12 registros
-        abrirModalSaldos();
-        
-    } catch (error) {
-        console.error('Erro ao carregar saldos:', error);
-        showNotification('Erro ao carregar saldos', 'error');
-    }
-}
-
-async function salvarSaldo(nome, valor) {
-    try {
-        const { error } = await supabase
-            .from('saldos')
-            .insert({
-                user_id: currentUser.id,
-                nome: nome,
-                valor: parseCurrency(valor),
-                data: formatDate(new Date()),
-                criado_em: new Date().toISOString()
-            });
-        
-        if (error) throw error;
-        
-        showNotification('Saldo atualizado!', 'success');
-        return true;
-        
-    } catch (error) {
-        console.error('Erro ao salvar saldo:', error);
-        showNotification('Erro ao salvar saldo', 'error');
-        return false;
-    }
-}
-
-// ============================================
-// 📅 FUNÇÕES DE CALENDÁRIO
-// ============================================
-
-function updateCalendar() {
-    const year = calendarCurrentDate.getFullYear();
-    const month = calendarCurrentDate.getMonth();
-    const today = new Date();
-    const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
-    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    
-    calendarMonthEl.textContent = `${monthNames[month]} ${year}`;
-    
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDay = firstDay.getDay();
-    
-    calendarGridEl.innerHTML = '';
-    
-    const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    for (let i = 0; i < 7; i++) {
-        const dayEl = document.createElement('div');
-        dayEl.className = 'calendar-day';
-        dayEl.innerHTML = weekDays[i];
-        dayEl.style.fontWeight = '600';
-        dayEl.style.color = 'var(--gray)';
-        dayEl.style.border = 'none';
-        calendarGridEl.appendChild(dayEl);
-    }
-    
-    for (let i = 0; i < startingDay; i++) { 
-        calendarGridEl.appendChild(document.createElement('div')); 
-    }
-    
-    // Contar contas por dia
-    const dayContasCount = {};
-    contasAtuais.forEach(conta => {
-        if (conta.status !== 'paga' && conta.dia_vencimento && conta.mes === month + 1) {
-            const day = conta.dia_vencimento;
-            if (day >= 1 && day <= daysInMonth) {
-                dayContasCount[day] = (dayContasCount[day] || 0) + 1;
-            }
-        }
-    });
-    
-    // Contar eventos por dia
-    const dayEventosCount = {};
-    eventosAtuais.forEach(evento => {
-        if (evento.mes === month + 1) {
-            const day = evento.dia;
-            if (day >= 1 && day <= daysInMonth) {
-                dayEventosCount[day] = (dayEventosCount[day] || 0) + 1;
-            }
-        }
-    });
-    
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dayEl = document.createElement('div');
-        dayEl.className = 'calendar-day';
-        dayEl.innerHTML = `<div class="day-number">${day}</div>`;
-        const dateObj = new Date(year, month, day);
-        
-        if (isCurrentMonth && day === today.getDate()) {
-            dayEl.classList.add('today');
-        }
-        
-        if (selectedDay && 
-            selectedDay.getDate() === day && 
-            selectedDay.getMonth() === month && 
-            selectedDay.getFullYear() === year) {
-            dayEl.classList.add('selected');
-        }
-        
-        // Adicionar bolinha para contas
-        if (dayContasCount[day] && dayContasCount[day] > 0) {
-            const countBadge = document.createElement('div');
-            countBadge.className = 'contas-count';
-            countBadge.textContent = dayContasCount[day];
-            countBadge.classList.add(dateObj < today ? 'past' : 'future');
-            dayEl.appendChild(countBadge);
-        }
-        
-        // Adicionar estrela para eventos
-        if (dayEventosCount[day] && dayEventosCount[day] > 0) {
-            const starBadge = document.createElement('div');
-            starBadge.className = 'event-star';
-            starBadge.innerHTML = '<i class="fas fa-star"></i>';
-            dayEl.appendChild(starBadge);
-        }
-        
-        dayEl.addEventListener('click', async () => {
-            selectedDay = dateObj;
-            currentFilter = 'dia';
-            updateFilterButtons();
-            
-            // Carregar contas do dia
-            await carregarContasDia(dateObj);
-        });
-        
-        calendarGridEl.appendChild(dayEl);
-    }
-}
-
-// ============================================
-// 🎨 FUNÇÕES DE INTERFACE
-// ============================================
-
-function atualizarInterfaceContas(contas) {
-    if (!contas || contas.length === 0) {
-        contasListEl.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-check-circle"></i>
-                <div style="margin-top:12px;">📭 Nenhuma conta encontrada</div>
-                <div style="font-size:0.8em;margin-top:10px;">
-                    Mês: ${getMonthName(getTargetDate(currentMonthOffset))}/${getTargetDate(currentMonthOffset).getFullYear()}
+    <!-- Tela de Autenticação -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-box">
+            <h2 class="auth-title"><i class="fas fa-home"></i> Gestor Doméstico</h2>
+            <div id="loginForm">
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="seu@email.com">
                 </div>
-                <button onclick="abrirModalNovaConta()" class="btn btn-primary" style="margin-top:15px;">
-                    <i class="fas fa-plus"></i> Adicionar Conta
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Senha</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Sua senha">
+                </div>
+                <button class="btn btn-primary auth-btn" onclick="login()">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
                 </button>
-            </div>
-        `;
-        return;
-    }
-    
-    let contasOrdenadas = [...contas];
-    contasOrdenadas.sort((a, b) => {
-        const ordem = { 'vencida': 0, 'pendente': 1, 'paga': 2 };
-        return (ordem[a.status] || 1) - (ordem[b.status] || 1);
-    });
-    
-    let html = '';
-    contasOrdenadas.forEach((conta) => {
-        // Determinar status
-        let status = 'pendente';
-        if (conta.valor_pago > 0) {
-            status = 'paga';
-        } else if (conta.dia_vencimento < new Date().getDate() && conta.mes <= new Date().getMonth() + 1) {
-            status = 'vencida';
-        }
-        
-        let statusText = '', statusClass = '', itemClass = 'conta-item';
-        let valorExibido = formatCurrency(conta.valor_original);
-        
-        switch(status) {
-            case 'vencida':
-                statusText = 'VENCIDA';
-                statusClass = 'status-vencida';
-                itemClass += ' vencida';
-                break;
-            case 'pendente':
-                statusText = 'PENDENTE';
-                statusClass = 'status-pendente';
-                itemClass += ' pendente';
-                break;
-            case 'paga':
-                statusText = 'PAGA';
-                statusClass = 'status-paga';
-                itemClass += ' paga';
-                if (conta.valor_pago === VALOR_SEM_PAGAMENTO) {
-                    valorExibido = 'R$ 0,01';
-                } else {
-                    valorExibido = formatCurrency(conta.valor_pago);
-                }
-                break;
-        }
-        
-        html += `
-            <div class="${itemClass}" onclick="abrirModalPagamento(${JSON.stringify(conta).replace(/"/g, '&quot;')})">
-                <div class="conta-header">
-                    <div class="conta-info">
-                        <div class="conta-descricao">${conta.descricao}</div>
-                        <div class="conta-detalhes">Vence dia ${conta.dia_vencimento}</div>
-                    </div>
-                    <div>
-                        <div class="conta-valor">${valorExibido}</div>
-                        <div class="conta-status ${statusClass}">${statusText}</div>
-                    </div>
+                <div class="auth-toggle">
+                    Não tem conta? <a href="#" onclick="showRegister()">Registrar</a>
                 </div>
             </div>
-        `;
-    });
-    
-    contasListEl.innerHTML = html;
-}
-
-// ============================================
-// 🎪 FUNÇÕES DE MODAIS
-// ============================================
-
-function abrirModalPagamento(conta) {
-    const modalHTML = `
-        <div class="modal-header">
-            <h2 class="modal-title"><i class="fas fa-money-check-alt"></i> Pagamento</h2>
-            <button class="close-modal" id="closeModalBtn">&times;</button>
-        </div>
-        <div class="conta-info-card">
-            <div class="conta-info-row">
-                <span class="conta-info-label">Descrição:</span>
-                <span class="conta-info-value">${conta.descricao}</span>
-            </div>
-            <div class="conta-info-row">
-                <span class="conta-info-label">Vencimento:</span>
-                <span class="conta-info-value">Dia ${conta.dia_vencimento}</span>
-            </div>
-            <div class="conta-info-row">
-                <span class="conta-info-label">Valor:</span>
-                <span class="conta-info-value">${formatCurrency(conta.valor_original)}</span>
-            </div>
-        </div>
-        <div class="form-group">
-            <label for="valor-pago-input"><i class="fas fa-money-bill-wave"></i> Valor Pago</label>
-            <input type="text" id="valor-pago-input" class="form-control" placeholder="Ex: 150,50 ou 0,01" 
-                   value="${conta.valor_pago > 0 ? conta.valor_pago.toFixed(2).replace('.', ',') : ''}">
-            <div class="zero-option">
-                <button class="zero-btn" id="btn-sempagamento" type="button">
-                    <i class="fas fa-ban"></i> Sem Pagamento (R$ 0,01)
+            <div id="registerForm" style="display:none;">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Nome</label>
+                    <input type="text" id="registerName" class="form-control" placeholder="Seu nome">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="registerEmail" class="form-control" placeholder="seu@email.com">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Senha</label>
+                    <input type="password" id="registerPassword" class="form-control" placeholder="Mínimo 6 caracteres">
+                </div>
+                <button class="btn btn-success auth-btn" onclick="register()">
+                    <i class="fas fa-user-plus"></i> Criar Conta
                 </button>
+                <div class="auth-toggle">
+                    Já tem conta? <a href="#" onclick="showLogin()">Entrar</a>
+                </div>
             </div>
         </div>
-        <div class="form-group">
-            <button class="btn btn-primary" id="salvar-pagamento-btn" style="width:100%;" onclick="processarPagamento('${conta.id}')">
-                <i class="fas fa-save"></i> Salvar Pagamento
+    </div>
+
+    <!-- Aplicativo Principal (inicia escondido) -->
+    <div class="container" id="mainContainer" style="display:none;">
+        <div class="header">
+            <h1><i class="fas fa-home"></i> Gestor Doméstico</h1>
+            <button onclick="logout()" style="position:absolute;right:15px;top:50%;transform:translateY(-50%);background:none;border:none;color:white;cursor:pointer;">
+                <i class="fas fa-sign-out-alt"></i>
             </button>
         </div>
-    `;
-    
-    modalContent.innerHTML = modalHTML;
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const valorInput = document.getElementById('valor-pago-input');
-    const btnSemPagamento = document.getElementById('btn-sempagamento');
-    
-    closeModalBtn.addEventListener('click', fecharModal);
-    
-    valorInput.addEventListener('input', (e) => {
-        e.target.value = formatCurrencyInput(e.target.value);
-    });
-    
-    btnSemPagamento.addEventListener('click', () => {
-        valorInput.value = '0,01';
-    });
-    
-    mainModal.style.display = 'flex';
-}
-
-async function processarPagamento(contaId) {
-    const valorInput = document.getElementById('valor-pago-input');
-    const valor = parseCurrency(valorInput.value);
-    
-    let status = 'pendente';
-    if (valor > 0) {
-        status = valor === VALOR_SEM_PAGAMENTO ? 'paga' : 'paga';
-    }
-    
-    const sucesso = await salvarPagamento(contaId, valor, status);
-    
-    if (sucesso) {
-        fecharModal();
-        await carregarContasMes();
-    }
-}
-
-function abrirModalNovaConta() {
-    const targetDate = getTargetDate(currentMonthOffset);
-    const mes = targetDate.getMonth() + 1;
-    const ano = targetDate.getFullYear();
-    
-    const modalHTML = `
-        <div class="modal-header">
-            <h2 class="modal-title"><i class="fas fa-plus-circle"></i> Nova Conta</h2>
-            <button class="close-modal" id="closeModalBtn">&times;</button>
-        </div>
-        <div style="padding: 15px;">
-            <div class="form-group">
-                <label for="nova-descricao"><i class="fas fa-file-alt"></i> Descrição</label>
-                <input type="text" id="nova-descricao" class="form-control" placeholder="Ex: Aluguel, Luz, etc.">
-            </div>
-            <div class="form-group">
-                <label for="nova-dia"><i class="fas fa-calendar-day"></i> Dia do Vencimento</label>
-                <input type="number" id="nova-dia" class="form-control" placeholder="1-31" min="1" max="31" value="10">
-            </div>
-            <div class="form-group">
-                <label for="nova-valor"><i class="fas fa-money-bill-wave"></i> Valor</label>
-                <input type="text" id="nova-valor" class="form-control" placeholder="Ex: 150,50">
-            </div>
-            <div class="form-group">
-                <label for="nova-mes"><i class="fas fa-calendar"></i> Mês/Ano</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="number" id="nova-mes" class="form-control" value="${mes}" min="1" max="12" style="flex:1;">
-                    <input type="number" id="nova-ano" class="form-control" value="${ano}" style="flex:1;">
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <div class="calendar-month" id="calendarMonth"></div>
+                <div class="calendar-nav">
+                    <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                    <button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
                 </div>
             </div>
-            <div class="form-group">
-                <button class="btn btn-success" onclick="criarConta()" style="width:100%;">
-                    <i class="fas fa-save"></i> Criar Conta
-                </button>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+        <div class="filters-container">
+            <div class="filter-row">
+                <button class="filter-btn active" data-filter="contas"><i class="fas fa-file-invoice-dollar"></i> Contas</button>
+                <button class="filter-btn" data-filter="eventos"><i class="fas fa-calendar-alt"></i> Eventos</button>
+                <button class="filter-btn" data-filter="lista"><i class="fas fa-shopping-cart"></i> Lista</button>
+                <button class="filter-btn" data-filter="pedir"><i class="fas fa-plus-circle"></i> Pedir</button>
+                <button class="filter-btn" data-filter="saldos"><i class="fas fa-wallet"></i> Saldos</button>
             </div>
         </div>
-    `;
-    
-    modalContent.innerHTML = modalHTML;
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    
-    closeModalBtn.addEventListener('click', fecharModal);
-    
-    const valorInput = document.getElementById('nova-valor');
-    valorInput.addEventListener('input', (e) => {
-        e.target.value = formatCurrencyInput(e.target.value);
-    });
-    
-    mainModal.style.display = 'flex';
-}
+        <div class="filter-indicator"><span id="currentFilterText">Contas do Mês</span></div>
+        <div class="loading" id="loading"><div class="loading-spinner"><i class="fas fa-spinner"></i></div><div style="margin-top:12px;">Carregando...</div></div>
+        <div id="contentContainer" style="display:none;">
+            <div class="contas-container">
+                <div class="filter-info" id="filterInfo"></div>
+                <div class="contas-list" id="contasList"></div>
+            </div>
+        </div>
+        <button class="refresh-btn" id="refreshBtn" style="display:none;"><i class="fas fa-sync-alt"></i></button>
+    </div>
 
-async function criarConta() {
-    const descricao = document.getElementById('nova-descricao').value;
-    const dia = parseInt(document.getElementById('nova-dia').value);
-    const valor = document.getElementById('nova-valor').value;
-    const mes = parseInt(document.getElementById('nova-mes').value);
-    const ano = parseInt(document.getElementById('nova-ano').value);
-    
-    if (!descricao || !dia || !valor || !mes || !ano) {
-        showNotification('Preencha todos os campos', 'error');
-        return;
-    }
-    
-    if (dia < 1 || dia > 31) {
-        showNotification('Dia deve ser entre 1 e 31', 'error');
-        return;
-    }
-    
-    const sucesso = await criarNovaConta(descricao, dia, valor, mes, ano);
-    
-    if (sucesso) {
-        fecharModal();
-        await carregarContasMes();
-    }
-}
+    <!-- Modal -->
+    <div class="modal-overlay" id="main-modal">
+        <div class="modal-container">
+            <div class="modal-content" id="modalContent"></div>
+        </div>
+    </div>
 
-// ============================================
-// 🎯 INICIALIZAÇÃO
-// ============================================
+    <script>
+        // ============================================
+        // 🔧 CONFIGURAÇÕES SUPABASE - COLE SUAS CREDENCIAIS AQUI
+        // ============================================
+        const SUPABASE_URL = 'https://zngojwlfsdjmsxhgpize.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_2PMpz6EaV9nmzlxMDdkyBQ_N_QdjIT_';
 
-async function initApp() {
-    try {
-        await carregarContasMes();
-        await carregarEventosMes();
-        
-        setupEventListeners();
-        
-        showNotification('Aplicativo carregado com sucesso!', 'success');
-        
-    } catch (error) {
-        console.error('Erro na inicialização:', error);
-        showNotification('Erro ao inicializar aplicativo', 'error');
-    }
-}
+        // Configurações
+        const VALOR_SEM_PAGAMENTO = 0.01;
 
-function setupEventListeners() {
-    // Botões de filtro
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            currentFilter = this.dataset.filter;
-            selectedDay = null;
-            updateFilterButtons();
+        // ============================================
+        // 📦 INICIALIZAÇÃO DO SUPABASE
+        // ============================================
+        let supabase = null;
+        let currentUser = null;
+        let currentMonthOffset = 0;
+        let currentFilter = 'contas';
+        let selectedDay = null;
+        let calendarCurrentDate = new Date();
+        let contasAtuais = [];
+        let eventosAtuais = [];
+        let listaAtual = [];
+        let saldosAtuais = [];
+        let historicoSaldos = [];
+
+        async function initSupabase() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (session) {
+                    currentUser = session.user;
+                    showMainApp();
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Erro ao inicializar Supabase:', error);
+                return false;
+            }
+        }
+
+        // ============================================
+        // 🔐 FUNÇÕES DE AUTENTICAÇÃO
+        // ============================================
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
             
-            switch(currentFilter) {
-                case 'contas':
-                    carregarContasMes();
-                    break;
-                case 'eventos':
-                    carregarTodosEventos();
-                    break;
-                case 'lista':
-                    carregarListaCompras();
-                    break;
-                case 'pedir':
-                    abrirModalPedir();
-                    break;
-                case 'saldos':
-                    carregarSaldos();
-                    break;
+            if (!email || !password) {
+                showNotification('Preencha email e senha', 'error');
+                return;
             }
-        });
-    });
-    
-    // Navegação do calendário
-    prevMonthBtnCal.addEventListener('click', function() {
-        currentMonthOffset -= 1;
-        calendarCurrentDate = getTargetDate(currentMonthOffset);
-        selectedDay = null;
-        if (currentFilter === 'eventos') {
-            carregarTodosEventos();
-        } else {
-            carregarContasMes();
-        }
-    });
-    
-    nextMonthBtnCal.addEventListener('click', function() {
-        currentMonthOffset += 1;
-        calendarCurrentDate = getTargetDate(currentMonthOffset);
-        selectedDay = null;
-        if (currentFilter === 'eventos') {
-            carregarTodosEventos();
-        } else {
-            carregarContasMes();
-        }
-    });
-}
-
-function updateFilterButtons() {
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        if (btn.dataset.filter === currentFilter) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
-}
-
-function showNotification(mensagem, tipo = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `sync-indicator ${tipo}`;
-    notification.innerHTML = `
-        <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-        <span>${mensagem}</span>
-    `;
-    
-    document.body.appendChild(notification);
-    notification.style.display = 'flex';
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideInLeft 0.2s reverse';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                
+                currentUser = data.user;
+                showMainApp();
+                showNotification('Login realizado!', 'success');
+                
+            } catch (error) {
+                console.error('Erro no login:', error.message);
+                showNotification('Erro no login: ' + error.message, 'error');
             }
-        }, 200);
-    }, 3000);
-}
+        }
 
-function fecharModal() {
-    mainModal.style.display = 'none';
-}
+        async function register() {
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            
+            if (!name || !email || !password) {
+                showNotification('Preencha todos os campos', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showNotification('Senha deve ter pelo menos 6 caracteres', 'error');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email, password,
+                    options: { data: { name, created_at: new Date().toISOString() } }
+                });
+                
+                if (error) throw error;
+                
+                showNotification('Conta criada! Faça login.', 'success');
+                showLogin();
+                
+            } catch (error) {
+                console.error('Erro no registro:', error.message);
+                showNotification('Erro: ' + error.message, 'error');
+            }
+        }
 
-// ============================================
-// 🚀 INICIALIZAÇÃO DO SISTEMA
-// ============================================
+        async function logout() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                
+                currentUser = null;
+                showAuthScreen();
+                showNotification('Logout realizado', 'info');
+                
+            } catch (error) {
+                console.error('Erro no logout:', error.message);
+                showNotification('Erro ao fazer logout', 'error');
+            }
+        }
 
-async function initialize() {
-    const initialized = await initSupabase();
-    
-    if (!initialized) {
-        showAuthScreen();
-    }
-}
+        function showLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
 
-// Iniciar quando a página carregar
-window.onload = initialize;
-</script>
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('registerName').value = '';
+            document.getElementById('registerEmail').value = '';
+            document.getElementById('registerPassword').value = '';
+        }
+
+        function showAuthScreen() {
+            document.getElementById('authContainer').style.display = 'flex';
+            document.getElementById('mainContainer').style.display = 'none';
+        }
+
+        function showMainApp() {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'block';
+            initApp();
+        }
+
+        // ============================================
+        // 🛠️ FUNÇÕES BÁSICAS
+        // ============================================
+        function formatCurrency(value) { 
+            return 'R$ ' + (isNaN(value) ? 0 : value).toFixed(2).replace('.', ','); 
+        }
+
+        function parseCurrency(value) {
+            if (!value && value !== 0) return 0;
+            const cleaned = value.toString().replace(/[^\d,-]/g, '').replace(',', '.').replace(/\.(?=.*\.)/g, '');
+            return parseFloat(cleaned) || 0;
+        }
+
+        function formatCurrencyInput(value) {
+            let cleaned = value.replace(/[^\d,.]/g, '').replace('.', ',');
+            const parts = cleaned.split(',');
+            if (parts.length > 2) cleaned = parts[0] + ',' + parts.slice(1).join('');
+            if (parts.length === 2) cleaned = parts[0] + ',' + parts[1].slice(0, 2);
+            return cleaned;
+        }
+
+        function getTargetDate(monthOffset) { 
+            const now = new Date(); 
+            return new Date(now.getFullYear(), now.getMonth() + monthOffset, 1); 
+        }
+
+        function getMonthName(date) {
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            return months[date.getMonth()];
+        }
+
+        function formatDate(date) {
+            const d = new Date(date);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+        }
+
+        function showNotification(mensagem, tipo = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `sync-indicator ${tipo}`;
+            notification.innerHTML = `
+                <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${mensagem}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            notification.style.display = 'flex';
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideInLeft 0.2s reverse';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 200);
+            }, 3000);
+        }
+
+        function fecharModal() {
+            document.getElementById('main-modal').style.display = 'none';
+        }
+
+        // ============================================
+        // 📅 FUNÇÕES DE CONTAS
+        // ============================================
+        async function carregarContasMes() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('contentContainer').style.display = 'none';
+                document.getElementById('currentFilterText').textContent = 'Contas do Mês';
+                
+                const targetDate = getTargetDate(currentMonthOffset);
+                const mes = targetDate.getMonth() + 1;
+                const ano = targetDate.getFullYear();
+                const mesAno = `${getMonthName(targetDate)}/${ano}`;
+                
+                document.getElementById('filterInfo').innerHTML = `Contas de ${mesAno}`;
+                
+                // Buscar do Supabase
+                const { data: contas, error } = await supabase
+                    .from('contas')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .eq('mes', mes)
+                    .eq('ano', ano)
+                    .order('dia_vencimento', { ascending: true });
+                
+                if (error) throw error;
+                
+                contasAtuais = contas || [];
+                atualizarInterfaceContas(contasAtuais);
+                updateCalendar();
+                
+            } catch (error) {
+                console.error('Erro ao carregar contas:', error);
+                document.getElementById('contasList').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div style="margin:10px 0;">Erro ao carregar contas</div>
+                        <div style="font-size:0.8em;">${error.message}</div>
+                    </div>
+                `;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('contentContainer').style.display = 'block';
+            }
+        }
+
+        function atualizarInterfaceContas(contas) {
+            const contasListEl = document.getElementById('contasList');
+            
+            if (!contas || contas.length === 0) {
+                contasListEl.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <div style="margin-top:12px;">📭 Nenhuma conta encontrada</div>
+                        <button onclick="abrirModalNovaConta()" class="btn btn-primary" style="margin-top:15px;">
+                            <i class="fas fa-plus"></i> Adicionar Conta
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            contas.forEach((conta) => {
+                let status = 'pendente';
+                if (conta.valor_pago > 0) {
+                    status = 'paga';
+                } else if (conta.dia_vencimento < new Date().getDate()) {
+                    status = 'vencida';
+                }
+                
+                let statusText = '', statusClass = '', itemClass = 'conta-item';
+                let valorExibido = formatCurrency(conta.valor_original);
+                
+                switch(status) {
+                    case 'vencida':
+                        statusText = 'VENCIDA';
+                        statusClass = 'status-vencida';
+                        itemClass += ' vencida';
+                        break;
+                    case 'pendente':
+                        statusText = 'PENDENTE';
+                        statusClass = 'status-pendente';
+                        itemClass += ' pendente';
+                        break;
+                    case 'paga':
+                        statusText = 'PAGA';
+                        statusClass = 'status-paga';
+                        itemClass += ' paga';
+                        valorExibido = formatCurrency(conta.valor_pago);
+                        break;
+                }
+                
+                html += `
+                    <div class="${itemClass}" onclick="abrirModalPagamento(${JSON.stringify(conta).replace(/"/g, '&quot;')})">
+                        <div class="conta-header">
+                            <div class="conta-info">
+                                <div class="conta-descricao">${conta.descricao}</div>
+                                <div class="conta-detalhes">Vence dia ${conta.dia_vencimento}</div>
+                            </div>
+                            <div>
+                                <div class="conta-valor">${valorExibido}</div>
+                                <div class="conta-status ${statusClass}">${statusText}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            contasListEl.innerHTML = html;
+        }
+
+        // ============================================
+        // 🎪 FUNÇÕES DE MODAIS
+        // ============================================
+        function abrirModalPagamento(conta) {
+            const modalHTML = `
+                <div class="modal-header">
+                    <h2 class="modal-title"><i class="fas fa-money-check-alt"></i> Pagamento</h2>
+                    <button class="close-modal" id="closeModalBtn">&times;</button>
+                </div>
+                <div class="conta-info-card">
+                    <div class="conta-info-row">
+                        <span class="conta-info-label">Descrição:</span>
+                        <span class="conta-info-value">${conta.descricao}</span>
+                    </div>
+                    <div class="conta-info-row">
+                        <span class="conta-info-label">Vencimento:</span>
+                        <span class="conta-info-value">Dia ${conta.dia_vencimento}</span>
+                    </div>
+                    <div class="conta-info-row">
+                        <span class="conta-info-label">Valor:</span>
+                        <span class="conta-info-value">${formatCurrency(conta.valor_original)}</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="valor-pago-input"><i class="fas fa-money-bill-wave"></i> Valor Pago</label>
+                    <input type="text" id="valor-pago-input" class="form-control" placeholder="Ex: 150,50 ou 0,01" 
+                           value="${conta.valor_pago > 0 ? conta.valor_pago.toFixed(2).replace('.', ',') : ''}">
+                    <div class="zero-option">
+                        <button class="zero-btn" id="btn-sempagamento" type="button" onclick="document.getElementById('valor-pago-input').value = '0,01'">
+                            <i class="fas fa-ban"></i> Sem Pagamento (R$ 0,01)
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-primary" style="width:100%;" onclick="processarPagamento('${conta.id}')">
+                        <i class="fas fa-save"></i> Salvar Pagamento
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = modalHTML;
+            document.getElementById('main-modal').style.display = 'flex';
+            
+            const valorInput = document.getElementById('valor-pago-input');
+            valorInput.addEventListener('input', (e) => {
+                e.target.value = formatCurrencyInput(e.target.value);
+            });
+            
+            document.getElementById('closeModalBtn').addEventListener('click', fecharModal);
+        }
+
+        async function processarPagamento(contaId) {
+            const valorInput = document.getElementById('valor-pago-input');
+            const valor = parseCurrency(valorInput.value);
+            
+            try {
+                const { error } = await supabase
+                    .from('contas')
+                    .update({
+                        valor_pago: valor,
+                        status: valor > 0 ? 'paga' : 'pendente',
+                        atualizado_em: new Date().toISOString()
+                    })
+                    .eq('id', contaId)
+                    .eq('user_id', currentUser.id);
+                
+                if (error) throw error;
+                
+                showNotification('Pagamento salvo!', 'success');
+                fecharModal();
+                await carregarContasMes();
+                
+            } catch (error) {
+                console.error('Erro ao salvar pagamento:', error);
+                showNotification('Erro ao salvar pagamento', 'error');
+            }
+        }
+
+        function abrirModalNovaConta() {
+            const targetDate = getTargetDate(currentMonthOffset);
+            const mes = targetDate.getMonth() + 1;
+            const ano = targetDate.getFullYear();
+            
+            const modalHTML = `
+                <div class="modal-header">
+                    <h2 class="modal-title"><i class="fas fa-plus-circle"></i> Nova Conta</h2>
+                    <button class="close-modal" id="closeModalBtn">&times;</button>
+                </div>
+                <div style="padding: 15px;">
+                    <div class="form-group">
+                        <label for="nova-descricao"><i class="fas fa-file-alt"></i> Descrição</label>
+                        <input type="text" id="nova-descricao" class="form-control" placeholder="Ex: Aluguel, Luz, etc.">
+                    </div>
+                    <div class="form-group">
+                        <label for="nova-dia"><i class="fas fa-calendar-day"></i> Dia do Vencimento</label>
+                        <input type="number" id="nova-dia" class="form-control" placeholder="1-31" min="1" max="31" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="nova-valor"><i class="fas fa-money-bill-wave"></i> Valor</label>
+                        <input type="text" id="nova-valor" class="form-control" placeholder="Ex: 150,50">
+                    </div>
+                    <div class="form-group">
+                        <label for="nova-mes"><i class="fas fa-calendar"></i> Mês/Ano</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="nova-mes" class="form-control" value="${mes}" min="1" max="12" style="flex:1;">
+                            <input type="number" id="nova-ano" class="form-control" value="${ano}" style="flex:1;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-success" onclick="criarConta()" style="width:100%;">
+                            <i class="fas fa-save"></i> Criar Conta
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = modalHTML;
+            document.getElementById('main-modal').style.display = 'flex';
+            
+            const valorInput = document.getElementById('nova-valor');
+            valorInput.addEventListener('input', (e) => {
+                e.target.value = formatCurrencyInput(e.target.value);
+            });
+            
+            document.getElementById('closeModalBtn').addEventListener('click', fecharModal);
+        }
+
+        async function criarConta() {
+            const descricao = document.getElementById('nova-descricao').value;
+            const dia = parseInt(document.getElementById('nova-dia').value);
+            const valor = document.getElementById('nova-valor').value;
+            const mes = parseInt(document.getElementById('nova-mes').value);
+            const ano = parseInt(document.getElementById('nova-ano').value);
+            
+            if (!descricao || !dia || !valor || !mes || !ano) {
+                showNotification('Preencha todos os campos', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('contas')
+                    .insert({
+                        user_id: currentUser.id,
+                        descricao: descricao,
+                        dia_vencimento: dia,
+                        valor_original: parseCurrency(valor),
+                        valor_pago: 0,
+                        mes: mes,
+                        ano: ano,
+                        status: 'pendente',
+                        criado_em: new Date().toISOString()
+                    });
+                
+                if (error) throw error;
+                
+                showNotification('Conta criada!', 'success');
+                fecharModal();
+                await carregarContasMes();
+                
+            } catch (error) {
+                console.error('Erro ao criar conta:', error);
+                showNotification('Erro ao criar conta', 'error');
+            }
+        }
+
+        // ============================================
+        // 📅 FUNÇÕES DE CALENDÁRIO
+        // ============================================
+        function updateCalendar() {
+            const year = calendarCurrentDate.getFullYear();
+            const month = calendarCurrentDate.getMonth();
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+            const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                               'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            
+            document.getElementById('calendarMonth').textContent = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+            
+            const calendarGridEl = document.getElementById('calendarGrid');
+            calendarGridEl.innerHTML = '';
+            
+            const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            for (let i = 0; i < 7; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.innerHTML = weekDays[i];
+                dayEl.style.fontWeight = '600';
+                dayEl.style.color = 'var(--gray)';
+                dayEl.style.border = 'none';
+                calendarGridEl.appendChild(dayEl);
+            }
+            
+            for (let i = 0; i < startingDay; i++) { 
+                calendarGridEl.appendChild(document.createElement('div')); 
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.innerHTML = `<div class="day-number">${day}</div>`;
+                
+                if (isCurrentMonth && day === today.getDate()) {
+                    dayEl.classList.add('today');
+                }
+                
+                dayEl.addEventListener('click', () => {
+                    selectedDay = new Date(year, month, day);
+                    // Aqui você pode adicionar lógica para mostrar contas do dia
+                    showNotification(`Dia ${day} selecionado`, 'info');
+                });
+                
+                calendarGridEl.appendChild(dayEl);
+            }
+        }
+
+        // ============================================
+        // 🚀 INICIALIZAÇÃO DO APLICATIVO
+        // ============================================
+        async function initApp() {
+            try {
+                await carregarContasMes();
+                updateCalendar();
+                setupEventListeners();
+                
+            } catch (error) {
+                console.error('Erro na inicialização:', error);
+                showNotification('Erro ao inicializar aplicativo', 'error');
+            }
+        }
+
+        function setupEventListeners() {
+            // Botões de filtro
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentFilter = this.dataset.filter;
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    switch(currentFilter) {
+                        case 'contas':
+                            carregarContasMes();
+                            break;
+                        case 'eventos':
+                        case 'lista':
+                        case 'pedir':
+                        case 'saldos':
+                            showNotification('Funcionalidade em desenvolvimento', 'info');
+                            break;
+                    }
+                });
+            });
+            
+            // Navegação do calendário
+            document.getElementById('prevMonth').addEventListener('click', function() {
+                currentMonthOffset -= 1;
+                calendarCurrentDate = getTargetDate(currentMonthOffset);
+                carregarContasMes();
+            });
+            
+            document.getElementById('nextMonth').addEventListener('click', function() {
+                currentMonthOffset += 1;
+                calendarCurrentDate = getTargetDate(currentMonthOffset);
+                carregarContasMes();
+            });
+        }
+
+        // ============================================
+        // 🎯 INICIALIZAÇÃO DO SISTEMA
+        // ============================================
+        async function initialize() {
+            const initialized = await initSupabase();
+            
+            if (!initialized) {
+                showAuthScreen();
+            }
+        }
+
+        // Iniciar quando a página carregar
+        window.onload = initialize;
+    </script>
 </body>
 </html>
