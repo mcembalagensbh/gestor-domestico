@@ -428,6 +428,7 @@
             font-size: 1.1em; transition: all 0.2s; padding: 5px;
             border-radius: 50%; width: 36px; height: 36px;
             display: flex; align-items: center; justify-content: center;
+            margin-right: 5px;
         }
         .refresh-btn:hover { background: rgba(255,255,255,0.15); }
         
@@ -558,11 +559,6 @@
         <!-- FILTROS COM CONTADORES - 3 POR LINHA -->
         <div class="filters">
             <div class="filter-buttons">
-                <button class="filter-btn active" data-filter="tudo">
-                    <i class="fas fa-list"></i>
-                    <span>Tudo</span>
-                    <span class="filter-badge contas" id="badgeTudo">0</span>
-                </button>
                 <button class="filter-btn" data-filter="contas">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>Contas</span>
@@ -661,12 +657,12 @@
             supabase: null,
             currentUser: null,
             currentMonthOffset: 0,
-            currentFilter: 'tudo',
+            currentFilter: null, // Nenhum filtro ativo por padrão
             currentDayFilter: 'tudo',
             selectedDay: null,
             selectedMonth: null,
             selectedYear: null,
-            saldoPassword: null,
+            saldoPassword: '1234', // Senha padrão
             stats: {
                 contas: { pendentes: 0, vencidas: 0, pagas: 0, concluidas: 0, total: 0 },
                 eventos: { hoje: 0, futuros: 0, total: 0 },
@@ -759,6 +755,10 @@
         }
         
         async function handleLogout() {
+            if (!confirm('Tem certeza que deseja sair do aplicativo?')) {
+                return;
+            }
+            
             try {
                 await app.supabase.auth.signOut();
                 app.currentUser = null;
@@ -818,8 +818,7 @@
             const dayFilters = document.getElementById('dayFiltersContainer');
             
             // Mostrar/ocultar filtros do dia
-            if (app.selectedDay && (app.currentFilter === 'tudo' || app.currentFilter === 'contas' || 
-                app.currentFilter === 'eventos' || app.currentFilter === 'gastos')) {
+            if (app.selectedDay) {
                 dayFilters.style.display = 'block';
             } else {
                 dayFilters.style.display = 'none';
@@ -851,44 +850,45 @@
                 `;
             }
             
-            switch(app.currentFilter) {
-                case 'tudo':
-                    if (app.selectedDay) {
-                        showTudoDoDia(content, html);
-                    } else {
-                        html += '<div class="empty-state"><i class="fas fa-calendar"></i><div>Selecione um dia para ver tudo</div></div>';
-                        content.innerHTML = html;
-                    }
-                    break;
-                    
-                case 'contas':
-                    showContasContent(content, html);
-                    break;
-                    
-                case 'gastos':
-                    showGastosContent(content, html);
-                    break;
-                    
-                case 'eventos':
-                    showEventosContent(content, html);
-                    break;
-                    
-                case 'lista':
-                    showListaContent(content, html);
-                    break;
-                    
-                case 'saldos':
-                    showSaldosContent(content, html);
-                    break;
-                    
-                case 'relatorio':
-                    openRelatorioModal();
-                    content.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><div>Gerando relatório...</div></div>';
-                    break;
+            // Se não tem filtro ativo, mostrar tudo do mês
+            if (!app.currentFilter) {
+                showTudoDoMes(content, html);
+            } else {
+                switch(app.currentFilter) {
+                    case 'contas':
+                        showContasContent(content, html);
+                        break;
+                        
+                    case 'gastos':
+                        showGastosContent(content, html);
+                        break;
+                        
+                    case 'eventos':
+                        showEventosContent(content, html);
+                        break;
+                        
+                    case 'lista':
+                        showListaContent(content, html);
+                        break;
+                        
+                    case 'saldos':
+                        showSaldosContent(content, html);
+                        break;
+                        
+                    case 'relatorio':
+                        openRelatorioModal();
+                        content.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><div>Gerando relatório...</div></div>';
+                        break;
+                }
             }
         }
         
         function getHeaderButtons() {
+            // Se não tem filtro ativo (mostrando tudo), não mostra botões de ação
+            if (!app.currentFilter) {
+                return '';
+            }
+            
             switch(app.currentFilter) {
                 case 'contas':
                     return `<button class="btn btn-primary" onclick="openNovaContaModal()"><i class="fas fa-plus"></i> Nova Conta</button>`;
@@ -916,12 +916,6 @@
                         <button class="btn btn-primary" onclick="openNovoSaldoModal()"><i class="fas fa-plus"></i> Novo Saldo</button>
                         <button class="btn btn-warning" onclick="openSegurancaModal()"><i class="fas fa-lock"></i> Segurança</button>
                     `;
-                    
-                case 'tudo':
-                    if (app.selectedDay) {
-                        return '';
-                    }
-                    break;
             }
             return '';
         }
@@ -939,6 +933,12 @@
                 if (app.currentDayFilter !== 'tudo') {
                     filterText += ` | ${app.currentDayFilter.charAt(0).toUpperCase() + app.currentDayFilter.slice(1)}`;
                 }
+            }
+            
+            if (app.currentFilter) {
+                filterText += ` | ${app.currentFilter.charAt(0).toUpperCase() + app.currentFilter.slice(1)}`;
+            } else {
+                filterText += ` | Tudo`;
             }
             
             document.getElementById('filterInfo').textContent = filterText;
@@ -1047,33 +1047,35 @@
                     const eventosDoDia = eventosDoMes.filter(e => e.dia === day);
                     
                     if (eventosDoDia.length > 0) {
-                        const evento = eventosDoDia[0];
-                        const eventIcon = document.createElement('div');
-                        const isPassado = cellDate < hoje;
-                        const isHoje = cellDate.getTime() === hoje.getTime();
-                        
-                        if (evento.tipo === 'amor') {
-                            eventIcon.className = `event-heart ${isPassado ? 'passado' : ''}`;
-                            eventIcon.innerHTML = '<i class="fas fa-heart"></i>';
-                            eventIcon.title = evento.titulo + (eventosDoDia.length > 1 ? ` +${eventosDoDia.length-1} mais` : '');
-                        } else {
-                            eventIcon.className = `event-star ${isPassado ? 'passado' : ''}`;
-                            eventIcon.innerHTML = '<i class="fas fa-star"></i>';
-                            eventIcon.title = evento.titulo + (eventosDoDia.length > 1 ? ` +${eventosDoDia.length-1} mais` : '');
-                        }
-                        
-                        if (isHoje) {
-                            eventIcon.style.color = '#ffeb3b';
-                            eventIcon.style.textShadow = '0 0 3px rgba(0,0,0,0.5)';
-                            eventIcon.style.transform = 'scale(1.2)';
-                        }
-                        
-                        eventIcon.style.position = 'absolute';
-                        eventIcon.style.bottom = '1px';
-                        eventIcon.style.left = evento.tipo === 'amor' ? 'auto' : '1px';
-                        eventIcon.style.right = evento.tipo === 'amor' ? '1px' : 'auto';
-                        
-                        dayContainer.appendChild(eventIcon);
+                        eventosDoDia.forEach(evento => {
+                            const eventIcon = document.createElement('div');
+                            const isPassado = cellDate < hoje;
+                            const isHoje = cellDate.getTime() === hoje.getTime();
+                            
+                            if (evento.tipo === 'amor') {
+                                eventIcon.className = `event-heart ${isPassado ? 'passado' : ''}`;
+                                eventIcon.innerHTML = '<i class="fas fa-heart"></i>';
+                                eventIcon.title = evento.titulo;
+                            } else {
+                                eventIcon.className = `event-star ${isPassado ? 'passado' : ''}`;
+                                eventIcon.innerHTML = '<i class="fas fa-star"></i>';
+                                eventIcon.title = evento.titulo;
+                            }
+                            
+                            if (isHoje) {
+                                eventIcon.style.color = '#ffeb3b';
+                                eventIcon.style.textShadow = '0 0 3px rgba(0,0,0,0.5)';
+                                eventIcon.style.transform = 'scale(1.2)';
+                            }
+                            
+                            eventIcon.style.position = 'absolute';
+                            eventIcon.style.bottom = '1px';
+                            eventIcon.style.left = evento.tipo === 'amor' ? 'auto' : '1px';
+                            eventIcon.style.right = evento.tipo === 'amor' ? '1px' : 'auto';
+                            eventIcon.style.zIndex = '2';
+                            
+                            dayContainer.appendChild(eventIcon);
+                        });
                     }
                     
                     dayCell.addEventListener('click', (e) => {
@@ -1114,6 +1116,204 @@
                 return 'vencida';
             }
             return 'pendente';
+        }
+        
+        // ============================================
+        // 📅 EXIBIÇÃO DE TUDO NO MÊS (quando clica no título do mês)
+        // ============================================
+        async function showTudoDoMes(content, headerHtml) {
+            const mesAtual = app.selectedMonth;
+            const anoAtual = app.selectedYear;
+            
+            try {
+                const [
+                    { data: contas },
+                    { data: eventos },
+                    { data: gastos }
+                ] = await Promise.all([
+                    app.supabase.from('contas').select('*').eq('user_id', app.currentUser.id),
+                    app.supabase.from('eventos').select('*').eq('user_id', app.currentUser.id),
+                    app.supabase.from('gastos').select('*').eq('user_id', app.currentUser.id)
+                ]);
+                
+                let contasDoMes = filterContasPorMes(contas || [], mesAtual, anoAtual);
+                let eventosDoMes = (eventos || [])
+                    .filter(evento => evento.mes === mesAtual && evento.ano === anoAtual);
+                
+                let gastosDoMes = filterGastosPorMes(gastos || [], mesAtual, anoAtual);
+                
+                // Se tem dia selecionado, filtrar por dia
+                if (app.selectedDay) {
+                    contasDoMes = contasDoMes.filter(conta => conta.dia_vencimento === app.selectedDay);
+                    eventosDoMes = eventosDoMes.filter(evento => evento.dia === app.selectedDay);
+                    gastosDoMes = gastosDoMes.filter(gasto => {
+                        const dataGasto = new Date(gasto.data);
+                        return dataGasto.getDate() === app.selectedDay;
+                    });
+                    
+                    // Aplicar filtro específico se selecionado
+                    if (app.currentDayFilter !== 'tudo') {
+                        switch(app.currentDayFilter) {
+                            case 'contas':
+                                eventosDoMes = [];
+                                gastosDoMes = [];
+                                break;
+                            case 'eventos':
+                                contasDoMes = [];
+                                gastosDoMes = [];
+                                break;
+                            case 'gastos':
+                                contasDoMes = [];
+                                eventosDoMes = [];
+                                break;
+                        }
+                    }
+                }
+                
+                let html = headerHtml;
+                
+                // Ordenar por data (dia)
+                contasDoMes.sort((a, b) => a.dia_vencimento - b.dia_vencimento);
+                eventosDoMes.sort((a, b) => a.dia - b.dia);
+                gastosDoMes.sort((a, b) => new Date(a.data) - new Date(b.data));
+                
+                const totalItens = contasDoMes.length + eventosDoMes.length + gastosDoMes.length;
+                
+                if (totalItens === 0) {
+                    html += '<div class="empty-state"><i class="fas fa-calendar-day"></i><div>Nenhum item para este período</div></div>';
+                    content.innerHTML = html;
+                    return;
+                }
+                
+                html += '<div class="contas-list">';
+                
+                // Agrupar por dia
+                const todosDias = new Set();
+                contasDoMes.forEach(c => todosDias.add(c.dia_vencimento));
+                eventosDoMes.forEach(e => todosDias.add(e.dia));
+                gastosDoMes.forEach(g => {
+                    const dataGasto = new Date(g.data);
+                    todosDias.add(dataGasto.getDate());
+                });
+                
+                const diasOrdenados = Array.from(todosDias).sort((a, b) => a - b);
+                
+                for (const dia of diasOrdenados) {
+                    const contasDoDia = contasDoMes.filter(c => c.dia_vencimento === dia);
+                    const eventosDoDia = eventosDoMes.filter(e => e.dia === dia);
+                    const gastosDoDia = gastosDoMes.filter(g => {
+                        const dataGasto = new Date(g.data);
+                        return dataGasto.getDate() === dia;
+                    });
+                    
+                    if (contasDoDia.length === 0 && eventosDoDia.length === 0 && gastosDoDia.length === 0) {
+                        continue;
+                    }
+                    
+                    html += `<div style="padding: 12px; background: #f8f9fa; margin-bottom: 8px; border-radius: 6px;">`;
+                    html += `<div style="font-weight: bold; color: var(--purple); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-calendar-day"></i> Dia ${dia}</div>`;
+                    
+                    // Mostrar contas do dia
+                    contasDoDia.forEach(conta => {
+                        const status = getContaStatus(conta);
+                        const valorOriginal = formatCurrency(conta.valor_original);
+                        const isMensal = conta.mensal;
+                        
+                        html += `
+                            <div class="conta-item ${status.classe}" onclick="openEditarContaModal('${conta.id}')">
+                                <div class="conta-info">
+                                    <div class="conta-desc text-truncate">
+                                        <i class="fas fa-file-invoice-dollar"></i>
+                                        ${conta.descricao}
+                                        ${isMensal ? '<span class="badge-mensal">M</span>' : ''}
+                                    </div>
+                                    <div class="conta-details">
+                                        Conta
+                                    </div>
+                                    <div class="conta-value">${valorOriginal}</div>
+                                </div>
+                                <div class="d-flex align-center">
+                                    <div class="conta-status ${status.classeStatus}">${status.texto}</div>
+                                    <div class="conta-actions">
+                                        <button class="action-btn edit" onclick="event.stopPropagation(); openEditarContaModal('${conta.id}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    // Mostrar eventos do dia
+                    eventosDoDia.forEach(evento => {
+                        const hoje = new Date();
+                        const eventoDate = new Date(evento.ano, evento.mes - 1, evento.dia);
+                        const isHoje = eventoDate.toDateString() === hoje.toDateString();
+                        const icon = evento.tipo === 'amor' ? 'fa-heart' : 'fa-star';
+                        const colorClass = evento.tipo === 'amor' ? 'love' : 'warning';
+                        
+                        html += `
+                            <div class="evento-item" onclick="openEditarEventoModal('${evento.id}')">
+                                <div class="evento-info">
+                                    <div class="evento-desc text-truncate">
+                                        <i class="fas ${icon}" style="color: var(--${colorClass});"></i>
+                                        ${evento.titulo}
+                                    </div>
+                                    <div class="evento-details">
+                                        ${evento.hora || 'Dia todo'}${evento.local ? ' | ' + evento.local : ''}
+                                    </div>
+                                </div>
+                                <div class="d-flex align-center">
+                                    <div class="evento-status ${isHoje ? 'status-hoje' : 'status-pendente'}">
+                                        ${isHoje ? 'HOJE' : 'EVENTO'}
+                                    </div>
+                                    <div class="evento-actions">
+                                        <button class="action-btn edit" onclick="event.stopPropagation(); openEditarEventoModal('${evento.id}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    // Mostrar gastos do dia
+                    gastosDoDia.forEach(gasto => {
+                        const categoria = CATEGORIAS_GASTOS.find(c => c.id === gasto.categoria) || CATEGORIAS_GASTOS[5];
+                        const valor = formatCurrency(gasto.valor);
+                        
+                        html += `
+                            <div class="gasto-item" onclick="openEditarGastoModal('${gasto.id}')">
+                                <div class="gasto-info">
+                                    <div class="gasto-desc text-truncate">
+                                        <i class="fas ${categoria.icon}"></i>
+                                        ${gasto.descricao}
+                                        <span class="gasto-categoria">${categoria.nome}</span>
+                                    </div>
+                                    <div class="gasto-details">
+                                        Gasto
+                                    </div>
+                                    <div class="gasto-value">${valor}</div>
+                                </div>
+                                <div class="gasto-actions">
+                                    <button class="action-btn edit" onclick="event.stopPropagation(); openEditarGastoModal('${gasto.id}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                }
+                
+                html += '</div>';
+                content.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Erro ao carregar tudo do mês:', error);
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><div>Erro ao carregar dados</div></div>';
+            }
         }
         
         // ============================================
@@ -1211,24 +1411,32 @@
                 const inicioAno = dataInicio.getFullYear();
                 
                 if (!conta.data_fim) {
-                    return (ano > inicioAno) || (ano === inicioAno && mes >= inicioMes);
+                    // Verifica se o mês/ano é igual ou posterior ao início
+                    if (ano < inicioAno) return false;
+                    if (ano === inicioAno && mes < inicioMes) return false;
+                    return true;
                 }
                 
                 const dataFim = new Date(conta.data_fim);
                 const fimMes = dataFim.getMonth() + 1;
                 const fimAno = dataFim.getFullYear();
                 
-                const inicioValido = (ano > inicioAno) || (ano === inicioAno && mes >= inicioMes);
-                const fimValido = (ano < fimAno) || (ano === fimAno && mes <= fimMes);
+                // Verifica se está dentro do período (inclusive)
+                if (ano < inicioAno) return false;
+                if (ano === inicioAno && mes < inicioMes) return false;
+                if (ano > fimAno) return false;
+                if (ano === fimAno && mes > fimMes) return false;
                 
-                return inicioValido && fimValido;
+                return true;
             });
         }
         
         function filterGastosPorMes(gastos, mes, ano) {
             return (gastos || []).filter(gasto => {
                 const dataGasto = new Date(gasto.data);
-                return dataGasto.getMonth() + 1 === mes && dataGasto.getFullYear() === ano;
+                const gastoMes = dataGasto.getMonth() + 1;
+                const gastoAno = dataGasto.getFullYear();
+                return gastoMes === mes && gastoAno === ano;
             });
         }
         
@@ -1237,187 +1445,6 @@
             document.getElementById('badgeEventos').textContent = app.stats.eventos.futuros;
             document.getElementById('badgeLista').textContent = app.stats.lista.pendentes;
             document.getElementById('badgeGastos').textContent = app.stats.gastos.total;
-            document.getElementById('badgeTudo').textContent = app.stats.contas.pendentes + app.stats.eventos.futuros + app.stats.gastos.total;
-        }
-        
-        // ============================================
-        // 📅 EXIBIÇÃO DE TUDO NO DIA
-        // ============================================
-        async function showTudoDoDia(content, headerHtml) {
-            const mesAtual = app.selectedMonth;
-            const anoAtual = app.selectedYear;
-            
-            try {
-                const [
-                    { data: contas },
-                    { data: eventos },
-                    { data: gastos }
-                ] = await Promise.all([
-                    app.supabase.from('contas').select('*').eq('user_id', app.currentUser.id),
-                    app.supabase.from('eventos').select('*').eq('user_id', app.currentUser.id),
-                    app.supabase.from('gastos').select('*').eq('user_id', app.currentUser.id)
-                ]);
-                
-                let contasDoDia = filterContasPorMes(contas || [], mesAtual, anoAtual)
-                    .filter(conta => conta.dia_vencimento === app.selectedDay);
-                
-                let eventosDoDia = (eventos || [])
-                    .filter(evento => evento.mes === mesAtual && evento.ano === anoAtual && evento.dia === app.selectedDay);
-                
-                let gastosDoDia = (gastos || [])
-                    .filter(gasto => {
-                        const dataGasto = new Date(gasto.data);
-                        return dataGasto.getMonth() + 1 === mesAtual && 
-                               dataGasto.getFullYear() === anoAtual &&
-                               dataGasto.getDate() === app.selectedDay;
-                    });
-                
-                // Aplicar filtro específico se selecionado
-                if (app.currentDayFilter !== 'tudo') {
-                    switch(app.currentDayFilter) {
-                        case 'contas':
-                            eventosDoDia = [];
-                            gastosDoDia = [];
-                            break;
-                        case 'eventos':
-                            contasDoDia = [];
-                            gastosDoDia = [];
-                            break;
-                        case 'gastos':
-                            contasDoDia = [];
-                            eventosDoDia = [];
-                            break;
-                    }
-                }
-                
-                let html = headerHtml;
-                
-                if (contasDoDia.length === 0 && eventosDoDia.length === 0 && gastosDoDia.length === 0) {
-                    html += '<div class="empty-state"><i class="fas fa-calendar-day"></i><div>Nenhum item para este dia</div></div>';
-                    content.innerHTML = html;
-                    return;
-                }
-                
-                html += '<div class="contas-list">';
-                
-                // Mostrar contas
-                if (contasDoDia.length > 0) {
-                    html += '<div style="padding: 12px; background: #f8f9fa; margin-bottom: 8px; border-radius: 6px;">';
-                    html += '<div style="font-weight: bold; color: var(--purple); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-file-invoice-dollar"></i> Contas</div>';
-                    
-                    contasDoDia.forEach(conta => {
-                        const status = getContaStatus(conta);
-                        const valorOriginal = formatCurrency(conta.valor_original);
-                        const isMensal = conta.mensal;
-                        
-                        html += `
-                            <div class="conta-item ${status.classe}" onclick="openEditarContaModal('${conta.id}')">
-                                <div class="conta-info">
-                                    <div class="conta-desc text-truncate">
-                                        ${conta.descricao}
-                                        ${isMensal ? '<span class="badge-mensal">M</span>' : ''}
-                                    </div>
-                                    <div class="conta-details">
-                                        Vence dia ${conta.dia_vencimento} de ${getMonthName(conta.mes)}
-                                    </div>
-                                    <div class="conta-value">${valorOriginal}</div>
-                                </div>
-                                <div class="d-flex align-center">
-                                    <div class="conta-status ${status.classeStatus}">${status.texto}</div>
-                                    <div class="conta-actions">
-                                        <button class="action-btn edit" onclick="event.stopPropagation(); openEditarContaModal('${conta.id}')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += '</div>';
-                }
-                
-                // Mostrar eventos
-                if (eventosDoDia.length > 0) {
-                    html += '<div style="padding: 12px; background: #f8f9fa; margin-bottom: 8px; border-radius: 6px;">';
-                    html += '<div style="font-weight: bold; color: var(--warning); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-calendar-alt"></i> Eventos</div>';
-                    
-                    eventosDoDia.forEach(evento => {
-                        const hoje = new Date();
-                        const eventoDate = new Date(evento.ano, evento.mes - 1, evento.dia);
-                        const isHoje = eventoDate.toDateString() === hoje.toDateString();
-                        const icon = evento.tipo === 'amor' ? 'fa-heart' : 'fa-star';
-                        const colorClass = evento.tipo === 'amor' ? 'love' : 'warning';
-                        
-                        html += `
-                            <div class="evento-item" onclick="openEditarEventoModal('${evento.id}')">
-                                <div class="evento-info">
-                                    <div class="evento-desc text-truncate">
-                                        <i class="fas ${icon}" style="color: var(--${colorClass});"></i>
-                                        ${evento.titulo}
-                                    </div>
-                                    <div class="evento-details">
-                                        ${evento.hora || 'Dia todo'}${evento.local ? ' | ' + evento.local : ''}
-                                    </div>
-                                </div>
-                                <div class="d-flex align-center">
-                                    <div class="evento-status ${isHoje ? 'status-hoje' : 'status-pendente'}">
-                                        ${isHoje ? 'HOJE' : 'EVENTO'}
-                                    </div>
-                                    <div class="evento-actions">
-                                        <button class="action-btn edit" onclick="event.stopPropagation(); openEditarEventoModal('${evento.id}')">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += '</div>';
-                }
-                
-                // Mostrar gastos
-                if (gastosDoDia.length > 0) {
-                    html += '<div style="padding: 12px; background: #f8f9fa; margin-bottom: 8px; border-radius: 6px;">';
-                    html += '<div style="font-weight: bold; color: var(--gasto); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-shopping-bag"></i> Gastos</div>';
-                    
-                    gastosDoDia.forEach(gasto => {
-                        const categoria = CATEGORIAS_GASTOS.find(c => c.id === gasto.categoria) || CATEGORIAS_GASTOS[5];
-                        const valor = formatCurrency(gasto.valor);
-                        
-                        html += `
-                            <div class="gasto-item" onclick="openEditarGastoModal('${gasto.id}')">
-                                <div class="gasto-info">
-                                    <div class="gasto-desc text-truncate">
-                                        <i class="fas ${categoria.icon}"></i>
-                                        ${gasto.descricao}
-                                        <span class="gasto-categoria">${categoria.nome}</span>
-                                    </div>
-                                    <div class="gasto-details">
-                                        ${formatDate(gasto.data)}
-                                    </div>
-                                    <div class="gasto-value">${valor}</div>
-                                </div>
-                                <div class="gasto-actions">
-                                    <button class="action-btn edit" onclick="event.stopPropagation(); openEditarGastoModal('${gasto.id}')">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += '</div>';
-                }
-                
-                html += '</div>';
-                content.innerHTML = html;
-                
-            } catch (error) {
-                console.error('Erro ao carregar tudo do dia:', error);
-                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><div>Erro ao carregar dados</div></div>';
-            }
         }
         
         // ============================================
@@ -1455,13 +1482,36 @@
                 return;
             }
             
-            const contasNaoPagas = contas.filter(conta => conta.valor_pago === 0 && conta.status !== 'concluida');
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            // Separar contas não pagas (pendentes/vencidas/hoje) e pagas
+            const contasAtivas = contas.filter(conta => {
+                if (conta.valor_pago > 0) return false;
+                if (conta.status === 'concluida') return false;
+                return true;
+            });
+            
             const contasPagas = contas.filter(conta => conta.valor_pago > 0);
             const contasConcluidas = contas.filter(conta => conta.status === 'concluida');
             
+            // Ordenar contas ativas: primeiro as vencidas, depois as de hoje, depois as pendentes
+            contasAtivas.sort((a, b) => {
+                const dataA = new Date(a.ano, a.mes - 1, a.dia_vencimento);
+                const dataB = new Date(b.ano, b.mes - 1, b.dia_vencimento);
+                
+                // Vencidas primeiro
+                if (dataA < hoje && dataB >= hoje) return -1;
+                if (dataA >= hoje && dataB < hoje) return 1;
+                
+                // Depois ordenar por data
+                return dataA - dataB;
+            });
+            
             let html = headerHtml + '<div class="contas-list">';
             
-            contasNaoPagas.forEach(conta => {
+            // Contas ativas
+            contasAtivas.forEach(conta => {
                 const status = getContaStatus(conta);
                 const valorOriginal = formatCurrency(conta.valor_original);
                 const isMensal = conta.mensal;
@@ -1490,6 +1540,7 @@
                 `;
             });
             
+            // Contas pagas
             if (contasPagas.length > 0) {
                 html += '<div style="padding: 12px; border-top: 1px dashed #eee; margin-top: 8px;">';
                 html += '<div style="color: var(--gray); font-size: 0.85em; margin-bottom: 8px;">Contas pagas:</div>';
@@ -1525,6 +1576,7 @@
                 html += '</div>';
             }
             
+            // Contas concluídas
             if (contasConcluidas.length > 0) {
                 html += '<div style="padding: 12px; border-top: 1px dashed #eee; margin-top: 8px;">';
                 html += '<div style="color: var(--gray); font-size: 0.85em; margin-bottom: 8px;">Contas concluídas (não pagas):</div>';
@@ -1816,19 +1868,19 @@
         // ============================================
         async function showSaldosContent(content, headerHtml) {
             // Verificar senha primeiro
-            const password = prompt("Digite a senha de 4 dígitos para acessar os saldos:");
+            const password = prompt("Digite a senha de 4 dígitos para acessar os saldos (padrão: 1234):");
             
             if (!password || password.length !== 4 || isNaN(password)) {
-                alert("Senha inválida ou não informada.");
-                app.currentFilter = 'contas';
-                showContent();
+                alert("Senha inválida! Deve ter 4 dígitos numéricos.");
+                desmarcarFiltros();
+                loadAppData();
                 return;
             }
             
             if (password !== app.saldoPassword) {
                 alert("Senha incorreta!");
-                app.currentFilter = 'contas';
-                showContent();
+                desmarcarFiltros();
+                loadAppData();
                 return;
             }
             
@@ -1892,10 +1944,14 @@
                 
                 if (data) {
                     app.saldoPassword = data.valor;
+                } else {
+                    // Se não tem senha salva, usar padrão e salvar
+                    app.saldoPassword = '1234';
+                    await saveSaldoPassword('1234');
                 }
             } catch (error) {
-                // Senha ainda não configurada
-                console.log('Senha dos saldos ainda não configurada');
+                // Usar senha padrão
+                app.saldoPassword = '1234';
             }
         }
         
@@ -1944,17 +2000,21 @@
                     const inicioAno = dataInicio.getFullYear();
                     
                     if (!conta.data_fim) {
-                        return (ano > inicioAno) || (ano === inicioAno && mes >= inicioMes);
+                        if (ano < inicioAno) return false;
+                        if (ano === inicioAno && mes < inicioMes) return false;
+                        return true;
                     }
                     
                     const dataFim = new Date(conta.data_fim);
                     const fimMes = dataFim.getMonth() + 1;
                     const fimAno = dataFim.getFullYear();
                     
-                    const inicioValido = (ano > inicioAno) || (ano === inicioAno && mes >= inicioMes);
-                    const fimValido = (ano < fimAno) || (ano === fimAno && mes <= fimMes);
+                    if (ano < inicioAno) return false;
+                    if (ano === inicioAno && mes < inicioMes) return false;
+                    if (ano > fimAno) return false;
+                    if (ano === fimAno && mes > fimMes) return false;
                     
-                    return inicioValido && fimValido;
+                    return true;
                 });
             } catch (error) {
                 console.error('Erro ao carregar contas para calendário:', error);
@@ -2000,7 +2060,16 @@
         function formatDate(dateString) {
             if (!dateString) return '';
             const date = new Date(dateString);
+            // Ajustar fuso horário para mostrar data correta
+            date.setHours(date.getHours() + 3); // Ajuste para GMT-3 (Brasília)
             return date.toLocaleDateString('pt-BR');
+        }
+        
+        function desmarcarFiltros() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            app.currentFilter = null;
         }
         
         // ============================================
@@ -2019,6 +2088,7 @@
                 if (calendarNavTimeout) return;
                 app.currentMonthOffset--;
                 app.selectedDay = null;
+                desmarcarFiltros();
                 loadAppData();
                 calendarNavTimeout = setTimeout(() => { calendarNavTimeout = null; }, 500);
             });
@@ -2027,16 +2097,21 @@
                 if (calendarNavTimeout) return;
                 app.currentMonthOffset++;
                 app.selectedDay = null;
+                desmarcarFiltros();
                 loadAppData();
                 calendarNavTimeout = setTimeout(() => { calendarNavTimeout = null; }, 500);
             });
             
+            // Ao clicar no título do mês, mostrar tudo e desmarcar filtros
             document.getElementById('calendarTitle').addEventListener('click', () => {
                 app.selectedDay = null;
+                desmarcarFiltros();
                 loadAppData();
             });
             
-            document.getElementById('btnRefresh').addEventListener('click', loadAppData);
+            document.getElementById('btnRefresh').addEventListener('click', () => {
+                loadAppData();
+            });
             
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -2187,7 +2262,9 @@
             
             // Data padrão: dia selecionado ou hoje
             const defaultDay = app.selectedDay || hoje.getDate();
-            const defaultDate = `${ano}-${mes.toString().padStart(2, '0')}-${defaultDay.toString().padStart(2, '0')}`;
+            // Corrigir problema de fuso horário: usar UTC para evitar diferença de 1 dia
+            const defaultDate = new Date(Date.UTC(ano, mes - 1, defaultDay));
+            const defaultDateStr = defaultDate.toISOString().split('T')[0];
             
             const modalHTML = `
                 <div class="modal-header">
@@ -2207,7 +2284,7 @@
                     
                     <div class="form-group">
                         <label class="form-label"><i class="fas fa-calendar-day"></i> Data</label>
-                        <input type="date" id="gastoData" class="form-input" value="${defaultDate}">
+                        <input type="date" id="gastoData" class="form-input" value="${defaultDateStr}">
                     </div>
                     
                     <div class="form-group">
@@ -2285,6 +2362,7 @@
                     }
                 }
                 
+                // Corrigir problema de fuso horário: usar data como está (já corrigida no input)
                 const { error } = await app.supabase
                     .from('gastos')
                     .insert({
@@ -2329,7 +2407,7 @@
                     
                     <div class="form-group">
                         <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
-                        <textarea id="eventoDescricao" class="form-input" rows="2" placeholder="Detalhes do evento..."></textarea>
+                            <textarea id="eventoDescricao" class="form-input" rows="2" placeholder="Detalhes do evento..."></textarea>
                     </div>
                     
                     <div style="display: flex; gap: 8px;">
@@ -2396,7 +2474,7 @@
         };
         
         window.openNovoSaldoModal = function() {
-            const password = prompt("Digite a senha de 4 dígitos para cadastrar saldo:");
+            const password = prompt("Digite a senha de 4 dígitos para cadastrar saldo (padrão: 1234):");
             
             if (!password || password.length !== 4 || isNaN(password)) {
                 alert("Senha inválida!");
