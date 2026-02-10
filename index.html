@@ -13,6 +13,7 @@
             --success: #2ecc71; --border: #dfe6e9; --love: #e84393;
             --star: #ffd700; --heart: #e84393; --event-yellow: #e67e22;
             --gasto: #9b59b6; --report: #1abc9c; --calendar: #e74c3c;
+            --purple: #9b59b6; --purple-light: #d7bde2; --purple-dark: #8e44ad;
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; 
@@ -48,24 +49,24 @@
             border-radius: 6px; font-size: 14px; transition: border-color 0.2s;
             background: #fff;
         }
-        .form-input:focus, .form-select:focus { outline: none; border-color: var(--primary); }
+        .form-input:focus, .form-select:focus { outline: none; border-color: var(--purple); }
         .btn {
             padding: 10px 16px; border: none; border-radius: 6px;
             font-weight: 600; cursor: pointer; display: flex; 
             align-items: center; justify-content: center; gap: 8px;
             transition: all 0.2s; font-size: 14px;
-            min-height: 44px; /* Tamanho mínimo para touch */
+            min-height: 44px;
         }
-        .btn:hover { opacity: 0.9; }
-        .btn-primary { background: linear-gradient(135deg, var(--primary), #2980b9); color: white; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); color: white; }
         .btn-success { background: linear-gradient(135deg, var(--success), #27ae60); color: white; }
         .btn-warning { background: linear-gradient(135deg, var(--warning), #e67e22); color: white; }
         .btn-love { background: linear-gradient(135deg, var(--love), #fd79a8); color: white; }
         .btn-danger { background: linear-gradient(135deg, var(--danger), #c0392b); color: white; }
-        .btn-gasto { background: linear-gradient(135deg, var(--gasto), #8e44ad); color: white; }
+        .btn-gasto { background: linear-gradient(135deg, var(--gasto), var(--purple-dark)); color: white; }
         .btn-report { background: linear-gradient(135deg, var(--report), #16a085); color: white; }
         .auth-toggle { text-align: center; margin-top: 16px; color: var(--gray); font-size: 13px; }
-        .auth-link { color: var(--primary); text-decoration: none; font-weight: 600; cursor: pointer; }
+        .auth-link { color: var(--purple); text-decoration: none; font-weight: 600; cursor: pointer; }
         
         /* ==================== HEADER COMPACTO ==================== */
         #mainContainer { display: none; }
@@ -106,14 +107,14 @@
         }
         .calendar-title { 
             font-weight: 600; font-size: 1em; 
-            background: linear-gradient(135deg, var(--calendar), #c0392b);
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
             color: white; padding: 6px 12px; border-radius: 16px;
             cursor: pointer; transition: all 0.2s;
             white-space: nowrap;
         }
         .calendar-title:hover { opacity: 0.9; }
         .calendar-nav button {
-            background: none; border: none; color: var(--primary);
+            background: none; border: none; color: var(--purple);
             font-size: 1.1em; cursor: pointer; padding: 4px 8px;
             transition: all 0.2s;
         }
@@ -130,7 +131,7 @@
         }
         .calendar-day:hover { background: #f8f9fa; }
         .calendar-day.today { 
-            background: linear-gradient(135deg, #3498db, #2980b9) !important; 
+            background: linear-gradient(135deg, var(--purple-light), var(--purple)) !important; 
             color: white !important; 
             font-weight: bold !important; 
         }
@@ -198,8 +199,8 @@
         }
         .filter-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .filter-btn.active {
-            background: linear-gradient(135deg, var(--primary), #2980b9); 
-            color: white; border-color: var(--primary);
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark)); 
+            color: white; border-color: var(--purple);
         }
         .filter-badge {
             position: absolute; top: -5px; right: -5px;
@@ -212,7 +213,6 @@
         .filter-badge.eventos { background: var(--event-yellow); }
         .filter-badge.lista { background: var(--event-yellow); }
         .filter-badge.gastos { background: var(--gasto); }
-        /* Relatório e Saldos sem badge */
         .filter-badge.relatorio, .filter-badge.saldos { display: none; }
         
         /* ==================== CONTENT AREA COMPACTA ==================== */
@@ -231,7 +231,7 @@
         .conta-item, .gasto-item, .evento-item, .lista-item, .saldo-item {
             padding: 12px; border-bottom: 1px solid #f0f0f0;
             display: flex; justify-content: space-between; align-items: center;
-            cursor: pointer; border-left: 3px solid var(--primary);
+            cursor: pointer; border-left: 3px solid var(--purple);
             transition: all 0.2s;
             min-height: 60px;
         }
@@ -250,15 +250,17 @@
             opacity: 0.6;
         }
         .gasto-item { border-left-color: var(--gasto); }
+        .evento-item { border-left-color: var(--warning); }
         
         .conta-info, .gasto-info, .evento-info, .lista-info, .saldo-info { 
             flex: 1; 
-            min-width: 0; /* Permite que o texto quebre */
+            min-width: 0;
         }
         .conta-desc, .gasto-desc, .evento-desc { 
             font-weight: 600; margin-bottom: 3px; 
             display: flex; align-items: center; gap: 6px; 
             font-size: 13px;
+            color: var(--purple);
         }
         .conta-details, .gasto-details, .evento-details, .lista-details, .saldo-details { 
             color: var(--gray); font-size: 0.85em; 
@@ -270,6 +272,7 @@
             font-weight: 600; font-size: 1.1em; 
             margin-left: 8px;
             white-space: nowrap;
+            color: var(--purple);
         }
         
         /* Ações compactas */
@@ -283,7 +286,7 @@
             cursor: pointer; transition: all 0.2s; border: none;
             color: white; font-size: 0.85em;
         }
-        .action-btn.edit { background: var(--primary); }
+        .action-btn.edit { background: var(--purple); }
         .action-btn.delete { background: var(--danger); }
         .action-btn:hover { transform: scale(1.05); }
         
@@ -296,6 +299,7 @@
         .status-vencida { background: #f8d7da; color: #721c24; }
         .status-paga { background: #d4edda; color: #155724; }
         .status-concluida { background: #e9ecef; color: #495057; }
+        .status-hoje { background: #e8d4f7; color: var(--purple-dark); }
         
         .badge-mensal, .gasto-categoria {
             background: #e8e0f5; color: var(--gasto); padding: 2px 8px;
@@ -307,26 +311,27 @@
         .lista-item {
             padding: 10px 12px;
             display: flex; align-items: center; gap: 12px;
-            border-left: 3px solid var(--success);
+            border-left: 3px solid var(--purple);
         }
         .lista-item.comprado {
             opacity: 0.7; 
             border-left-color: #bdc3c7;
         }
         .lista-checkbox {
-            width: 22px; height: 22px; border: 2px solid var(--primary);
+            width: 22px; height: 22px; border: 2px solid var(--purple);
             border-radius: 4px; display: flex; align-items: center;
             justify-content: center; cursor: pointer; flex-shrink: 0;
             transition: all 0.2s;
         }
-        .lista-checkbox:hover { border-color: var(--primary-dark); }
+        .lista-checkbox:hover { border-color: var(--purple-dark); }
         .lista-checkbox.checked {
-            background: var(--primary); color: white;
+            background: var(--purple); color: white;
         }
-        .lista-text { flex: 1; min-width: 0; }
+        .lista-text { flex: 1; min-width: 0; color: var(--purple); }
         .lista-quantidade {
             background: #e8f4fc; padding: 2px 8px; border-radius: 8px;
             font-size: 0.8em; margin-right: 6px; font-weight: 600;
+            color: var(--purple);
         }
         .lista-added-by {
             font-size: 0.75em; color: var(--gray); margin-top: 2px;
@@ -361,6 +366,7 @@
         .modal-title { 
             font-size: 1.1em; font-weight: bold; 
             display: flex; align-items: center; gap: 8px; 
+            color: var(--purple);
         }
         .close-modal {
             background: none; border: none; font-size: 1.6em;
@@ -375,6 +381,38 @@
         }
         .close-modal:hover { color: var(--danger); }
         
+        /* ==================== FILTROS DO DIA ==================== */
+        .day-filters {
+            display: flex; gap: 8px; margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .day-filter-btn {
+            padding: 8px 12px; border: 1px solid #e8e8e8; background: #fafafa;
+            border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;
+            display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+        }
+        .day-filter-btn:hover { background: #f0f0f0; }
+        .day-filter-btn.active {
+            background: linear-gradient(135deg, var(--purple), var(--purple-dark)); 
+            color: white; border-color: var(--purple);
+        }
+        
+        /* ==================== HEADER DE CONTEÚDO ==================== */
+        .content-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+        }
+        .content-title {
+            font-weight: 600; font-size: 1em; color: var(--dark);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .header-buttons {
+            display: flex; gap: 8px;
+        }
+        .header-buttons .btn {
+            padding: 6px 12px; font-size: 12px; min-height: 36px;
+        }
+        
         /* ==================== ESTADOS COMPACTOS ==================== */
         .loading {
             text-align: center; padding: 30px; color: var(--gray); font-size: 1em;
@@ -386,21 +424,12 @@
             font-size: 2.5em; margin-bottom: 12px; color: #ddd; 
         }
         .refresh-btn {
-            position: fixed; bottom: 16px; right: 16px;
-            width: 50px; height: 50px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), #2980b9);
-            color: white; border: none; cursor: pointer; font-size: 1.2em;
-            box-shadow: 0 4px 12px rgba(52,152,219,0.3);
+            background: none; border: none; color: white; cursor: pointer;
+            font-size: 1.1em; transition: all 0.2s; padding: 5px;
+            border-radius: 50%; width: 36px; height: 36px;
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s; z-index: 99;
         }
-        .refresh-btn:hover { transform: scale(1.05); }
-        
-        /* ==================== BOTÕES DE AÇÃO COMPACTOS ==================== */
-        .action-buttons {
-            display: grid; grid-template-columns: repeat(2, 1fr);
-            gap: 8px; margin-top: 16px;
-        }
+        .refresh-btn:hover { background: rgba(255,255,255,0.15); }
         
         /* ==================== RESPONSIVO ==================== */
         @media (max-width: 768px) {
@@ -504,6 +533,9 @@
             <div class="header-content">
                 <h1><i class="fas fa-home"></i> Home Life</h1>
                 <div class="header-actions">
+                    <button class="refresh-btn" id="btnRefresh" title="Atualizar">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                     <button class="header-btn" id="btnLogout" title="Sair">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
@@ -526,20 +558,25 @@
         <!-- FILTROS COM CONTADORES - 3 POR LINHA -->
         <div class="filters">
             <div class="filter-buttons">
-                <button class="filter-btn active" data-filter="contas">
+                <button class="filter-btn active" data-filter="tudo">
+                    <i class="fas fa-list"></i>
+                    <span>Tudo</span>
+                    <span class="filter-badge contas" id="badgeTudo">0</span>
+                </button>
+                <button class="filter-btn" data-filter="contas">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>Contas</span>
                     <span class="filter-badge contas" id="badgeContas">0</span>
-                </button>
-                <button class="filter-btn" data-filter="gastos">
-                    <i class="fas fa-shopping-bag"></i>
-                    <span>Gastos</span>
-                    <span class="filter-badge gastos" id="badgeGastos">0</span>
                 </button>
                 <button class="filter-btn" data-filter="eventos">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Eventos</span>
                     <span class="filter-badge eventos" id="badgeEventos">0</span>
+                </button>
+                <button class="filter-btn" data-filter="gastos">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>Gastos</span>
+                    <span class="filter-badge gastos" id="badgeGastos">0</span>
                 </button>
                 <button class="filter-btn" data-filter="lista">
                     <i class="fas fa-shopping-cart"></i>
@@ -561,7 +598,25 @@
         
         <!-- CONTEÚDO DINÂMICO -->
         <div class="content-area">
-            <div id="filterInfo" style="margin-bottom: 12px; color: var(--primary); font-weight: 600; font-size: 13px;"></div>
+            <div id="filterInfo" style="margin-bottom: 12px; color: var(--purple); font-weight: 600; font-size: 13px;"></div>
+            
+            <!-- FILTROS ESPECÍFICOS PARA DIA -->
+            <div id="dayFiltersContainer" style="display: none; margin-bottom: 16px;">
+                <div class="day-filters">
+                    <button class="day-filter-btn active" data-day-filter="tudo">
+                        <i class="fas fa-list"></i> Tudo
+                    </button>
+                    <button class="day-filter-btn" data-day-filter="contas">
+                        <i class="fas fa-file-invoice-dollar"></i> Contas
+                    </button>
+                    <button class="day-filter-btn" data-day-filter="eventos">
+                        <i class="fas fa-calendar-alt"></i> Eventos
+                    </button>
+                    <button class="day-filter-btn" data-day-filter="gastos">
+                        <i class="fas fa-shopping-bag"></i> Gastos
+                    </button>
+                </div>
+            </div>
             
             <div class="loading" id="loadingState" style="display: none;">
                 <i class="fas fa-spinner fa-spin" style="font-size: 1.8em; margin-bottom: 12px;"></i>
@@ -570,16 +625,10 @@
             
             <div id="contentArea" style="display: none;">
                 <div id="dynamicContent"></div>
-                
-                <!-- BOTÕES DE AÇÃO -->
-                <div id="actionButtons" class="action-buttons"></div>
             </div>
         </div>
         
-        <!-- BOTÃO DE ATUALIZAR -->
-        <button class="refresh-btn" id="btnRefresh">
-            <i class="fas fa-sync-alt"></i>
-        </button>
+        <!-- BOTÃO FLUTUANTE PARA AÇÕES RÁPIDAS (removido da posição fixa) -->
     </div>
 
     <!-- MODAL PRINCIPAL -->
@@ -596,7 +645,6 @@
             key: 'sb_publishable_2PMpz6EaV9nmzlxMDdkyBQ_N_QdjIT_'
         };
         
-        // Categorias de gastos pré-definidas
         const CATEGORIAS_GASTOS = [
             { id: 'mercado', nome: 'Mercado', icon: 'fa-shopping-cart' },
             { id: 'lazer', nome: 'Lazer', icon: 'fa-film' },
@@ -613,10 +661,12 @@
             supabase: null,
             currentUser: null,
             currentMonthOffset: 0,
-            currentFilter: 'contas',
+            currentFilter: 'tudo',
+            currentDayFilter: 'tudo',
             selectedDay: null,
             selectedMonth: null,
             selectedYear: null,
+            saldoPassword: null,
             stats: {
                 contas: { pendentes: 0, vencidas: 0, pagas: 0, concluidas: 0, total: 0 },
                 eventos: { hoje: 0, futuros: 0, total: 0 },
@@ -643,8 +693,8 @@
                 
                 if (session) {
                     app.currentUser = session.user;
+                    await loadSaldoPassword();
                     showMainApp();
-                    console.log('✅ Usuário logado:', app.currentUser.email);
                 } else {
                     showAuthScreen();
                 }
@@ -674,6 +724,7 @@
                 if (error) throw error;
                 
                 app.currentUser = data.user;
+                await loadSaldoPassword();
                 showMainApp();
                 
             } catch (error) {
@@ -764,72 +815,115 @@
         
         function showContent() {
             const content = document.getElementById('dynamicContent');
-            const actions = document.getElementById('actionButtons');
+            const dayFilters = document.getElementById('dayFiltersContainer');
             
-            // Atualizar informações do filtro
+            // Mostrar/ocultar filtros do dia
+            if (app.selectedDay && (app.currentFilter === 'tudo' || app.currentFilter === 'contas' || 
+                app.currentFilter === 'eventos' || app.currentFilter === 'gastos')) {
+                dayFilters.style.display = 'block';
+            } else {
+                dayFilters.style.display = 'none';
+            }
+            
             updateFilterInfo();
             
+            let html = '';
+            
+            // Criar header com título e botões de ação
+            const hoje = new Date();
+            const targetDate = new Date(hoje.getFullYear(), hoje.getMonth() + app.currentMonthOffset, 1);
+            const mes = targetDate.getMonth() + 1;
+            const ano = targetDate.getFullYear();
+            
+            const headerButtons = getHeaderButtons();
+            
+            if (headerButtons) {
+                html += `
+                    <div class="content-header">
+                        <div class="content-title">
+                            <i class="fas fa-calendar"></i>
+                            ${getMonthName(mes)}/${ano}${app.selectedDay ? ` - Dia ${app.selectedDay}` : ''}
+                        </div>
+                        <div class="header-buttons">
+                            ${headerButtons}
+                        </div>
+                    </div>
+                `;
+            }
+            
             switch(app.currentFilter) {
+                case 'tudo':
+                    if (app.selectedDay) {
+                        showTudoDoDia(content, html);
+                    } else {
+                        html += '<div class="empty-state"><i class="fas fa-calendar"></i><div>Selecione um dia para ver tudo</div></div>';
+                        content.innerHTML = html;
+                    }
+                    break;
+                    
                 case 'contas':
-                    showContasContent();
-                    actions.innerHTML = `
-                        <button class="btn btn-primary" onclick="openNovaContaModal()">
-                            <i class="fas fa-plus"></i> Nova Conta
-                        </button>
-                    `;
+                    showContasContent(content, html);
                     break;
                     
                 case 'gastos':
-                    showGastosContent();
-                    actions.innerHTML = `
-                        <button class="btn btn-gasto" onclick="openNovoGastoModal()">
-                            <i class="fas fa-plus"></i> Novo Gasto
-                        </button>
-                    `;
+                    showGastosContent(content, html);
                     break;
                     
                 case 'eventos':
-                    showEventosContent();
-                    actions.innerHTML = `
-                        <button class="btn btn-warning" onclick="openNovoEventoModal()">
-                            <i class="fas fa-plus"></i> Novo Evento
-                        </button>
-                        <button class="btn btn-love" onclick="openNovoEventoModal('amor')">
-                            <i class="fas fa-heart"></i> Data Especial
-                        </button>
-                    `;
+                    showEventosContent(content, html);
                     break;
                     
                 case 'lista':
-                    showListaContent();
-                    actions.innerHTML = `
-                        <button class="btn btn-success" onclick="openNovoItemModal()">
-                            <i class="fas fa-plus"></i> Novo Item
-                        </button>
-                        <button class="btn btn-danger" onclick="deleteSelectedItems()" style="${app.listaSelecionados.length === 0 ? 'display: none;' : ''}" id="deleteSelectedBtn">
-                            <i class="fas fa-trash"></i> Deletar (${app.listaSelecionados.length})
-                        </button>
-                    `;
+                    showListaContent(content, html);
                     break;
                     
                 case 'saldos':
-                    showSaldosContent();
-                    actions.innerHTML = `
-                        <button class="btn btn-primary" onclick="openNovoSaldoModal()">
-                            <i class="fas fa-plus"></i> Novo Saldo
-                        </button>
-                    `;
+                    showSaldosContent(content, html);
                     break;
                     
                 case 'relatorio':
-                    showRelatorioContent();
-                    actions.innerHTML = `
-                        <button class="btn btn-report" onclick="openRelatorioModal()">
-                            <i class="fas fa-chart-bar"></i> Gerar Relatório
-                        </button>
-                    `;
+                    openRelatorioModal();
+                    content.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><div>Gerando relatório...</div></div>';
                     break;
             }
+        }
+        
+        function getHeaderButtons() {
+            switch(app.currentFilter) {
+                case 'contas':
+                    return `<button class="btn btn-primary" onclick="openNovaContaModal()"><i class="fas fa-plus"></i> Nova Conta</button>`;
+                    
+                case 'gastos':
+                    return `<button class="btn btn-primary" onclick="openNovoGastoModal()"><i class="fas fa-plus"></i> Novo Gasto</button>`;
+                    
+                case 'eventos':
+                    return `
+                        <button class="btn btn-primary" onclick="openNovoEventoModal()"><i class="fas fa-plus"></i> Novo Evento</button>
+                        <button class="btn btn-love" onclick="openNovoEventoModal('amor')"><i class="fas fa-heart"></i> Data Especial</button>
+                    `;
+                    
+                case 'lista':
+                    return `
+                        <button class="btn btn-primary" onclick="openNovoItemModal()"><i class="fas fa-plus"></i> Novo Item</button>
+                        ${app.listaSelecionados.length > 0 ? 
+                            `<button class="btn btn-danger" onclick="deleteSelectedItems()" id="deleteSelectedBtn">
+                                <i class="fas fa-trash"></i> Deletar (${app.listaSelecionados.length})
+                            </button>` : ''}
+                    `;
+                    
+                case 'saldos':
+                    return `
+                        <button class="btn btn-primary" onclick="openNovoSaldoModal()"><i class="fas fa-plus"></i> Novo Saldo</button>
+                        <button class="btn btn-warning" onclick="openSegurancaModal()"><i class="fas fa-lock"></i> Segurança</button>
+                    `;
+                    
+                case 'tudo':
+                    if (app.selectedDay) {
+                        return '';
+                    }
+                    break;
+            }
+            return '';
         }
         
         function updateFilterInfo() {
@@ -842,32 +936,32 @@
             
             if (app.selectedDay) {
                 filterText += ` | Dia ${app.selectedDay}`;
+                if (app.currentDayFilter !== 'tudo') {
+                    filterText += ` | ${app.currentDayFilter.charAt(0).toUpperCase() + app.currentDayFilter.slice(1)}`;
+                }
             }
             
             document.getElementById('filterInfo').textContent = filterText;
         }
         
         // ============================================
-        // 📅 CALENDÁRIO - VERSÃO CORRIGIDA E OTIMIZADA
+        // 📅 CALENDÁRIO
         // ============================================
-        let calendarUpdateInProgress = false; // Flag para evitar duplicação
+        let calendarUpdateInProgress = false;
 
         async function updateCalendar() {
-            // Evitar múltiplas execuções simultâneas
             if (calendarUpdateInProgress) return;
             
             try {
                 calendarUpdateInProgress = true;
-                console.log('🔄 Atualizando calendário (v2)...');
                 
                 const hoje = new Date();
-                hoje.setHours(0, 0, 0, 0); // Normalizar data
+                hoje.setHours(0, 0, 0, 0);
                 
                 const targetDate = new Date(hoje.getFullYear(), hoje.getMonth() + app.currentMonthOffset, 1);
                 const mes = targetDate.getMonth() + 1;
                 const ano = targetDate.getFullYear();
                 
-                // Salvar mês e ano atuais
                 app.selectedMonth = mes;
                 app.selectedYear = ano;
                 
@@ -875,12 +969,11 @@
                 
                 const calendarGrid = document.getElementById('calendarGrid');
                 
-                // Limpar completamente o calendário de forma segura
                 while (calendarGrid.firstChild) {
                     calendarGrid.removeChild(calendarGrid.firstChild);
                 }
                 
-                // Adicionar os dias da semana
+                // Dias da semana
                 ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].forEach(day => {
                     const dayCell = document.createElement('div');
                     dayCell.className = 'calendar-day';
@@ -893,32 +986,24 @@
                     calendarGrid.appendChild(dayCell);
                 });
                 
-                // Calcular dias do mês
                 const firstDay = new Date(ano, targetDate.getMonth(), 1);
                 const lastDay = new Date(ano, targetDate.getMonth() + 1, 0);
                 const daysInMonth = lastDay.getDate();
                 const startingDay = firstDay.getDay();
                 
-                // Espaços vazios antes do primeiro dia
                 for (let i = 0; i < startingDay; i++) {
                     calendarGrid.appendChild(document.createElement('div'));
                 }
                 
-                // Carregar dados para o calendário APENAS UMA VEZ
                 const [contasDoMes, eventosDoMes] = await Promise.all([
                     loadContasParaCalendario(mes, ano),
                     loadEventosParaCalendario(mes, ano)
                 ]);
                 
-                console.log(`📊 Contas não pagas para calendário: ${contasDoMes.length}`);
-                console.log(`📅 Eventos para calendário: ${eventosDoMes.length}`);
-                
-                // Criar células para cada dia do mês
                 for (let day = 1; day <= daysInMonth; day++) {
                     const dayCell = document.createElement('div');
                     dayCell.className = 'calendar-day';
                     
-                    // Criar contêiner interno
                     const dayContainer = document.createElement('div');
                     dayContainer.style.position = 'relative';
                     dayContainer.style.height = '100%';
@@ -931,7 +1016,6 @@
                     
                     dayCell.appendChild(dayContainer);
                     
-                    // Verificar se é hoje (usando data normalizada)
                     const cellDate = new Date(ano, mes-1, day);
                     cellDate.setHours(0, 0, 0, 0);
                     
@@ -940,17 +1024,14 @@
                         dayNumber.style.color = 'white';
                     }
                     
-                    // Verificar se está selecionado
                     if (app.selectedDay === day) {
                         dayCell.classList.add('selected');
                     }
                     
-                    // Calcular contas NÃO PAGAS e NÃO CONCLUÍDAS para este dia
                     const contasDoDia = contasDoMes.filter(c => {
                         return c.dia_vencimento === day && c.valor_pago === 0 && c.status !== 'concluida';
                     });
                     
-                    // Adicionar balões de contas SOMENTE se houver contas não pagas
                     if (contasDoDia.length > 0) {
                         const status = getStatusContasDoDia(contasDoDia, cellDate, hoje);
                         const badge = document.createElement('div');
@@ -963,11 +1044,9 @@
                         dayContainer.appendChild(badge);
                     }
                     
-                    // Adicionar eventos (estrelas/corações)
                     const eventosDoDia = eventosDoMes.filter(e => e.dia === day);
                     
                     if (eventosDoDia.length > 0) {
-                        // Mostrar apenas o primeiro evento se houver mais de um
                         const evento = eventosDoDia[0];
                         const eventIcon = document.createElement('div');
                         const isPassado = cellDate < hoje;
@@ -983,7 +1062,6 @@
                             eventIcon.title = evento.titulo + (eventosDoDia.length > 1 ? ` +${eventosDoDia.length-1} mais` : '');
                         }
                         
-                        // Destacar eventos de hoje
                         if (isHoje) {
                             eventIcon.style.color = '#ffeb3b';
                             eventIcon.style.textShadow = '0 0 3px rgba(0,0,0,0.5)';
@@ -998,7 +1076,6 @@
                         dayContainer.appendChild(eventIcon);
                     }
                     
-                    // Adicionar evento de clique
                     dayCell.addEventListener('click', (e) => {
                         e.stopPropagation();
                         handleDayClick(day);
@@ -1006,8 +1083,6 @@
                     
                     calendarGrid.appendChild(dayCell);
                 }
-                
-                console.log('✅ Calendário atualizado com sucesso');
                 
             } catch (error) {
                 console.error('❌ Erro ao atualizar calendário:', error);
@@ -1017,10 +1092,8 @@
         }
 
         function handleDayClick(day) {
-            // Alternar seleção do dia
             app.selectedDay = app.selectedDay === day ? null : day;
             
-            // Atualizar calendário visualmente
             const cells = document.querySelectorAll('.calendar-day');
             cells.forEach(cell => {
                 const dayNumber = cell.querySelector('.day-number');
@@ -1033,22 +1106,18 @@
                 }
             });
             
-            // Recarregar dados da aplicação
             loadAppData();
         }
 
         function getStatusContasDoDia(contas, dataVencimento, hoje) {
-            // Contas vencidas (data de vencimento anterior a hoje)
             if (dataVencimento < hoje) {
                 return 'vencida';
             }
-            
-            // Contas a vencer (incluindo hoje)
             return 'pendente';
         }
         
         // ============================================
-        // 💰 CARREGAMENTO DE DADOS E ESTATÍSTICAS
+        // 💰 CARREGAMENTO DE DADOS
         // ============================================
         async function loadFilterData() {
             try {
@@ -1057,7 +1126,6 @@
                 const mesAtual = app.selectedMonth;
                 const anoAtual = app.selectedYear;
                 
-                // Carregar todos os dados em paralelo
                 const [
                     { data: contas },
                     { data: eventos },
@@ -1072,7 +1140,6 @@
                     app.supabase.from('gastos').select('*').eq('user_id', app.currentUser.id)
                 ]);
                 
-                // Atualizar estatísticas
                 updateStats(contas || [], eventos || [], lista || [], saldos || [], gastos || []);
                 
             } catch (error) {
@@ -1086,10 +1153,8 @@
             const mesAtual = app.selectedMonth;
             const anoAtual = app.selectedYear;
             
-            // Filtrar contas do mês atual CORRETAMENTE
             const contasFiltradas = filterContasPorMes(contas, mesAtual, anoAtual);
             
-            // Contas
             app.stats.contas.total = contasFiltradas.length;
             app.stats.contas.vencidas = contasFiltradas.filter(c => {
                 const vencimento = new Date(c.ano, c.mes - 1, c.dia_vencimento);
@@ -1100,11 +1165,9 @@
             app.stats.contas.concluidas = contasFiltradas.filter(c => c.status === 'concluida').length;
             app.stats.contas.pendentes = contasFiltradas.filter(c => c.valor_pago === 0 && c.status !== 'concluida').length;
             
-            // Eventos - contar eventos do mês atual
             const eventosMes = (eventos || []).filter(e => e.mes === mesAtual && e.ano === anoAtual);
             app.stats.eventos.total = eventosMes.length;
             
-            // Eventos de hoje
             const eventosHoje = eventosMes.filter(e => {
                 const eventoDate = new Date(e.ano, e.mes - 1, e.dia);
                 eventoDate.setHours(0, 0, 0, 0);
@@ -1112,21 +1175,17 @@
             });
             app.stats.eventos.hoje = eventosHoje.length;
             
-            // Eventos futuros (hoje em diante)
             app.stats.eventos.futuros = eventosMes.filter(e => {
                 const dataEvento = new Date(e.ano, e.mes - 1, e.dia);
                 dataEvento.setHours(0, 0, 0, 0);
                 return dataEvento >= hoje;
             }).length;
             
-            // Lista
             app.stats.lista.total = lista.length;
             app.stats.lista.pendentes = lista.filter(i => !i.comprado).length;
             
-            // Saldos
             app.stats.saldos.total = saldos.length;
             
-            // Gastos
             const gastosFiltrados = filterGastosPorMes(gastos, mesAtual, anoAtual);
             app.stats.gastos.total = gastosFiltrados.length;
             app.stats.gastos.porCategoria = {};
@@ -1138,28 +1197,23 @@
                 app.stats.gastos.porCategoria[gasto.categoria] += gasto.valor;
             });
             
-            // Atualizar badges
             updateBadges();
         }
         
         function filterContasPorMes(contas, mes, ano) {
             return (contas || []).filter(conta => {
-                // Contas não mensais: verificar mês/ano específico
                 if (!conta.mensal) {
                     return conta.mes === mes && conta.ano === ano;
                 }
                 
-                // Contas mensais: verificar período de vigência
                 const dataInicio = new Date(conta.data_inicio);
                 const inicioMes = dataInicio.getMonth() + 1;
                 const inicioAno = dataInicio.getFullYear();
                 
-                // Se não tiver data_fim, aparece a partir da data_inicio
                 if (!conta.data_fim) {
                     return (ano > inicioAno) || (ano === inicioAno && mes >= inicioMes);
                 }
                 
-                // Se tiver data_fim, verificar se está dentro do período
                 const dataFim = new Date(conta.data_fim);
                 const fimMes = dataFim.getMonth() + 1;
                 const fimAno = dataFim.getFullYear();
@@ -1179,22 +1233,197 @@
         }
         
         function updateBadges() {
-            // Atualizar badge de contas (somente pendentes)
             document.getElementById('badgeContas').textContent = app.stats.contas.pendentes;
-            
-            // Atualizar badge de eventos (futuros, incluindo hoje)
             document.getElementById('badgeEventos').textContent = app.stats.eventos.futuros;
-            
-            // Outros badges permanecem
             document.getElementById('badgeLista').textContent = app.stats.lista.pendentes;
             document.getElementById('badgeGastos').textContent = app.stats.gastos.total;
+            document.getElementById('badgeTudo').textContent = app.stats.contas.pendentes + app.stats.eventos.futuros + app.stats.gastos.total;
         }
         
         // ============================================
-        // 💰 CONTAS - FUNÇÕES DE EXIBIÇÃO
+        // 📅 EXIBIÇÃO DE TUDO NO DIA
         // ============================================
-        async function showContasContent() {
-            const hoje = new Date();
+        async function showTudoDoDia(content, headerHtml) {
+            const mesAtual = app.selectedMonth;
+            const anoAtual = app.selectedYear;
+            
+            try {
+                const [
+                    { data: contas },
+                    { data: eventos },
+                    { data: gastos }
+                ] = await Promise.all([
+                    app.supabase.from('contas').select('*').eq('user_id', app.currentUser.id),
+                    app.supabase.from('eventos').select('*').eq('user_id', app.currentUser.id),
+                    app.supabase.from('gastos').select('*').eq('user_id', app.currentUser.id)
+                ]);
+                
+                let contasDoDia = filterContasPorMes(contas || [], mesAtual, anoAtual)
+                    .filter(conta => conta.dia_vencimento === app.selectedDay);
+                
+                let eventosDoDia = (eventos || [])
+                    .filter(evento => evento.mes === mesAtual && evento.ano === anoAtual && evento.dia === app.selectedDay);
+                
+                let gastosDoDia = (gastos || [])
+                    .filter(gasto => {
+                        const dataGasto = new Date(gasto.data);
+                        return dataGasto.getMonth() + 1 === mesAtual && 
+                               dataGasto.getFullYear() === anoAtual &&
+                               dataGasto.getDate() === app.selectedDay;
+                    });
+                
+                // Aplicar filtro específico se selecionado
+                if (app.currentDayFilter !== 'tudo') {
+                    switch(app.currentDayFilter) {
+                        case 'contas':
+                            eventosDoDia = [];
+                            gastosDoDia = [];
+                            break;
+                        case 'eventos':
+                            contasDoDia = [];
+                            gastosDoDia = [];
+                            break;
+                        case 'gastos':
+                            contasDoDia = [];
+                            eventosDoDia = [];
+                            break;
+                    }
+                }
+                
+                let html = headerHtml;
+                
+                if (contasDoDia.length === 0 && eventosDoDia.length === 0 && gastosDoDia.length === 0) {
+                    html += '<div class="empty-state"><i class="fas fa-calendar-day"></i><div>Nenhum item para este dia</div></div>';
+                    content.innerHTML = html;
+                    return;
+                }
+                
+                html += '<div class="contas-list">';
+                
+                // Mostrar contas
+                if (contasDoDia.length > 0) {
+                    html += '<div style="padding: 12px; background: #f8f9fa; margin-bottom: 8px; border-radius: 6px;">';
+                    html += '<div style="font-weight: bold; color: var(--purple); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-file-invoice-dollar"></i> Contas</div>';
+                    
+                    contasDoDia.forEach(conta => {
+                        const status = getContaStatus(conta);
+                        const valorOriginal = formatCurrency(conta.valor_original);
+                        const isMensal = conta.mensal;
+                        
+                        html += `
+                            <div class="conta-item ${status.classe}" onclick="openEditarContaModal('${conta.id}')">
+                                <div class="conta-info">
+                                    <div class="conta-desc text-truncate">
+                                        ${conta.descricao}
+                                        ${isMensal ? '<span class="badge-mensal">M</span>' : ''}
+                                    </div>
+                                    <div class="conta-details">
+                                        Vence dia ${conta.dia_vencimento} de ${getMonthName(conta.mes)}
+                                    </div>
+                                    <div class="conta-value">${valorOriginal}</div>
+                                </div>
+                                <div class="d-flex align-center">
+                                    <div class="conta-status ${status.classeStatus}">${status.texto}</div>
+                                    <div class="conta-actions">
+                                        <button class="action-btn edit" onclick="event.stopPropagation(); openEditarContaModal('${conta.id}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                }
+                
+                // Mostrar eventos
+                if (eventosDoDia.length > 0) {
+                    html += '<div style="padding: 12px; background: #f8f9fa; margin-bottom: 8px; border-radius: 6px;">';
+                    html += '<div style="font-weight: bold; color: var(--warning); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-calendar-alt"></i> Eventos</div>';
+                    
+                    eventosDoDia.forEach(evento => {
+                        const hoje = new Date();
+                        const eventoDate = new Date(evento.ano, evento.mes - 1, evento.dia);
+                        const isHoje = eventoDate.toDateString() === hoje.toDateString();
+                        const icon = evento.tipo === 'amor' ? 'fa-heart' : 'fa-star';
+                        const colorClass = evento.tipo === 'amor' ? 'love' : 'warning';
+                        
+                        html += `
+                            <div class="evento-item" onclick="openEditarEventoModal('${evento.id}')">
+                                <div class="evento-info">
+                                    <div class="evento-desc text-truncate">
+                                        <i class="fas ${icon}" style="color: var(--${colorClass});"></i>
+                                        ${evento.titulo}
+                                    </div>
+                                    <div class="evento-details">
+                                        ${evento.hora || 'Dia todo'}${evento.local ? ' | ' + evento.local : ''}
+                                    </div>
+                                </div>
+                                <div class="d-flex align-center">
+                                    <div class="evento-status ${isHoje ? 'status-hoje' : 'status-pendente'}">
+                                        ${isHoje ? 'HOJE' : 'EVENTO'}
+                                    </div>
+                                    <div class="evento-actions">
+                                        <button class="action-btn edit" onclick="event.stopPropagation(); openEditarEventoModal('${evento.id}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                }
+                
+                // Mostrar gastos
+                if (gastosDoDia.length > 0) {
+                    html += '<div style="padding: 12px; background: #f8f9fa; margin-bottom: 8px; border-radius: 6px;">';
+                    html += '<div style="font-weight: bold; color: var(--gasto); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-shopping-bag"></i> Gastos</div>';
+                    
+                    gastosDoDia.forEach(gasto => {
+                        const categoria = CATEGORIAS_GASTOS.find(c => c.id === gasto.categoria) || CATEGORIAS_GASTOS[5];
+                        const valor = formatCurrency(gasto.valor);
+                        
+                        html += `
+                            <div class="gasto-item" onclick="openEditarGastoModal('${gasto.id}')">
+                                <div class="gasto-info">
+                                    <div class="gasto-desc text-truncate">
+                                        <i class="fas ${categoria.icon}"></i>
+                                        ${gasto.descricao}
+                                        <span class="gasto-categoria">${categoria.nome}</span>
+                                    </div>
+                                    <div class="gasto-details">
+                                        ${formatDate(gasto.data)}
+                                    </div>
+                                    <div class="gasto-value">${valor}</div>
+                                </div>
+                                <div class="gasto-actions">
+                                    <button class="action-btn edit" onclick="event.stopPropagation(); openEditarGastoModal('${gasto.id}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                content.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Erro ao carregar tudo do dia:', error);
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><div>Erro ao carregar dados</div></div>';
+            }
+        }
+        
+        // ============================================
+        // 💰 CONTAS
+        // ============================================
+        async function showContasContent(content, headerHtml) {
             const mesAtual = app.selectedMonth;
             const anoAtual = app.selectedYear;
             
@@ -1206,56 +1435,40 @@
                     .order('status')
                     .order('dia_vencimento');
                 
-                // Filtrar contas
                 let contasFiltradas = filterContasPorMes(contas || [], mesAtual, anoAtual);
                 
-                // Filtrar por dia se selecionado
                 if (app.selectedDay) {
                     contasFiltradas = contasFiltradas.filter(conta => conta.dia_vencimento === app.selectedDay);
                 }
                 
-                displayContas(contasFiltradas);
+                displayContas(content, headerHtml, contasFiltradas);
                 
             } catch (error) {
                 console.error('Erro ao carregar contas:', error);
-                document.getElementById('dynamicContent').innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <div>Erro ao carregar contas</div>
-                    </div>
-                `;
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><div>Erro ao carregar contas</div></div>';
             }
         }
         
-        function displayContas(contas) {
-            const content = document.getElementById('dynamicContent');
-            
+        function displayContas(content, headerHtml, contas) {
             if (!contas.length) {
-                content.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-check-circle"></i>
-                        <div>Nenhuma conta encontrada</div>
-                    </div>
-                `;
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-check-circle"></i><div>Nenhuma conta encontrada</div></div>';
                 return;
             }
             
-            // Separar contas por status
             const contasNaoPagas = contas.filter(conta => conta.valor_pago === 0 && conta.status !== 'concluida');
             const contasPagas = contas.filter(conta => conta.valor_pago > 0);
             const contasConcluidas = contas.filter(conta => conta.status === 'concluida');
             
-            let html = '<div class="contas-list">';
+            let html = headerHtml + '<div class="contas-list">';
             
-            // Contas não pagas primeiro
             contasNaoPagas.forEach(conta => {
                 const status = getContaStatus(conta);
                 const valorOriginal = formatCurrency(conta.valor_original);
                 const isMensal = conta.mensal;
                 
                 html += `
-                    <div class="conta-item ${status.classe}">
-                        <div class="conta-info" onclick="openEditarContaModal('${conta.id}')">
+                    <div class="conta-item ${status.classe}" onclick="openEditarContaModal('${conta.id}')">
+                        <div class="conta-info">
                             <div class="conta-desc text-truncate">
                                 ${conta.descricao}
                                 ${isMensal ? '<span class="badge-mensal">M</span>' : ''}
@@ -1271,16 +1484,12 @@
                                 <button class="action-btn edit" onclick="event.stopPropagation(); openEditarContaModal('${conta.id}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="action-btn delete" onclick="event.stopPropagation(); deleteConta('${conta.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
                             </div>
                         </div>
                     </div>
                 `;
             });
             
-            // Contas pagas (no final)
             if (contasPagas.length > 0) {
                 html += '<div style="padding: 12px; border-top: 1px dashed #eee; margin-top: 8px;">';
                 html += '<div style="color: var(--gray); font-size: 0.85em; margin-bottom: 8px;">Contas pagas:</div>';
@@ -1290,8 +1499,8 @@
                     const isMensal = conta.mensal;
                     
                     html += `
-                        <div class="conta-item paga">
-                            <div class="conta-info" onclick="openEditarContaModal('${conta.id}')">
+                        <div class="conta-item paga" onclick="openEditarContaModal('${conta.id}')">
+                            <div class="conta-info">
                                 <div class="conta-desc text-truncate">
                                     ${conta.descricao}
                                     ${isMensal ? '<span class="badge-mensal">M</span>' : ''}
@@ -1307,9 +1516,6 @@
                                     <button class="action-btn edit" onclick="event.stopPropagation(); openEditarContaModal('${conta.id}')">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="action-btn delete" onclick="event.stopPropagation(); deleteConta('${conta.id}')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1319,7 +1525,6 @@
                 html += '</div>';
             }
             
-            // Contas concluídas (não pagas)
             if (contasConcluidas.length > 0) {
                 html += '<div style="padding: 12px; border-top: 1px dashed #eee; margin-top: 8px;">';
                 html += '<div style="color: var(--gray); font-size: 0.85em; margin-bottom: 8px;">Contas concluídas (não pagas):</div>';
@@ -1329,8 +1534,8 @@
                     const isMensal = conta.mensal;
                     
                     html += `
-                        <div class="conta-item concluida">
-                            <div class="conta-info" onclick="openEditarContaModal('${conta.id}')">
+                        <div class="conta-item concluida" onclick="openEditarContaModal('${conta.id}')">
+                            <div class="conta-info">
                                 <div class="conta-desc text-truncate">
                                     ${conta.descricao}
                                     ${isMensal ? '<span class="badge-mensal">M</span>' : ''}
@@ -1345,9 +1550,6 @@
                                 <div class="conta-actions">
                                     <button class="action-btn edit" onclick="event.stopPropagation(); openEditarContaModal('${conta.id}')">
                                         <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="action-btn delete" onclick="event.stopPropagation(); deleteConta('${conta.id}')">
-                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             </div>
@@ -1374,15 +1576,17 @@
                 return { texto: 'CONCLUÍDA', classe: 'concluida', classeStatus: 'status-concluida' };
             } else if (vencimento < hoje) {
                 return { texto: 'VENCIDA', classe: 'vencida', classeStatus: 'status-vencida' };
+            } else if (vencimento.getTime() === hoje.getTime()) {
+                return { texto: 'HOJE', classe: 'pendente', classeStatus: 'status-hoje' };
             } else {
                 return { texto: 'PENDENTE', classe: 'pendente', classeStatus: 'status-pendente' };
             }
         }
         
         // ============================================
-        // 🛍️ GASTOS - FUNÇÕES RESTAURADAS
+        // 🛍️ GASTOS
         // ============================================
-        async function showGastosContent() {
+        async function showGastosContent(content, headerHtml) {
             const mesAtual = app.selectedMonth;
             const anoAtual = app.selectedYear;
             
@@ -1393,10 +1597,8 @@
                     .eq('user_id', app.currentUser.id)
                     .order('data', { ascending: false });
                 
-                // Filtrar gastos
                 let gastosFiltrados = filterGastosPorMes(gastos || [], mesAtual, anoAtual);
                 
-                // Filtrar por dia se selecionado
                 if (app.selectedDay) {
                     gastosFiltrados = gastosFiltrados.filter(gasto => {
                         const dataGasto = new Date(gasto.data);
@@ -1404,33 +1606,21 @@
                     });
                 }
                 
-                displayGastos(gastosFiltrados);
+                displayGastos(content, headerHtml, gastosFiltrados);
                 
             } catch (error) {
                 console.error('Erro ao carregar gastos:', error);
-                document.getElementById('dynamicContent').innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-shopping-bag"></i>
-                        <div>Nenhum gasto encontrado</div>
-                    </div>
-                `;
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-shopping-bag"></i><div>Nenhum gasto encontrado</div></div>';
             }
         }
         
-        function displayGastos(gastos) {
-            const content = document.getElementById('dynamicContent');
-            
+        function displayGastos(content, headerHtml, gastos) {
             if (!gastos.length) {
-                content.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-shopping-bag"></i>
-                        <div>Nenhum gasto encontrado</div>
-                    </div>
-                `;
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-shopping-bag"></i><div>Nenhum gasto encontrado</div></div>';
                 return;
             }
             
-            let html = '<div class="contas-list">';
+            let html = headerHtml + '<div class="contas-list">';
             
             gastos.forEach(gasto => {
                 const categoria = CATEGORIAS_GASTOS.find(c => c.id === gasto.categoria) || CATEGORIAS_GASTOS[5];
@@ -1438,8 +1628,8 @@
                 const data = formatDate(gasto.data);
                 
                 html += `
-                    <div class="gasto-item">
-                        <div class="gasto-info" onclick="openEditarGastoModal('${gasto.id}')">
+                    <div class="gasto-item" onclick="openEditarGastoModal('${gasto.id}')">
+                        <div class="gasto-info">
                             <div class="gasto-desc text-truncate">
                                 <i class="fas ${categoria.icon}"></i>
                                 ${gasto.descricao}
@@ -1454,9 +1644,6 @@
                             <button class="action-btn edit" onclick="event.stopPropagation(); openEditarGastoModal('${gasto.id}')">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="action-btn delete" onclick="event.stopPropagation(); deleteGasto('${gasto.id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
                         </div>
                     </div>
                 `;
@@ -1467,9 +1654,9 @@
         }
         
         // ============================================
-        // 📅 EVENTOS - FUNÇÕES RESTAURADAS
+        // 📅 EVENTOS
         // ============================================
-        async function showEventosContent() {
+        async function showEventosContent(content, headerHtml) {
             const mesAtual = app.selectedMonth;
             const anoAtual = app.selectedYear;
             
@@ -1482,66 +1669,53 @@
                     .eq('ano', anoAtual)
                     .order('dia');
                 
-                // Filtrar por dia se selecionado
                 let eventosFiltrados = eventos || [];
                 if (app.selectedDay) {
                     eventosFiltrados = eventosFiltrados.filter(evento => evento.dia === app.selectedDay);
                 }
                 
-                displayEventos(eventosFiltrados);
+                displayEventos(content, headerHtml, eventosFiltrados);
                 
             } catch (error) {
                 console.error('Erro ao carregar eventos:', error);
-                document.getElementById('dynamicContent').innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-calendar-alt"></i>
-                        <div>Nenhum evento encontrado</div>
-                    </div>
-                `;
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-calendar-alt"></i><div>Nenhum evento encontrado</div></div>';
             }
         }
         
-        function displayEventos(eventos) {
-            const content = document.getElementById('dynamicContent');
-            
+        function displayEventos(content, headerHtml, eventos) {
             if (!eventos.length) {
-                content.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-calendar-alt"></i>
-                        <div>Nenhum evento encontrado</div>
-                    </div>
-                `;
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-calendar-alt"></i><div>Nenhum evento encontrado</div></div>';
                 return;
             }
             
-            let html = '<div class="contas-list">';
+            let html = headerHtml + '<div class="contas-list">';
             
             eventos.forEach(evento => {
-                const isPassado = new Date(evento.ano, evento.mes - 1, evento.dia) < new Date();
+                const hoje = new Date();
+                const eventoDate = new Date(evento.ano, evento.mes - 1, evento.dia);
+                const isPassado = eventoDate < hoje;
+                const isHoje = eventoDate.toDateString() === hoje.toDateString();
                 const icon = evento.tipo === 'amor' ? 'fa-heart' : 'fa-star';
                 const colorClass = evento.tipo === 'amor' ? 'love' : 'warning';
                 
                 html += `
-                    <div class="conta-item ${isPassado ? 'pendente' : ''}">
-                        <div class="conta-info" onclick="openEditarEventoModal('${evento.id}')">
-                            <div class="conta-desc text-truncate">
+                    <div class="evento-item" onclick="openEditarEventoModal('${evento.id}')">
+                        <div class="evento-info">
+                            <div class="evento-desc text-truncate">
                                 <i class="fas ${icon}" style="color: var(--${colorClass});"></i>
                                 ${evento.titulo}
                             </div>
-                            <div class="conta-details">
+                            <div class="evento-details">
                                 Dia ${evento.dia} | ${evento.hora || 'Dia todo'}${evento.local ? ' | ' + evento.local : ''}
                             </div>
                         </div>
                         <div class="d-flex align-center">
-                            <div class="conta-status ${isPassado ? 'status-pendente' : 'status-paga'}">
-                                ${isPassado ? 'PASSADO' : 'PRÓXIMO'}
+                            <div class="evento-status ${isHoje ? 'status-hoje' : (isPassado ? 'status-pendente' : 'status-paga')}">
+                                ${isHoje ? 'HOJE' : (isPassado ? 'PASSADO' : 'PRÓXIMO')}
                             </div>
-                            <div class="conta-actions">
+                            <div class="evento-actions">
                                 <button class="action-btn edit" onclick="event.stopPropagation(); openEditarEventoModal('${evento.id}')">
                                     <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="action-btn delete" onclick="event.stopPropagation(); deleteEvento('${evento.id}')">
-                                    <i class="fas fa-trash"></i>
                                 </button>
                             </div>
                         </div>
@@ -1554,9 +1728,9 @@
         }
         
         // ============================================
-        // 🛒 LISTA DE COMPRAS - FUNÇÕES RESTAURADAS
+        // 🛒 LISTA DE COMPRAS
         // ============================================
-        async function showListaContent() {
+        async function showListaContent(content, headerHtml) {
             try {
                 const { data: lista } = await app.supabase
                     .from('lista_compras')
@@ -1565,39 +1739,25 @@
                     .order('comprado')
                     .order('criado_em', { ascending: false });
                 
-                displayLista(lista || []);
+                displayLista(content, headerHtml, lista || []);
                 
             } catch (error) {
                 console.error('Erro ao carregar lista:', error);
-                document.getElementById('dynamicContent').innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-shopping-cart"></i>
-                        <div>Lista de compras vazia</div>
-                    </div>
-                `;
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-shopping-cart"></i><div>Lista de compras vazia</div></div>';
             }
         }
         
-        function displayLista(lista) {
-            const content = document.getElementById('dynamicContent');
-            
+        function displayLista(content, headerHtml, lista) {
             if (!lista.length) {
-                content.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-shopping-cart"></i>
-                        <div>Lista de compras vazia</div>
-                    </div>
-                `;
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-shopping-cart"></i><div>Lista de compras vazia</div></div>';
                 return;
             }
             
-            // Separar itens comprados e não comprados
             const naoComprados = lista.filter(item => !item.comprado);
             const comprados = lista.filter(item => item.comprado);
             
-            let html = '<div class="contas-list">';
+            let html = headerHtml + '<div class="contas-list">';
             
-            // Itens não comprados
             naoComprados.forEach(item => {
                 const isSelected = app.listaSelecionados.includes(item.id);
                 html += `
@@ -1616,15 +1776,11 @@
                             <button class="action-btn edit" onclick="event.stopPropagation(); openEditarItemModal('${item.id}')">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="action-btn delete" onclick="event.stopPropagation(); deleteItemLista('${item.id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
                         </div>
                     </div>
                 `;
             });
             
-            // Itens comprados (se houver)
             if (comprados.length > 0) {
                 html += '<div style="padding: 12px; border-top: 1px dashed #eee; margin-top: 8px;">';
                 html += '<div style="color: var(--gray); font-size: 0.85em; margin-bottom: 8px;">Já comprados:</div>';
@@ -1643,9 +1799,6 @@
                                 <button class="action-btn edit" onclick="event.stopPropagation(); openEditarItemModal('${item.id}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="action-btn delete" onclick="event.stopPropagation(); deleteItemLista('${item.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
                             </div>
                         </div>
                     `;
@@ -1659,9 +1812,26 @@
         }
         
         // ============================================
-        // 💸 SALDOS - FUNÇÕES RESTAURADAS
+        // 💸 SALDOS
         // ============================================
-        async function showSaldosContent() {
+        async function showSaldosContent(content, headerHtml) {
+            // Verificar senha primeiro
+            const password = prompt("Digite a senha de 4 dígitos para acessar os saldos:");
+            
+            if (!password || password.length !== 4 || isNaN(password)) {
+                alert("Senha inválida ou não informada.");
+                app.currentFilter = 'contas';
+                showContent();
+                return;
+            }
+            
+            if (password !== app.saldoPassword) {
+                alert("Senha incorreta!");
+                app.currentFilter = 'contas';
+                showContent();
+                return;
+            }
+            
             try {
                 const { data: saldos } = await app.supabase
                     .from('saldos')
@@ -1669,38 +1839,26 @@
                     .eq('user_id', app.currentUser.id)
                     .order('criado_em', { ascending: false });
                 
-                displaySaldos(saldos || []);
+                displaySaldos(content, headerHtml, saldos || []);
                 
             } catch (error) {
                 console.error('Erro ao carregar saldos:', error);
-                document.getElementById('dynamicContent').innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-wallet"></i>
-                        <div>Nenhum saldo cadastrado</div>
-                    </div>
-                `;
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-wallet"></i><div>Nenhum saldo cadastrado</div></div>';
             }
         }
         
-        function displaySaldos(saldos) {
-            const content = document.getElementById('dynamicContent');
-            
+        function displaySaldos(content, headerHtml, saldos) {
             if (!saldos.length) {
-                content.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-wallet"></i>
-                        <div>Nenhum saldo cadastrado</div>
-                    </div>
-                `;
+                content.innerHTML = headerHtml + '<div class="empty-state"><i class="fas fa-wallet"></i><div>Nenhum saldo cadastrado</div></div>';
                 return;
             }
             
-            let html = '<div class="saldos-container">';
+            let html = headerHtml + '<div class="saldos-container">';
             
             saldos.forEach(saldo => {
                 html += `
-                    <div class="saldo-item">
-                        <div class="saldo-info" onclick="openEditarSaldoModal('${saldo.id}')">
+                    <div class="saldo-item" onclick="openEditarSaldoModal('${saldo.id}')">
+                        <div class="saldo-info">
                             <div class="saldo-nome text-truncate">${saldo.nome}</div>
                             <div class="saldo-details">Atualizado: ${formatDate(saldo.data)}</div>
                         </div>
@@ -1709,9 +1867,6 @@
                             <div class="saldo-actions">
                                 <button class="action-btn edit" onclick="event.stopPropagation(); openEditarSaldoModal('${saldo.id}')">
                                     <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="action-btn delete" onclick="event.stopPropagation(); deleteSaldo('${saldo.id}')">
-                                    <i class="fas fa-trash"></i>
                                 </button>
                             </div>
                         </div>
@@ -1724,23 +1879,208 @@
         }
         
         // ============================================
-        // 📊 RELATÓRIO - FUNÇÕES RESTAURADAS
+        // 🔐 SENHA DOS SALDOS
         // ============================================
-        async function showRelatorioContent() {
-            const content = document.getElementById('dynamicContent');
-            
-            content.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-chart-bar"></i>
-                    <div>Clique no botão abaixo para gerar um relatório financeiro</div>
-                </div>
-            `;
+        async function loadSaldoPassword() {
+            try {
+                const { data, error } = await app.supabase
+                    .from('configuracoes')
+                    .select('*')
+                    .eq('user_id', app.currentUser.id)
+                    .eq('chave', 'saldo_password')
+                    .single();
+                
+                if (data) {
+                    app.saldoPassword = data.valor;
+                }
+            } catch (error) {
+                // Senha ainda não configurada
+                console.log('Senha dos saldos ainda não configurada');
+            }
+        }
+        
+        async function saveSaldoPassword(password) {
+            try {
+                const { error } = await app.supabase
+                    .from('configuracoes')
+                    .upsert({
+                        user_id: app.currentUser.id,
+                        chave: 'saldo_password',
+                        valor: password,
+                        atualizado_em: new Date().toISOString()
+                    }, {
+                        onConflict: 'user_id,chave'
+                    });
+                
+                if (error) throw error;
+                
+                app.saldoPassword = password;
+                return true;
+            } catch (error) {
+                console.error('Erro ao salvar senha:', error);
+                return false;
+            }
         }
         
         // ============================================
-        // 💰 MODAL DE CONTA MENSAL - CORRIGIDO
+        // 🔧 FUNÇÕES AUXILIARES
         // ============================================
-        async function openNovaContaModal() {
+        async function loadContasParaCalendario(mes, ano) {
+            try {
+                const { data } = await app.supabase
+                    .from('contas')
+                    .select('*')
+                    .eq('user_id', app.currentUser.id);
+                
+                return (data || []).filter(conta => {
+                    if (conta.valor_pago > 0 || conta.status === 'concluida') return false;
+                    
+                    if (!conta.mensal) {
+                        return conta.mes === mes && conta.ano === ano;
+                    }
+                    
+                    const dataInicio = new Date(conta.data_inicio);
+                    const inicioMes = dataInicio.getMonth() + 1;
+                    const inicioAno = dataInicio.getFullYear();
+                    
+                    if (!conta.data_fim) {
+                        return (ano > inicioAno) || (ano === inicioAno && mes >= inicioMes);
+                    }
+                    
+                    const dataFim = new Date(conta.data_fim);
+                    const fimMes = dataFim.getMonth() + 1;
+                    const fimAno = dataFim.getFullYear();
+                    
+                    const inicioValido = (ano > inicioAno) || (ano === inicioAno && mes >= inicioMes);
+                    const fimValido = (ano < fimAno) || (ano === fimAno && mes <= fimMes);
+                    
+                    return inicioValido && fimValido;
+                });
+            } catch (error) {
+                console.error('Erro ao carregar contas para calendário:', error);
+                return [];
+            }
+        }
+        
+        async function loadEventosParaCalendario(mes, ano) {
+            try {
+                const { data } = await app.supabase
+                    .from('eventos')
+                    .select('*')
+                    .eq('user_id', app.currentUser.id)
+                    .eq('mes', mes)
+                    .eq('ano', ano);
+                
+                return data || [];
+            } catch (error) {
+                console.error('Erro ao carregar eventos para calendário:', error);
+                return [];
+            }
+        }
+        
+        function getMonthName(month) {
+            const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            return months[month - 1] || '';
+        }
+        
+        function formatCurrency(value, short = false) {
+            if (short && value >= 1000) {
+                return 'R$ ' + (value / 1000).toFixed(1).replace('.', ',') + 'k';
+            }
+            return 'R$ ' + (value || 0).toFixed(2).replace('.', ',');
+        }
+        
+        function parseCurrency(value) {
+            if (!value) return 0;
+            const cleaned = value.toString().replace(/[^\d,.-]/g, '').replace(',', '.');
+            return parseFloat(cleaned) || 0;
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        }
+        
+        // ============================================
+        // 🎯 CONFIGURAÇÃO DE EVENTOS
+        // ============================================
+        function setupEventListeners() {
+            document.getElementById('btnLogin').addEventListener('click', handleLogin);
+            document.getElementById('btnRegister').addEventListener('click', handleRegister);
+            document.getElementById('btnLogout').addEventListener('click', handleLogout);
+            document.getElementById('linkRegister').addEventListener('click', showRegisterForm);
+            document.getElementById('linkLogin').addEventListener('click', showLoginForm);
+            
+            let calendarNavTimeout;
+            
+            document.getElementById('btnPrevMonth').addEventListener('click', () => {
+                if (calendarNavTimeout) return;
+                app.currentMonthOffset--;
+                app.selectedDay = null;
+                loadAppData();
+                calendarNavTimeout = setTimeout(() => { calendarNavTimeout = null; }, 500);
+            });
+            
+            document.getElementById('btnNextMonth').addEventListener('click', () => {
+                if (calendarNavTimeout) return;
+                app.currentMonthOffset++;
+                app.selectedDay = null;
+                loadAppData();
+                calendarNavTimeout = setTimeout(() => { calendarNavTimeout = null; }, 500);
+            });
+            
+            document.getElementById('calendarTitle').addEventListener('click', () => {
+                app.selectedDay = null;
+                loadAppData();
+            });
+            
+            document.getElementById('btnRefresh').addEventListener('click', loadAppData);
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    app.currentFilter = this.dataset.filter;
+                    
+                    if (app.currentFilter === 'relatorio') {
+                        openRelatorioModal();
+                    } else if (app.currentFilter === 'saldos') {
+                        showContent();
+                    } else {
+                        loadAppData();
+                    }
+                });
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.day-filter-btn')) {
+                    const btn = e.target.closest('.day-filter-btn');
+                    document.querySelectorAll('.day-filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    app.currentDayFilter = btn.dataset.dayFilter;
+                    showContent();
+                }
+            });
+            
+            ['loginEmail', 'loginPassword', 'registerName', 'registerEmail', 'registerPassword'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            if (id.includes('login')) handleLogin();
+                            else if (id.includes('register')) handleRegister();
+                        }
+                    });
+                }
+            });
+        }
+        
+        // ============================================
+        // 🌐 FUNÇÕES GLOBAIS
+        // ============================================
+        window.openNovaContaModal = function() {
             const hoje = new Date();
             const targetDate = new Date(hoje.getFullYear(), hoje.getMonth() + app.currentMonthOffset, 1);
             const mes = targetDate.getMonth() + 1;
@@ -1753,7 +2093,7 @@
                 </div>
                 <div style="padding: 16px;">
                     <div class="tab-buttons" id="contaTabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
-                        <button class="tab-btn active" onclick="switchContaTab('unica')" style="flex: 1; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;">Conta Única</button>
+                        <button class="tab-btn active" onclick="switchContaTab('unica')" style="flex: 1; padding: 10px; background: var(--purple); color: white; border: none; border-radius: 6px; cursor: pointer;">Conta Única</button>
                         <button class="tab-btn" onclick="switchContaTab('mensal')" style="flex: 1; padding: 10px; background: #f8f9fa; color: var(--dark); border: 1px solid #ddd; border-radius: 6px; cursor: pointer;">Conta Mensal</button>
                     </div>
                     
@@ -1825,7 +2165,7 @@
                     </div>
                     
                     <div style="display: flex; gap: 8px; margin-top: 16px;">
-                        <button class="btn btn-success" onclick="saveNovaConta()" style="flex: 1;">
+                        <button class="btn btn-primary" onclick="saveNovaConta()" style="flex: 1;">
                             <i class="fas fa-save"></i> Salvar
                         </button>
                         <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
@@ -1837,234 +2177,455 @@
             
             document.getElementById('modalContent').innerHTML = modalHTML;
             document.getElementById('modalOverlay').style.display = 'flex';
-        }
+        };
         
-        // ============================================
-        // 🔧 FUNÇÕES AUXILIARES
-        // ============================================
-        async function loadContasParaCalendario(mes, ano) {
+        window.openNovoGastoModal = function() {
+            const hoje = new Date();
+            const targetDate = new Date(hoje.getFullYear(), hoje.getMonth() + app.currentMonthOffset, 1);
+            const mes = targetDate.getMonth() + 1;
+            const ano = targetDate.getFullYear();
+            
+            // Data padrão: dia selecionado ou hoje
+            const defaultDay = app.selectedDay || hoje.getDate();
+            const defaultDate = `${ano}-${mes.toString().padStart(2, '0')}-${defaultDay.toString().padStart(2, '0')}`;
+            
+            const modalHTML = `
+                <div class="modal-header">
+                    <div class="modal-title"><i class="fas fa-shopping-bag"></i> Novo Gasto</div>
+                    <button class="close-modal" onclick="closeModal()">&times;</button>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
+                        <input type="text" id="gastoDescricao" class="form-input" placeholder="Ex: Supermercado, Restaurante, Cinema">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
+                        <input type="text" id="gastoValor" class="form-input" placeholder="0,00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-calendar-day"></i> Data</label>
+                        <input type="date" id="gastoData" class="form-input" value="${defaultDate}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-tags"></i> Categoria</label>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;">
+                            ${CATEGORIAS_GASTOS.map(cat => `
+                                <button class="btn categoria-btn ${cat.id === 'outros' ? 'active' : ''}" data-categoria="${cat.id}" onclick="selectCategoriaModal('${cat.id}')" style="display: flex; align-items: center; gap: 6px; justify-content: center; padding: 8px; font-size: 12px; ${cat.id === 'outros' ? 'background: var(--gasto); color: white;' : 'background: #f8f9fa; color: var(--dark);'}">
+                                    <i class="fas ${cat.icon}"></i> ${cat.nome}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <input type="hidden" id="gastoCategoria" value="outros">
+                        <div id="outrosDescContainer" style="display: none; margin-top: 8px;">
+                            <label class="form-label"><i class="fas fa-pen"></i> Descrição do "Outros"</label>
+                            <input type="text" id="outrosDesc" class="form-input" placeholder="Descreva o que foi">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 16px;">
+                        <button class="btn btn-primary" onclick="saveNovoGasto()" style="flex: 1;">
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = modalHTML;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        };
+        
+        window.selectCategoriaModal = function(categoriaId) {
+            document.querySelectorAll('.categoria-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = '#f8f9fa';
+                btn.style.color = 'var(--dark)';
+            });
+            
+            const selectedBtn = document.querySelector(`.categoria-btn[data-categoria="${categoriaId}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('active');
+                selectedBtn.style.background = 'var(--gasto)';
+                selectedBtn.style.color = 'white';
+            }
+            
+            document.getElementById('gastoCategoria').value = categoriaId;
+            
+            const outrosContainer = document.getElementById('outrosDescContainer');
+            if (categoriaId === 'outros') {
+                outrosContainer.style.display = 'block';
+            } else {
+                outrosContainer.style.display = 'none';
+            }
+        };
+        
+        window.saveNovoGasto = async function() {
+            const descricao = document.getElementById('gastoDescricao').value.trim();
+            const valor = parseCurrency(document.getElementById('gastoValor').value);
+            const categoria = document.getElementById('gastoCategoria').value;
+            const data = document.getElementById('gastoData').value;
+            
+            if (!descricao || !valor || !data) {
+                alert('Preencha descrição, valor e data');
+                return;
+            }
+            
             try {
-                const { data } = await app.supabase
-                    .from('contas')
-                    .select('*')
-                    .eq('user_id', app.currentUser.id);
-                
-                return (data || []).filter(conta => {
-                    // Somente contas não pagas e não concluídas aparecem no calendário
-                    if (conta.valor_pago > 0 || conta.status === 'concluida') return false;
-                    
-                    // Contas não mensais: verificar mês/ano específico
-                    if (!conta.mensal) {
-                        return conta.mes === mes && conta.ano === ano;
+                let descricaoFinal = descricao;
+                if (categoria === 'outros') {
+                    const outrosDesc = document.getElementById('outrosDesc').value.trim();
+                    if (outrosDesc) {
+                        descricaoFinal = outrosDesc;
                     }
-                    
-                    // Contas mensais: verificar período de vigência
-                    const dataInicio = new Date(conta.data_inicio);
-                    const inicioMes = dataInicio.getMonth() + 1;
-                    const inicioAno = dataInicio.getFullYear();
-                    
-                    // Se não tiver data_fim, aparece a partir da data_inicio
-                    if (!conta.data_fim) {
-                        return (ano > inicioAno) || (ano === inicioAno && mes >= inicioMes);
-                    }
-                    
-                    // Se tiver data_fim, verificar se está dentro do período
-                    const dataFim = new Date(conta.data_fim);
-                    const fimMes = dataFim.getMonth() + 1;
-                    const fimAno = dataFim.getFullYear();
-                    
-                    const inicioValido = (ano > inicioAno) || (ano === inicioAno && mes >= inicioMes);
-                    const fimValido = (ano < fimAno) || (ano === fimAno && mes <= fimMes);
-                    
-                    return inicioValido && fimValido;
-                });
-            } catch (error) {
-                console.error('Erro ao carregar contas para calendário:', error);
-                return [];
-            }
-        }
-        
-        async function loadEventosParaCalendario(mes, ano) {
-            try {
-                const { data } = await app.supabase
-                    .from('eventos')
-                    .select('*')
-                    .eq('user_id', app.currentUser.id)
-                    .eq('mes', mes)
-                    .eq('ano', ano);
-                
-                return data || [];
-            } catch (error) {
-                console.error('Erro ao carregar eventos para calendário:', error);
-                return [];
-            }
-        }
-        
-        function getMonthName(month) {
-            const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-            return months[month - 1] || '';
-        }
-        
-        function formatCurrency(value, short = false) {
-            if (short && value >= 1000) {
-                return 'R$ ' + (value / 1000).toFixed(1).replace('.', ',') + 'k';
-            }
-            return 'R$ ' + (value || 0).toFixed(2).replace('.', ',');
-        }
-        
-        function parseCurrency(value) {
-            if (!value) return 0;
-            const cleaned = value.toString().replace(/[^\d,.-]/g, '').replace(',', '.');
-            return parseFloat(cleaned) || 0;
-        }
-        
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('pt-BR');
-        }
-        
-        // ============================================
-        // 🎯 CONFIGURAÇÃO DE EVENTOS - CORRIGIDO
-        // ============================================
-        function setupEventListeners() {
-            // Autenticação
-            document.getElementById('btnLogin').addEventListener('click', handleLogin);
-            document.getElementById('btnRegister').addEventListener('click', handleRegister);
-            document.getElementById('btnLogout').addEventListener('click', handleLogout);
-            document.getElementById('linkRegister').addEventListener('click', showRegisterForm);
-            document.getElementById('linkLogin').addEventListener('click', showLoginForm);
-            
-            // Calendário - CORRIGIDO: usar throttling para evitar múltiplos cliques
-            let calendarNavTimeout;
-            
-            document.getElementById('btnPrevMonth').addEventListener('click', () => {
-                if (calendarNavTimeout) return;
-                
-                app.currentMonthOffset--;
-                app.selectedDay = null;
-                loadAppData();
-                
-                calendarNavTimeout = setTimeout(() => {
-                    calendarNavTimeout = null;
-                }, 500);
-            });
-            
-            document.getElementById('btnNextMonth').addEventListener('click', () => {
-                if (calendarNavTimeout) return;
-                
-                app.currentMonthOffset++;
-                app.selectedDay = null;
-                loadAppData();
-                
-                calendarNavTimeout = setTimeout(() => {
-                    calendarNavTimeout = null;
-                }, 500);
-            });
-            
-            // Evento de clique no título do calendário
-            document.getElementById('calendarTitle').addEventListener('click', () => {
-                app.selectedDay = null;
-                loadAppData();
-            });
-            
-            // Filtros
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    app.currentFilter = this.dataset.filter;
-                    showContent();
-                });
-            });
-            
-            // Botão de atualizar
-            document.getElementById('btnRefresh').addEventListener('click', loadAppData);
-            
-            // REMOVER: Não fechar modal ao clicar fora (comentado)
-            // document.getElementById('modalOverlay').addEventListener('click', function(e) {
-            //     if (e.target === this) closeModal();
-            // });
-            
-            // Enter para login
-            ['loginEmail', 'loginPassword', 'registerName', 'registerEmail', 'registerPassword'].forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') {
-                            if (id.includes('login')) handleLogin();
-                            else if (id.includes('register')) handleRegister();
-                        }
-                    });
                 }
-            });
-        }
-        
-        // ============================================
-        // 🌐 INICIALIZAÇÃO E FUNÇÕES GLOBAIS
-        // ============================================
-        
-        // Funções globais para os modais e ações
-        window.openEditarContaModal = async function(id) {
-            try {
-                const { data: conta, error } = await app.supabase
-                    .from('contas')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
+                
+                const { error } = await app.supabase
+                    .from('gastos')
+                    .insert({
+                        user_id: app.currentUser.id,
+                        descricao: descricaoFinal,
+                        valor: valor,
+                        categoria: categoria,
+                        data: data,
+                        added_by: app.currentUser.email.split('@')[0],
+                        criado_em: new Date().toISOString()
+                    });
                 
                 if (error) throw error;
                 
-                // Opção para "não pagar" (concluir sem pagar)
-                const opcoesPagamento = `
-                    <option value="0.00" ${conta.valor_pago === 0 && conta.status !== 'concluida' ? 'selected' : ''}>Não pago</option>
-                    <option value="concluir" ${conta.status === 'concluida' ? 'selected' : ''}>Concluir sem pagar</option>
-                    <option value="outro">Outro valor</option>
-                `;
+                alert('✅ Gasto registrado com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao registrar gasto:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.openNovoEventoModal = function(tipo = 'normal') {
+            const mes = app.selectedMonth;
+            const ano = app.selectedYear;
+            
+            const modalHTML = `
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas ${tipo === 'amor' ? 'fa-heart' : 'fa-calendar-plus'}"></i>
+                        ${tipo === 'amor' ? 'Nova Data Especial' : 'Novo Evento'}
+                    </div>
+                    <button class="close-modal" onclick="closeModal()">&times;</button>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-heading"></i> Título</label>
+                        <input type="text" id="eventoTitulo" class="form-input" placeholder="${tipo === 'amor' ? 'Jantar romântico, etc.' : 'Reunião, Consulta, etc.'}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
+                        <textarea id="eventoDescricao" class="form-input" rows="2" placeholder="Detalhes do evento..."></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label>
+                            <input type="number" id="eventoDia" class="form-input" min="1" max="31" value="${app.selectedDay || new Date().getDate()}">
+                        </div>
+                        
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label"><i class="fas fa-clock"></i> Hora</label>
+                            <input type="time" id="eventoHora" class="form-input" value="19:00">
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="eventoTipo" value="${tipo}">
+                    <input type="hidden" id="eventoMes" value="${mes}">
+                    <input type="hidden" id="eventoAno" value="${ano}">
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 16px;">
+                        <button class="btn btn-primary" onclick="saveNovoEvento()" style="flex: 1;">
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = modalHTML;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        };
+        
+        window.openNovoItemModal = function() {
+            const modalHTML = `
+                <div class="modal-header">
+                    <div class="modal-title"><i class="fas fa-cart-plus"></i> Novo Item</div>
+                    <button class="close-modal" onclick="closeModal()">&times;</button>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-hashtag"></i> Quantidade</label>
+                        <input type="number" id="itemQuantidade" class="form-input" min="1" value="1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-box"></i> Item</label>
+                            <input type="text" id="itemDescricao" class="form-input" placeholder="Ex: Leite, Pão, Arroz">
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 16px;">
+                        <button class="btn btn-primary" onclick="saveNovoItem()" style="flex: 1;">
+                            <i class="fas fa-save"></i> Adicionar
+                        </button>
+                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = modalHTML;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        };
+        
+        window.openNovoSaldoModal = function() {
+            const password = prompt("Digite a senha de 4 dígitos para cadastrar saldo:");
+            
+            if (!password || password.length !== 4 || isNaN(password)) {
+                alert("Senha inválida!");
+                return;
+            }
+            
+            if (password !== app.saldoPassword) {
+                alert("Senha incorreta!");
+                return;
+            }
+            
+            const modalHTML = `
+                <div class="modal-header">
+                    <div class="modal-title"><i class="fas fa-wallet"></i> Novo Saldo</div>
+                    <button class="close-modal" onclick="closeModal()">&times;</button>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-tag"></i> Nome do Saldo</label>
+                        <input type="text" id="saldoNome" class="form-input" placeholder="Ex: Saldo Hugo, Saldo Casa, Poupança">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
+                        <input type="text" id="saldoValor" class="form-input" placeholder="0,00">
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 16px;">
+                        <button class="btn btn-primary" onclick="saveNovoSaldo()" style="flex: 1;">
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = modalHTML;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        };
+        
+        window.openSegurancaModal = function() {
+            const modalHTML = `
+                <div class="modal-header">
+                    <div class="modal-title"><i class="fas fa-lock"></i> Segurança - Senha dos Saldos</div>
+                    <button class="close-modal" onclick="closeModal()">&times;</button>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-key"></i> Nova Senha (4 dígitos)</label>
+                        <input type="password" id="novaSenha" class="form-input" placeholder="Digite 4 números" maxlength="4" pattern="[0-9]*" inputmode="numeric">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-key"></i> Confirmar Senha</label>
+                        <input type="password" id="confirmarSenha" class="form-input" placeholder="Confirme a senha" maxlength="4" pattern="[0-9]*" inputmode="numeric">
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 16px;">
+                        <button class="btn btn-primary" onclick="salvarNovaSenha()" style="flex: 1;">
+                            <i class="fas fa-save"></i> Salvar Senha
+                        </button>
+                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = modalHTML;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        };
+        
+        window.salvarNovaSenha = async function() {
+            const novaSenha = document.getElementById('novaSenha').value;
+            const confirmarSenha = document.getElementById('confirmarSenha').value;
+            
+            if (!novaSenha || novaSenha.length !== 4 || isNaN(novaSenha)) {
+                alert("Digite uma senha válida de 4 dígitos!");
+                return;
+            }
+            
+            if (novaSenha !== confirmarSenha) {
+                alert("As senhas não coincidem!");
+                return;
+            }
+            
+            const success = await saveSaldoPassword(novaSenha);
+            if (success) {
+                alert("✅ Senha atualizada com sucesso!");
+                closeModal();
+            } else {
+                alert("❌ Erro ao salvar senha!");
+            }
+        };
+        
+        window.openRelatorioModal = async function() {
+            const hoje = new Date();
+            const targetDate = new Date(hoje.getFullYear(), hoje.getMonth() + app.currentMonthOffset, 1);
+            const mes = targetDate.getMonth() + 1;
+            const ano = targetDate.getFullYear();
+            
+            try {
+                const [
+                    { data: contas },
+                    { data: gastos },
+                    { data: historico }
+                ] = await Promise.all([
+                    app.supabase.from('contas').select('*').eq('user_id', app.currentUser.id),
+                    app.supabase.from('gastos').select('*').eq('user_id', app.currentUser.id),
+                    app.supabase.from('historico').select('*').eq('user_id', app.currentUser.id)
+                        .gte('data', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
+                        .order('data', { ascending: false })
+                        .limit(50)
+                ]);
+                
+                const contasMes = filterContasPorMes(contas || [], mes, ano);
+                const gastosMes = filterGastosPorMes(gastos || [], mes, ano);
+                
+                const totalContas = contasMes.reduce((sum, conta) => sum + conta.valor_original, 0);
+                const totalContasPagas = contasMes.reduce((sum, conta) => sum + (conta.valor_pago || 0), 0);
+                const totalContasPendentes = contasMes.filter(c => c.valor_pago === 0 && c.status !== 'concluida')
+                    .reduce((sum, conta) => sum + conta.valor_original, 0);
+                const totalGastos = gastosMes.reduce((sum, gasto) => sum + gasto.valor, 0);
+                const saldoFinal = -totalContasPendentes - totalGastos;
+                
+                const gastosPorCategoria = {};
+                gastosMes.forEach(gasto => {
+                    if (!gastosPorCategoria[gasto.categoria]) {
+                        gastosPorCategoria[gasto.categoria] = 0;
+                    }
+                    gastosPorCategoria[gasto.categoria] += gasto.valor;
+                });
                 
                 const modalHTML = `
                     <div class="modal-header">
-                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Conta</div>
+                        <div class="modal-title"><i class="fas fa-chart-bar"></i> Relatório e Histórico</div>
                         <button class="close-modal" onclick="closeModal()">&times;</button>
                     </div>
                     <div style="padding: 16px;">
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-file-alt"></i> Descrição</label>
-                            <input type="text" id="editarDescricao" class="form-input" value="${conta.descricao}">
+                        <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 12px;">
+                            <div style="font-size: 1.2em; font-weight: bold; color: var(--dark); margin-bottom: 5px;">
+                                Relatório Financeiro
+                            </div>
+                            <div style="color: var(--gray); font-size: 0.9em;">
+                                ${getMonthName(mes)}/${ano}
+                            </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-calendar-day"></i> Dia do Vencimento</label>
-                            <input type="number" id="editarDia" class="form-input" min="1" max="31" value="${conta.dia_vencimento}">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border-left: 4px solid var(--purple);">
+                                <div style="color: var(--gray); font-size: 0.85em;">Contas Total</div>
+                                <div style="font-size: 1.2em; font-weight: bold; margin: 5px 0;">${formatCurrency(totalContas, true)}</div>
+                                <div style="font-size: 0.8em; color: var(--gray);">${contasMes.length} conta(s)</div>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border-left: 4px solid var(--success);">
+                                <div style="color: var(--gray); font-size: 0.85em;">Contas Pagas</div>
+                                <div style="font-size: 1.2em; font-weight: bold; margin: 5px 0;">${formatCurrency(totalContasPagas, true)}</div>
+                                <div style="font-size: 0.8em; color: var(--gray);">${contasMes.filter(c => c.valor_pago > 0).length} conta(s)</div>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border-left: 4px solid var(--warning);">
+                                <div style="color: var(--gray); font-size: 0.85em;">Contas Pendentes</div>
+                                <div style="font-size: 1.2em; font-weight: bold; margin: 5px 0;">${formatCurrency(totalContasPendentes, true)}</div>
+                                <div style="font-size: 0.8em; color: var(--gray);">${contasMes.filter(c => c.valor_pago === 0 && c.status !== 'concluida').length} conta(s)</div>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border-left: 4px solid var(--gasto);">
+                                <div style="color: var(--gray); font-size: 0.85em;">Total Gastos</div>
+                                <div style="font-size: 1.2em; font-weight: bold; margin: 5px 0;">${formatCurrency(totalGastos, true)}</div>
+                                <div style="font-size: 0.8em; color: var(--gray);">${gastosMes.length} gasto(s)</div>
+                            </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor Original</label>
-                            <input type="text" id="editarValorOriginal" class="form-input" value="${conta.valor_original.toFixed(2).replace('.', ',')}">
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-weight: bold; font-size: 1em; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
+                                Gastos por Categoria
+                            </div>
+                            ${Object.entries(gastosPorCategoria).map(([categoria, valor]) => {
+                                const catInfo = CATEGORIAS_GASTOS.find(c => c.id === categoria) || CATEGORIAS_GASTOS[5];
+                                const percent = totalGastos > 0 ? ((valor / totalGastos) * 100).toFixed(1) : '0';
+                                return `
+                                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                                        <div>
+                                            <i class="fas ${catInfo.icon}"></i>
+                                            ${catInfo.nome}
+                                        </div>
+                                        <div>
+                                            <strong>${formatCurrency(valor, true)}</strong>
+                                            <span style="color: var(--gray); font-size: 0.85em; margin-left: 8px;">
+                                                ${percent}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
                         </div>
                         
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-money-check"></i> Situação do Pagamento</label>
-                            <select id="editarSituacaoPagamento" class="form-select" onchange="handleSituacaoPagamentoChange()">
-                                ${opcoesPagamento}
-                            </select>
+                        <div style="margin-bottom: 20px;">
+                            <div style="font-weight: bold; font-size: 1em; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
+                                Histórico (últimos 90 dias)
+                            </div>
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                ${(historico || []).map(item => `
+                                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 0.85em;">
+                                        <div>
+                                            <i class="fas ${item.tipo === 'criado' ? 'fa-plus-circle' : item.tipo === 'editado' ? 'fa-edit' : 'fa-trash'}" 
+                                               style="color: ${item.tipo === 'criado' ? 'var(--success)' : item.tipo === 'editado' ? 'var(--warning)' : 'var(--danger)'}; margin-right: 6px;"></i>
+                                            ${item.descricao}
+                                        </div>
+                                        <div style="color: var(--gray); font-size: 0.8em;">
+                                            ${formatDate(item.data)}
+                                        </div>
+                                    </div>
+                                `).join('') || '<div style="text-align: center; padding: 20px; color: var(--gray);">Nenhum histórico encontrado</div>'}
+                            </div>
                         </div>
                         
-                        <div class="form-group" id="editarValorPagoContainer" style="display: ${conta.valor_pago > 0 ? 'block' : 'none'}">
-                            <label class="form-label"><i class="fas fa-money-bill"></i> Valor Pago</label>
-                            <input type="text" id="editarValorPago" class="form-input" value="${conta.valor_pago > 0 ? conta.valor_pago.toFixed(2).replace('.', ',') : '0,00'}" placeholder="Digite o valor pago">
-                        </div>
-                        
-                        <div style="display: flex; gap: 8px; margin-top: 16px;">
-                            <button class="btn btn-success" onclick="saveEditarConta('${conta.id}')" style="flex: 1;">
-                                <i class="fas fa-save"></i> Salvar
+                        <div style="display: flex; gap: 8px; margin-top: 20px;">
+                            <button class="btn btn-primary" onclick="imprimirRelatorio()" style="flex: 1;">
+                                <i class="fas fa-print"></i> Imprimir Relatório
                             </button>
-                            <button class="btn btn-danger" onclick="deleteConta('${conta.id}')" style="flex: 1;">
-                                <i class="fas fa-trash"></i> Excluir
+                            <button class="btn btn-warning" onclick="verHistoricoCompleto()" style="flex: 1;">
+                                <i class="fas fa-history"></i> Ver Histórico
                             </button>
                             <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                                Cancelar
+                                Fechar
                             </button>
                         </div>
                     </div>
@@ -2074,74 +2635,126 @@
                 document.getElementById('modalOverlay').style.display = 'flex';
                 
             } catch (error) {
-                console.error('Erro ao abrir modal de edição:', error);
-                alert('Erro ao carregar dados da conta.');
+                console.error('Erro ao gerar relatório:', error);
+                alert('Erro ao gerar relatório: ' + error.message);
             }
         };
         
-        window.handleSituacaoPagamentoChange = function() {
-            const select = document.getElementById('editarSituacaoPagamento');
-            const container = document.getElementById('editarValorPagoContainer');
+        window.saveNovoEvento = async function() {
+            const titulo = document.getElementById('eventoTitulo').value.trim();
+            const descricao = document.getElementById('eventoDescricao').value.trim();
+            const dia = parseInt(document.getElementById('eventoDia').value);
+            const hora = document.getElementById('eventoHora').value;
+            const mes = parseInt(document.getElementById('eventoMes').value);
+            const ano = parseInt(document.getElementById('eventoAno').value);
+            const tipo = document.getElementById('eventoTipo').value;
             
-            if (select.value === 'outro') {
-                container.style.display = 'block';
-                document.getElementById('editarValorPago').value = '';
-            } else if (select.value === 'concluir') {
-                container.style.display = 'none';
-            } else {
-                container.style.display = 'none';
-            }
-        };
-        
-        window.saveEditarConta = async function(id) {
-            const descricao = document.getElementById('editarDescricao').value.trim();
-            const dia = parseInt(document.getElementById('editarDia').value);
-            const valorOriginal = parseCurrency(document.getElementById('editarValorOriginal').value);
-            const situacao = document.getElementById('editarSituacaoPagamento').value;
-            
-            if (!descricao || !dia) {
-                alert('Preencha descrição e dia');
+            if (!titulo || !dia) {
+                alert('Preencha título e dia');
                 return;
             }
             
-            let valorPago = 0;
-            let status = 'pendente';
-            
-            if (situacao === 'concluir') {
-                status = 'concluida';
-                valorPago = 0;
-            } else if (situacao === 'outro') {
-                valorPago = parseCurrency(document.getElementById('editarValorPago').value);
-                status = valorPago > 0 ? 'paga' : 'pendente';
-            } else {
-                valorPago = 0;
-                status = 'pendente';
-            }
-            
             try {
-                const updateData = {
-                    descricao: descricao,
-                    dia_vencimento: dia,
-                    valor_original: valorOriginal,
-                    valor_pago: valorPago,
-                    status: status,
-                    atualizado_em: new Date().toISOString()
-                };
-                
                 const { error } = await app.supabase
-                    .from('contas')
-                    .update(updateData)
-                    .eq('id', id);
+                    .from('eventos')
+                    .insert({
+                        user_id: app.currentUser.id,
+                        titulo: titulo,
+                        descricao: descricao,
+                        dia: dia,
+                        mes: mes,
+                        ano: ano,
+                        hora: hora,
+                        tipo: tipo,
+                        added_by: app.currentUser.email.split('@')[0],
+                        criado_em: new Date().toISOString()
+                    });
                 
                 if (error) throw error;
                 
-                alert('✅ Conta atualizada com sucesso!');
+                alert('✅ Evento criado com sucesso!');
                 closeModal();
                 loadAppData();
                 
             } catch (error) {
-                console.error('Erro ao atualizar conta:', error);
+                console.error('Erro ao criar evento:', error);
                 alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.saveNovoItem = async function() {
+            const quantidade = parseInt(document.getElementById('itemQuantidade').value);
+            const descricao = document.getElementById('itemDescricao').value.trim();
+            
+            if (!quantidade || !descricao) {
+                alert('Preencha quantidade e descrição');
+                return;
+            }
+            
+            try {
+                const { error } = await app.supabase
+                    .from('lista_compras')
+                    .insert({
+                        user_id: app.currentUser.id,
+                        quantidade: quantidade,
+                        descricao: descricao,
+                        comprado: false,
+                        added_by: app.currentUser.email.split('@')[0],
+                        criado_em: new Date().toISOString()
+                    });
+                
+                if (error) throw error;
+                
+                alert('✅ Item adicionado à lista!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao adicionar item:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.saveNovoSaldo = async function() {
+            const nome = document.getElementById('saldoNome').value.trim();
+            const valor = parseCurrency(document.getElementById('saldoValor').value);
+            
+            if (!nome || !valor) {
+                alert('Preencha nome e valor');
+                return;
+            }
+            
+            try {
+                const { error } = await app.supabase
+                    .from('saldos')
+                    .insert({
+                        user_id: app.currentUser.id,
+                        nome: nome,
+                        valor: valor,
+                        data: new Date().toISOString().split('T')[0],
+                        added_by: app.currentUser.email.split('@')[0],
+                        criado_em: new Date().toISOString()
+                    });
+                
+                if (error) throw error;
+                
+                alert('✅ Saldo salvo com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao salvar saldo:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.saveNovaConta = function() {
+            const isMensal = document.getElementById('contaMensalForm').style.display === 'block';
+            
+            if (isMensal) {
+                saveContaMensal();
+            } else {
+                saveContaUnica();
             }
         };
         
@@ -2159,14 +2772,12 @@
                 return;
             }
             
-            // Validar data de início
             const dataInicio = new Date(inicioAno, inicioMes - 1, 1);
             if (isNaN(dataInicio.getTime())) {
                 alert('Data de início inválida');
                 return;
             }
             
-            // Validar data de fim (se preenchida)
             let dataFim = null;
             if (fimMes && fimAno) {
                 dataFim = new Date(parseInt(fimAno), parseInt(fimMes) - 1, 1);
@@ -2253,42 +2864,11 @@
             }
         };
         
-        window.saveNovaConta = function() {
-            const isMensal = document.getElementById('contaMensalForm').style.display === 'block';
-            
-            if (isMensal) {
-                saveContaMensal();
-            } else {
-                saveContaUnica();
-            }
-        };
-        
-        window.deleteConta = async function(id) {
-            if (!confirm('Tem certeza que deseja excluir esta conta?')) return;
-            
-            try {
-                const { error } = await app.supabase
-                    .from('contas')
-                    .delete()
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('✅ Conta excluída com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao excluir conta:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
         window.switchContaTab = function(tab) {
             document.querySelectorAll('#contaTabs .tab-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.textContent.includes(tab === 'unica' ? 'Única' : 'Mensal')) {
-                    btn.style.background = 'var(--primary)';
+                    btn.style.background = 'var(--purple)';
                     btn.style.color = 'white';
                     btn.style.border = 'none';
                 } else {
@@ -2306,522 +2886,6 @@
             document.getElementById('modalOverlay').style.display = 'none';
         };
         
-        // Restaurar outras funções globais
-        window.openNovoGastoModal = function() {
-            const hoje = new Date();
-            const mes = app.selectedMonth;
-            const ano = app.selectedYear;
-            
-            const modalHTML = `
-                <div class="modal-header">
-                    <div class="modal-title"><i class="fas fa-shopping-bag"></i> Novo Gasto</div>
-                    <button class="close-modal" onclick="closeModal()">&times;</button>
-                </div>
-                <div style="padding: 16px;">
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
-                        <input type="text" id="gastoDescricao" class="form-input" placeholder="Ex: Supermercado, Restaurante, Cinema">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
-                        <input type="text" id="gastoValor" class="form-input" placeholder="0,00">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-tags"></i> Categoria</label>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;">
-                            ${CATEGORIAS_GASTOS.map(cat => `
-                                <button class="btn categoria-btn ${cat.id === 'outros' ? 'active' : ''}" data-categoria="${cat.id}" onclick="selectCategoriaModal('${cat.id}')" style="display: flex; align-items: center; gap: 6px; justify-content: center; padding: 8px; font-size: 12px; ${cat.id === 'outros' ? 'background: var(--gasto); color: white;' : 'background: #f8f9fa; color: var(--dark);'}">
-                                    <i class="fas ${cat.icon}"></i> ${cat.nome}
-                                </button>
-                            `).join('')}
-                        </div>
-                        <input type="hidden" id="gastoCategoria" value="outros">
-                    </div>
-                    
-                    <div style="display: flex; gap: 8px; margin-top: 16px;">
-                        <button class="btn btn-gasto" onclick="saveNovoGasto()" style="flex: 1;">
-                            <i class="fas fa-save"></i> Salvar
-                        </button>
-                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('modalContent').innerHTML = modalHTML;
-            document.getElementById('modalOverlay').style.display = 'flex';
-        };
-        
-        window.selectCategoriaModal = function(categoriaId) {
-            document.querySelectorAll('.categoria-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.style.background = '#f8f9fa';
-                btn.style.color = 'var(--dark)';
-            });
-            
-            const selectedBtn = document.querySelector(`.categoria-btn[data-categoria="${categoriaId}"]`);
-            if (selectedBtn) {
-                selectedBtn.classList.add('active');
-                selectedBtn.style.background = 'var(--gasto)';
-                selectedBtn.style.color = 'white';
-            }
-            
-            document.getElementById('gastoCategoria').value = categoriaId;
-        };
-        
-        window.saveNovoGasto = async function() {
-            const descricao = document.getElementById('gastoDescricao').value.trim();
-            const valor = parseCurrency(document.getElementById('gastoValor').value);
-            const categoria = document.getElementById('gastoCategoria').value;
-            
-            if (!descricao || !valor) {
-                alert('Preencha descrição e valor');
-                return;
-            }
-            
-            try {
-                const data = new Date(app.selectedYear, app.selectedMonth - 1, app.selectedDay || 1);
-                const dataFormatada = data.toISOString().split('T')[0];
-                
-                const { error } = await app.supabase
-                    .from('gastos')
-                    .insert({
-                        user_id: app.currentUser.id,
-                        descricao: descricao,
-                        valor: valor,
-                        categoria: categoria,
-                        data: dataFormatada,
-                        added_by: app.currentUser.email.split('@')[0],
-                        criado_em: new Date().toISOString()
-                    });
-                
-                if (error) throw error;
-                
-                alert('✅ Gasto registrado com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao registrar gasto:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.openEditarGastoModal = async function(id) {
-            try {
-                const { data: gasto, error } = await app.supabase
-                    .from('gastos')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-                
-                if (error) throw error;
-                
-                const categoriaInfo = CATEGORIAS_GASTOS.find(c => c.id === gasto.categoria) || CATEGORIAS_GASTOS[5];
-                
-                const modalHTML = `
-                    <div class="modal-header">
-                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Gasto</div>
-                        <button class="close-modal" onclick="closeModal()">&times;</button>
-                    </div>
-                    <div style="padding: 16px;">
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
-                            <input type="text" id="editarGastoDescricao" class="form-input" value="${gasto.descricao}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
-                            <input type="text" id="editarGastoValor" class="form-input" value="${gasto.valor.toFixed(2).replace('.', ',')}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-tags"></i> Categoria</label>
-                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;">
-                                ${CATEGORIAS_GASTOS.map(cat => `
-                                    <button class="btn categoria-btn ${gasto.categoria === cat.id ? 'active' : ''}" data-categoria="${cat.id}" onclick="selectCategoriaModalEdit('${cat.id}')" style="display: flex; align-items: center; gap: 6px; justify-content: center; padding: 8px; font-size: 12px; ${gasto.categoria === cat.id ? 'background: var(--gasto); color: white;' : 'background: #f8f9fa; color: var(--dark);'}">
-                                        <i class="fas ${cat.icon}"></i> ${cat.nome}
-                                    </button>
-                                `).join('')}
-                            </div>
-                            <input type="hidden" id="editarGastoCategoria" value="${gasto.categoria}">
-                        </div>
-                        
-                        <div style="display: flex; gap: 8px; margin-top: 16px;">
-                            <button class="btn btn-gasto" onclick="saveEditarGasto('${gasto.id}')" style="flex: 1;">
-                                <i class="fas fa-save"></i> Salvar
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteGasto('${gasto.id}')" style="flex: 1;">
-                                <i class="fas fa-trash"></i> Excluir
-                            </button>
-                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('modalContent').innerHTML = modalHTML;
-                document.getElementById('modalOverlay').style.display = 'flex';
-                
-            } catch (error) {
-                console.error('Erro ao abrir modal de gasto:', error);
-                alert('Erro ao carregar dados do gasto.');
-            }
-        };
-        
-        window.selectCategoriaModalEdit = function(categoriaId) {
-            document.querySelectorAll('.categoria-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.style.background = '#f8f9fa';
-                btn.style.color = 'var(--dark)';
-            });
-            
-            const selectedBtn = document.querySelector(`.categoria-btn[data-categoria="${categoriaId}"]`);
-            if (selectedBtn) {
-                selectedBtn.classList.add('active');
-                selectedBtn.style.background = 'var(--gasto)';
-                selectedBtn.style.color = 'white';
-            }
-            
-            document.getElementById('editarGastoCategoria').value = categoriaId;
-        };
-        
-        window.saveEditarGasto = async function(id) {
-            const descricao = document.getElementById('editarGastoDescricao').value.trim();
-            const valor = parseCurrency(document.getElementById('editarGastoValor').value);
-            const categoria = document.getElementById('editarGastoCategoria').value;
-            
-            if (!descricao || !valor || !categoria) {
-                alert('Preencha todos os campos obrigatórios');
-                return;
-            }
-            
-            try {
-                const { error } = await app.supabase
-                    .from('gastos')
-                    .update({
-                        descricao: descricao,
-                        valor: valor,
-                        categoria: categoria,
-                        atualizado_em: new Date().toISOString()
-                    })
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('✅ Gasto atualizado com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao atualizar gasto:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.deleteGasto = async function(id) {
-            if (!confirm('Tem certeza que deseja excluir este gasto?')) return;
-            
-            try {
-                const { error } = await app.supabase
-                    .from('gastos')
-                    .delete()
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('✅ Gasto excluído com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao excluir gasto:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.openNovoEventoModal = function(tipo = 'normal') {
-            const mes = app.selectedMonth;
-            const ano = app.selectedYear;
-            
-            const modalHTML = `
-                <div class="modal-header">
-                    <div class="modal-title">
-                        <i class="fas ${tipo === 'amor' ? 'fa-heart' : 'fa-calendar-plus'}"></i>
-                        ${tipo === 'amor' ? 'Nova Data Especial' : 'Novo Evento'}
-                    </div>
-                    <button class="close-modal" onclick="closeModal()">&times;</button>
-                </div>
-                <div style="padding: 16px;">
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-heading"></i> Título</label>
-                        <input type="text" id="eventoTitulo" class="form-input" placeholder="${tipo === 'amor' ? 'Jantar romântico, etc.' : 'Reunião, Consulta, etc.'}">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
-                        <textarea id="eventoDescricao" class="form-input" rows="2" placeholder="Detalhes do evento..."></textarea>
-                    </div>
-                    
-                    <div style="display: flex; gap: 8px;">
-                        <div class="form-group" style="flex: 1;">
-                            <label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label>
-                            <input type="number" id="eventoDia" class="form-input" min="1" max="31" value="${app.selectedDay || new Date().getDate()}">
-                        </div>
-                        
-                        <div class="form-group" style="flex: 1;">
-                            <label class="form-label"><i class="fas fa-clock"></i> Hora</label>
-                            <input type="time" id="eventoHora" class="form-input" value="19:00">
-                        </div>
-                    </div>
-                    
-                    <input type="hidden" id="eventoTipo" value="${tipo}">
-                    <input type="hidden" id="eventoMes" value="${mes}">
-                    <input type="hidden" id="eventoAno" value="${ano}">
-                    
-                    <div style="display: flex; gap: 8px; margin-top: 16px;">
-                        <button class="btn ${tipo === 'amor' ? 'btn-love' : 'btn-warning'}" onclick="saveNovoEvento()" style="flex: 1;">
-                            <i class="fas fa-save"></i> Salvar
-                        </button>
-                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('modalContent').innerHTML = modalHTML;
-            document.getElementById('modalOverlay').style.display = 'flex';
-        };
-        
-        window.saveNovoEvento = async function() {
-            const titulo = document.getElementById('eventoTitulo').value.trim();
-            const descricao = document.getElementById('eventoDescricao').value.trim();
-            const dia = parseInt(document.getElementById('eventoDia').value);
-            const hora = document.getElementById('eventoHora').value;
-            const mes = parseInt(document.getElementById('eventoMes').value);
-            const ano = parseInt(document.getElementById('eventoAno').value);
-            const tipo = document.getElementById('eventoTipo').value;
-            
-            if (!titulo || !dia) {
-                alert('Preencha título e dia');
-                return;
-            }
-            
-            try {
-                const { error } = await app.supabase
-                    .from('eventos')
-                    .insert({
-                        user_id: app.currentUser.id,
-                        titulo: titulo,
-                        descricao: descricao,
-                        dia: dia,
-                        mes: mes,
-                        ano: ano,
-                        hora: hora,
-                        tipo: tipo,
-                        added_by: app.currentUser.email.split('@')[0],
-                        criado_em: new Date().toISOString()
-                    });
-                
-                if (error) throw error;
-                
-                alert('✅ Evento criado com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao criar evento:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.openEditarEventoModal = async function(id) {
-            try {
-                const { data: evento, error } = await app.supabase
-                    .from('eventos')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-                
-                if (error) throw error;
-                
-                const modalHTML = `
-                    <div class="modal-header">
-                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Evento</div>
-                        <button class="close-modal" onclick="closeModal()">&times;</button>
-                    </div>
-                    <div style="padding: 16px;">
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-heading"></i> Título</label>
-                            <input type="text" id="editarEventoTitulo" class="form-input" value="${evento.titulo}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
-                            <textarea id="editarEventoDescricao" class="form-input" rows="2">${evento.descricao || ''}</textarea>
-                        </div>
-                        
-                        <div style="display: flex; gap: 8px;">
-                            <div class="form-group" style="flex: 1;">
-                                <label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label>
-                                <input type="number" id="editarEventoDia" class="form-input" min="1" max="31" value="${evento.dia}">
-                            </div>
-                            
-                            <div class="form-group" style="flex: 1;">
-                                <label class="form-label"><i class="fas fa-clock"></i> Hora</label>
-                                <input type="time" id="editarEventoHora" class="form-input" value="${evento.hora || '19:00'}">
-                            </div>
-                        </div>
-                        
-                        <div style="display: flex; gap: 8px; margin-top: 16px;">
-                            <button class="btn btn-warning" onclick="saveEditarEvento('${evento.id}')" style="flex: 1;">
-                                <i class="fas fa-save"></i> Salvar
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteEvento('${evento.id}')" style="flex: 1;">
-                                <i class="fas fa-trash"></i> Excluir
-                            </button>
-                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('modalContent').innerHTML = modalHTML;
-                document.getElementById('modalOverlay').style.display = 'flex';
-                
-            } catch (error) {
-                console.error('Erro ao abrir modal de evento:', error);
-                alert('Erro ao carregar dados do evento.');
-            }
-        };
-        
-        window.saveEditarEvento = async function(id) {
-            const titulo = document.getElementById('editarEventoTitulo').value.trim();
-            const descricao = document.getElementById('editarEventoDescricao').value.trim();
-            const dia = parseInt(document.getElementById('editarEventoDia').value);
-            const hora = document.getElementById('editarEventoHora').value;
-            
-            if (!titulo || !dia) {
-                alert('Preencha título e dia');
-                return;
-            }
-            
-            try {
-                const { error } = await app.supabase
-                    .from('eventos')
-                    .update({
-                        titulo: titulo,
-                        descricao: descricao,
-                        dia: dia,
-                        hora: hora,
-                        atualizado_em: new Date().toISOString()
-                    })
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('✅ Evento atualizado com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao atualizar evento:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.deleteEvento = async function(id) {
-            if (!confirm('Tem certeza que deseja excluir este evento?')) return;
-            
-            try {
-                const { error } = await app.supabase
-                    .from('eventos')
-                    .delete()
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('✅ Evento excluído com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao excluir evento:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.openNovoItemModal = function() {
-            const modalHTML = `
-                <div class="modal-header">
-                    <div class="modal-title"><i class="fas fa-cart-plus"></i> Novo Item</div>
-                    <button class="close-modal" onclick="closeModal()">&times;</button>
-                </div>
-                <div style="padding: 16px;">
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-hashtag"></i> Quantidade</label>
-                        <input type="number" id="itemQuantidade" class="form-input" min="1" value="1">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-box"></i> Item</label>
-                            <input type="text" id="itemDescricao" class="form-input" placeholder="Ex: Leite, Pão, Arroz">
-                    </div>
-                    
-                    <div style="display: flex; gap: 8px; margin-top: 16px;">
-                        <button class="btn btn-success" onclick="saveNovoItem()" style="flex: 1;">
-                            <i class="fas fa-save"></i> Adicionar
-                        </button>
-                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('modalContent').innerHTML = modalHTML;
-            document.getElementById('modalOverlay').style.display = 'flex';
-        };
-        
-        window.saveNovoItem = async function() {
-            const quantidade = parseInt(document.getElementById('itemQuantidade').value);
-            const descricao = document.getElementById('itemDescricao').value.trim();
-            
-            if (!quantidade || !descricao) {
-                alert('Preencha quantidade e descrição');
-                return;
-            }
-            
-            try {
-                const { error } = await app.supabase
-                    .from('lista_compras')
-                    .insert({
-                        user_id: app.currentUser.id,
-                        quantidade: quantidade,
-                        descricao: descricao,
-                        comprado: false,
-                        added_by: app.currentUser.email.split('@')[0],
-                        criado_em: new Date().toISOString()
-                    });
-                
-                if (error) throw error;
-                
-                alert('✅ Item adicionado à lista!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao adicionar item:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
         window.toggleItemSelecionado = function(itemId) {
             const index = app.listaSelecionados.indexOf(itemId);
             if (index === -1) {
@@ -2830,13 +2894,7 @@
                 app.listaSelecionados.splice(index, 1);
             }
             
-            const deleteBtn = document.getElementById('deleteSelectedBtn');
-            if (deleteBtn) {
-                deleteBtn.style.display = app.listaSelecionados.length > 0 ? 'flex' : 'none';
-                deleteBtn.innerHTML = `<i class="fas fa-trash"></i> Deletar (${app.listaSelecionados.length})`;
-            }
-            
-            showListaContent();
+            showContent();
         };
         
         window.toggleItemComprado = async function(itemId, compradoAtual) {
@@ -2856,106 +2914,6 @@
                 
             } catch (error) {
                 console.error('Erro ao atualizar item:', error);
-            }
-        };
-        
-        window.openEditarItemModal = async function(id) {
-            try {
-                const { data: item, error } = await app.supabase
-                    .from('lista_compras')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-                
-                if (error) throw error;
-                
-                const modalHTML = `
-                    <div class="modal-header">
-                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Item</div>
-                        <button class="close-modal" onclick="closeModal()">&times;</button>
-                    </div>
-                    <div style="padding: 16px;">
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-hashtag"></i> Quantidade</label>
-                            <input type="number" id="editarItemQuantidade" class="form-input" min="1" value="${item.quantidade}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-box"></i> Item</label>
-                            <input type="text" id="editarItemDescricao" class="form-input" value="${item.descricao}">
-                        </div>
-                        
-                        <div style="display: flex; gap: 8px; margin-top: 16px;">
-                            <button class="btn btn-success" onclick="saveEditarItem('${item.id}')" style="flex: 1;">
-                                <i class="fas fa-save"></i> Salvar
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteItemLista('${item.id}')" style="flex: 1;">
-                                <i class="fas fa-trash"></i> Excluir
-                            </button>
-                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('modalContent').innerHTML = modalHTML;
-                document.getElementById('modalOverlay').style.display = 'flex';
-                
-            } catch (error) {
-                console.error('Erro ao abrir modal de item:', error);
-                alert('Erro ao carregar dados do item.');
-            }
-        };
-        
-        window.saveEditarItem = async function(id) {
-            const quantidade = parseInt(document.getElementById('editarItemQuantidade').value);
-            const descricao = document.getElementById('editarItemDescricao').value.trim();
-            
-            if (!quantidade || !descricao) {
-                alert('Preencha quantidade e descrição');
-                return;
-            }
-            
-            try {
-                const { error } = await app.supabase
-                    .from('lista_compras')
-                    .update({
-                        quantidade: quantidade,
-                        descricao: descricao,
-                        atualizado_em: new Date().toISOString()
-                    })
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('✅ Item atualizado com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao atualizar item:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.deleteItemLista = async function(id) {
-            if (!confirm('Tem certeza que deseja excluir este item?')) return;
-            
-            try {
-                const { error } = await app.supabase
-                    .from('lista_compras')
-                    .delete()
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('✅ Item excluído com sucesso!');
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao excluir item:', error);
-                alert('❌ Erro: ' + error.message);
             }
         };
         
@@ -2985,329 +2943,41 @@
             }
         };
         
-        window.openNovoSaldoModal = function() {
-            const modalHTML = `
-                <div class="modal-header">
-                    <div class="modal-title"><i class="fas fa-wallet"></i> Novo Saldo</div>
-                    <button class="close-modal" onclick="closeModal()">&times;</button>
-                </div>
-                <div style="padding: 16px;">
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-tag"></i> Nome do Saldo</label>
-                        <input type="text" id="saldoNome" class="form-input" placeholder="Ex: Saldo Hugo, Saldo Casa, Poupança">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
-                        <input type="text" id="saldoValor" class="form-input" placeholder="0,00">
-                    </div>
-                    
-                    <div style="display: flex; gap: 8px; margin-top: 16px;">
-                        <button class="btn btn-primary" onclick="saveNovoSaldo()" style="flex: 1;">
-                            <i class="fas fa-save"></i> Salvar
-                        </button>
-                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('modalContent').innerHTML = modalHTML;
-            document.getElementById('modalOverlay').style.display = 'flex';
-        };
-        
-        window.saveNovoSaldo = async function() {
-            const nome = document.getElementById('saldoNome').value.trim();
-            const valor = parseCurrency(document.getElementById('saldoValor').value);
-            
-            if (!nome || !valor) {
-                alert('Preencha nome e valor');
-                return;
-            }
-            
+        window.verHistoricoCompleto = async function() {
             try {
-                const { error } = await app.supabase
-                    .from('saldos')
-                    .insert({
-                        user_id: app.currentUser.id,
-                        nome: nome,
-                        valor: valor,
-                        data: new Date().toISOString().split('T')[0],
-                        added_by: app.currentUser.email.split('@')[0],
-                        criado_em: new Date().toISOString()
-                    });
-                
-                if (error) throw error;
-                
-                alert('✅ Saldo salvo com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao salvar saldo:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.openEditarSaldoModal = async function(id) {
-            try {
-                const { data: saldo, error } = await app.supabase
-                    .from('saldos')
+                const { data: historico } = await app.supabase
+                    .from('historico')
                     .select('*')
-                    .eq('id', id)
-                    .single();
-                
-                if (error) throw error;
+                    .eq('user_id', app.currentUser.id)
+                    .order('data', { ascending: false })
+                    .limit(100);
                 
                 const modalHTML = `
                     <div class="modal-header">
-                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Saldo</div>
+                        <div class="modal-title"><i class="fas fa-history"></i> Histórico Completo</div>
                         <button class="close-modal" onclick="closeModal()">&times;</button>
                     </div>
                     <div style="padding: 16px;">
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-tag"></i> Nome do Saldo</label>
-                            <input type="text" id="editarSaldoNome" class="form-input" value="${saldo.nome}">
+                        <div style="font-weight: bold; font-size: 1em; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
+                            Últimas 100 atividades
                         </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
-                            <input type="text" id="editarSaldoValor" class="form-input" value="${saldo.valor.toFixed(2).replace('.', ',')}">
-                        </div>
-                        
-                        <div style="display: flex; gap: 8px; margin-top: 16px;">
-                            <button class="btn btn-primary" onclick="saveEditarSaldo('${saldo.id}')" style="flex: 1;">
-                                <i class="fas fa-save"></i> Salvar
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteSaldo('${saldo.id}')" style="flex: 1;">
-                                <i class="fas fa-trash"></i> Excluir
-                            </button>
-                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('modalContent').innerHTML = modalHTML;
-                document.getElementById('modalOverlay').style.display = 'flex';
-                
-            } catch (error) {
-                console.error('Erro ao abrir modal de saldo:', error);
-                alert('Erro ao carregar dados do saldo.');
-            }
-        };
-        
-        window.saveEditarSaldo = async function(id) {
-            const nome = document.getElementById('editarSaldoNome').value.trim();
-            const valor = parseCurrency(document.getElementById('editarSaldoValor').value);
-            
-            if (!nome || !valor) {
-                alert('Preencha nome e valor');
-                return;
-            }
-            
-            try {
-                const { error } = await app.supabase
-                    .from('saldos')
-                    .update({
-                        nome: nome,
-                        valor: valor,
-                        data: new Date().toISOString().split('T')[0],
-                        atualizado_em: new Date().toISOString()
-                    })
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('✅ Saldo atualizado com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao atualizar saldo:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.deleteSaldo = async function(id) {
-            if (!confirm('Tem certeza que deseja excluir este saldo?')) return;
-            
-            try {
-                const { error } = await app.supabase
-                    .from('saldos')
-                    .delete()
-                    .eq('id', id);
-                
-                if (error) throw error;
-                
-                alert('✅ Saldo excluído com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao excluir saldo:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.openRelatorioModal = function() {
-            const hoje = new Date();
-            const targetDate = new Date(hoje.getFullYear(), hoje.getMonth() + app.currentMonthOffset, 1);
-            const mes = targetDate.getMonth() + 1;
-            const ano = targetDate.getFullYear();
-            
-            const modalHTML = `
-                <div class="modal-header">
-                    <div class="modal-title"><i class="fas fa-chart-bar"></i> Relatório Financeiro</div>
-                    <button class="close-modal" onclick="closeModal()">&times;</button>
-                </div>
-                <div style="padding: 16px;">
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-calendar"></i> Período do Relatório</label>
-                        <div style="display: flex; gap: 8px;">
-                            <select id="reportMesInicio" class="form-select" style="flex: 1;">
-                                ${Array.from({length: 12}, (_, i) => `
-                                    <option value="${i+1}" ${i+1 === mes ? 'selected' : ''}>${getMonthName(i+1)}</option>
-                                `).join('')}
-                            </select>
-                            <input type="number" id="reportAnoInicio" class="form-input" value="${ano}" style="flex: 1;">
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 8px; margin-top: 16px;">
-                        <button class="btn btn-report" onclick="gerarRelatorio()" style="flex: 1;">
-                            <i class="fas fa-chart-line"></i> Gerar Relatório
-                        </button>
-                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('modalContent').innerHTML = modalHTML;
-            document.getElementById('modalOverlay').style.display = 'flex';
-        };
-        
-        window.gerarRelatorio = async function() {
-            const mesInicio = parseInt(document.getElementById('reportMesInicio').value);
-            const anoInicio = parseInt(document.getElementById('reportAnoInicio').value);
-            
-            try {
-                const [
-                    { data: contas },
-                    { data: gastos },
-                    { data: saldos }
-                ] = await Promise.all([
-                    app.supabase.from('contas').select('*').eq('user_id', app.currentUser.id),
-                    app.supabase.from('gastos').select('*').eq('user_id', app.currentUser.id),
-                    app.supabase.from('saldos').select('*').eq('user_id', app.currentUser.id)
-                ]);
-                
-                const contasMes = filterContasPorMes(contas || [], mesInicio, anoInicio);
-                const gastosMes = filterGastosPorMes(gastos || [], mesInicio, anoInicio);
-                
-                const totalContas = contasMes.reduce((sum, conta) => sum + conta.valor_original, 0);
-                const totalContasPagas = contasMes.reduce((sum, conta) => sum + (conta.valor_pago || 0), 0);
-                const totalContasPendentes = contasMes.filter(c => c.valor_pago === 0 && c.status !== 'concluida')
-                    .reduce((sum, conta) => sum + conta.valor_original, 0);
-                const totalGastos = gastosMes.reduce((sum, gasto) => sum + gasto.valor, 0);
-                const totalSaldos = (saldos || []).reduce((sum, saldo) => sum + saldo.valor, 0);
-                const saldoFinal = totalSaldos - totalContasPendentes - totalGastos;
-                
-                const gastosPorCategoria = {};
-                gastosMes.forEach(gasto => {
-                    if (!gastosPorCategoria[gasto.categoria]) {
-                        gastosPorCategoria[gasto.categoria] = 0;
-                    }
-                    gastosPorCategoria[gasto.categoria] += gasto.valor;
-                });
-                
-                const reportHTML = `
-                    <div style="padding: 16px;">
-                        <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 12px;">
-                            <div style="font-size: 1.2em; font-weight: bold; color: var(--dark); margin-bottom: 5px;">
-                                Relatório Financeiro
-                            </div>
-                            <div style="color: var(--gray); font-size: 0.9em;">
-                                ${getMonthName(mesInicio)}/${anoInicio}
-                            </div>
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
-                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border-left: 4px solid var(--primary);">
-                                <div style="color: var(--gray); font-size: 0.85em;">Contas Total</div>
-                                <div style="font-size: 1.2em; font-weight: bold; margin: 5px 0;">${formatCurrency(totalContas, true)}</div>
-                                <div style="font-size: 0.8em; color: var(--gray);">${contasMes.length} conta(s)</div>
-                            </div>
-                            
-                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border-left: 4px solid var(--success);">
-                                <div style="color: var(--gray); font-size: 0.85em;">Contas Pagas</div>
-                                <div style="font-size: 1.2em; font-weight: bold; margin: 5px 0;">${formatCurrency(totalContasPagas, true)}</div>
-                                <div style="font-size: 0.8em; color: var(--gray);">${contasMes.filter(c => c.valor_pago > 0).length} conta(s)</div>
-                            </div>
-                            
-                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border-left: 4px solid var(--warning);">
-                                <div style="color: var(--gray); font-size: 0.85em;">Contas Pendentes</div>
-                                <div style="font-size: 1.2em; font-weight: bold; margin: 5px 0;">${formatCurrency(totalContasPendentes, true)}</div>
-                                <div style="font-size: 0.8em; color: var(--gray);">${contasMes.filter(c => c.valor_pago === 0 && c.status !== 'concluida').length} conta(s)</div>
-                            </div>
-                            
-                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center; border-left: 4px solid var(--gasto);">
-                                <div style="color: var(--gray); font-size: 0.85em;">Total Gastos</div>
-                                <div style="font-size: 1.2em; font-weight: bold; margin: 5px 0;">${formatCurrency(totalGastos, true)}</div>
-                                <div style="font-size: 0.8em; color: var(--gray);">${gastosMes.length} gasto(s)</div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <div style="font-weight: bold; font-size: 1em; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
-                                Gastos por Categoria
-                            </div>
-                            ${Object.entries(gastosPorCategoria).map(([categoria, valor]) => {
-                                const catInfo = CATEGORIAS_GASTOS.find(c => c.id === categoria) || CATEGORIAS_GASTOS[5];
-                                const percent = totalGastos > 0 ? ((valor / totalGastos) * 100).toFixed(1) : '0';
-                                return `
-                                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                                        <div>
-                                            <i class="fas ${catInfo.icon}"></i>
-                                            ${catInfo.nome}
-                                        </div>
-                                        <div>
-                                            <strong>${formatCurrency(valor, true)}</strong>
-                                            <span style="color: var(--gray); font-size: 0.85em; margin-left: 8px;">
-                                                ${percent}%
-                                            </span>
-                                        </div>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            ${(historico || []).map(item => `
+                                <div style="padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 0.85em;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <i class="fas ${item.tipo === 'criado' ? 'fa-plus-circle' : item.tipo === 'editado' ? 'fa-edit' : 'fa-trash'}" 
+                                           style="color: ${item.tipo === 'criado' ? 'var(--success)' : item.tipo === 'editado' ? 'var(--warning)' : 'var(--danger)'};"></i>
+                                        <strong>${item.descricao}</strong>
                                     </div>
-                                `;
-                            }).join('')}
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <div style="font-weight: bold; font-size: 1em; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
-                                Resumo Financeiro
-                            </div>
-                            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee;">
-                                <div>Total de Saldos:</div>
-                                <div><strong>${formatCurrency(totalSaldos, true)}</strong></div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee;">
-                                <div>Despesas do Mês:</div>
-                                <div><strong>${formatCurrency(totalContasPendentes + totalGastos, true)}</strong></div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; padding: 10px 0; font-weight: bold; color: ${saldoFinal >= 0 ? 'var(--success)' : 'var(--danger)'};">
-                                <div>Saldo Final Estimado:</div>
-                                <div>${formatCurrency(saldoFinal, true)}</div>
-                            </div>
+                                    <div style="color: var(--gray); font-size: 0.8em; display: flex; justify-content: space-between;">
+                                        <span>${item.added_by || 'Sistema'}</span>
+                                        <span>${formatDate(item.data)}</span>
+                                    </div>
+                                </div>
+                            `).join('') || '<div style="text-align: center; padding: 40px; color: var(--gray);">Nenhum histórico encontrado</div>'}
                         </div>
                         
                         <div style="display: flex; gap: 8px; margin-top: 20px;">
-                            <button class="btn btn-primary" onclick="imprimirRelatorio()" style="flex: 1;">
-                                <i class="fas fa-print"></i> Imprimir
-                            </button>
                             <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
                                 Fechar
                             </button>
@@ -3315,11 +2985,11 @@
                     </div>
                 `;
                 
-                document.getElementById('modalContent').innerHTML = reportHTML;
+                document.getElementById('modalContent').innerHTML = modalHTML;
                 
             } catch (error) {
-                console.error('Erro ao gerar relatório:', error);
-                alert('Erro ao gerar relatório: ' + error.message);
+                console.error('Erro ao carregar histórico:', error);
+                alert('Erro ao carregar histórico: ' + error.message);
             }
         };
         
@@ -3349,6 +3019,152 @@
             setTimeout(() => {
                 printWindow.print();
             }, 500);
+        };
+        
+        // Funções de edição (simplificadas para manter o código mais limpo)
+        window.openEditarContaModal = async function(id) {
+            try {
+                const { data: conta, error } = await app.supabase
+                    .from('contas')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                if (error) throw error;
+                
+                const opcoesPagamento = `
+                    <option value="0.00" ${conta.valor_pago === 0 && conta.status !== 'concluida' ? 'selected' : ''}>Não pago</option>
+                    <option value="concluir" ${conta.status === 'concluida' ? 'selected' : ''}>Concluir sem pagar</option>
+                    <option value="outro">Outro valor</option>
+                `;
+                
+                const modalHTML = `
+                    <div class="modal-header">
+                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Conta</div>
+                        <button class="close-modal" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-file-alt"></i> Descrição</label>
+                            <input type="text" id="editarDescricao" class="form-input" value="${conta.descricao}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-calendar-day"></i> Dia do Vencimento</label>
+                            <input type="number" id="editarDia" class="form-input" min="1" max="31" value="${conta.dia_vencimento}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor Original</label>
+                            <input type="text" id="editarValorOriginal" class="form-input" value="${conta.valor_original.toFixed(2).replace('.', ',')}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-money-check"></i> Situação do Pagamento</label>
+                            <select id="editarSituacaoPagamento" class="form-select" onchange="handleSituacaoPagamentoChange()">
+                                ${opcoesPagamento}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="editarValorPagoContainer" style="display: ${conta.valor_pago > 0 ? 'block' : 'none'}">
+                            <label class="form-label"><i class="fas fa-money-bill"></i> Valor Pago</label>
+                            <input type="text" id="editarValorPago" class="form-input" value="${conta.valor_pago > 0 ? conta.valor_pago.toFixed(2).replace('.', ',') : '0,00'}" placeholder="Digite o valor pago">
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 16px;">
+                            <button class="btn btn-primary" onclick="saveEditarConta('${conta.id}')" style="flex: 1;">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteConta('${conta.id}')" style="flex: 1;">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('modalContent').innerHTML = modalHTML;
+                document.getElementById('modalOverlay').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Erro ao abrir modal de edição:', error);
+                alert('Erro ao carregar dados da conta.');
+            }
+        };
+        
+        window.saveEditarConta = async function(id) {
+            const descricao = document.getElementById('editarDescricao').value.trim();
+            const dia = parseInt(document.getElementById('editarDia').value);
+            const valorOriginal = parseCurrency(document.getElementById('editarValorOriginal').value);
+            const situacao = document.getElementById('editarSituacaoPagamento').value;
+            
+            if (!descricao || !dia) {
+                alert('Preencha descrição e dia');
+                return;
+            }
+            
+            let valorPago = 0;
+            let status = 'pendente';
+            
+            if (situacao === 'concluir') {
+                status = 'concluida';
+                valorPago = 0;
+            } else if (situacao === 'outro') {
+                valorPago = parseCurrency(document.getElementById('editarValorPago').value);
+                status = valorPago > 0 ? 'paga' : 'pendente';
+            } else {
+                valorPago = 0;
+                status = 'pendente';
+            }
+            
+            try {
+                const updateData = {
+                    descricao: descricao,
+                    dia_vencimento: dia,
+                    valor_original: valorOriginal,
+                    valor_pago: valorPago,
+                    status: status,
+                    atualizado_em: new Date().toISOString()
+                };
+                
+                const { error } = await app.supabase
+                    .from('contas')
+                    .update(updateData)
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                alert('✅ Conta atualizada com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao atualizar conta:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.deleteConta = async function(id) {
+            if (!confirm('Tem certeza que deseja excluir esta conta?')) return;
+            
+            try {
+                const { error } = await app.supabase
+                    .from('contas')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                alert('✅ Conta excluída com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao excluir conta:', error);
+                alert('❌ Erro: ' + error.message);
+            }
         };
         
         // Iniciar aplicativo
