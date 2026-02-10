@@ -14,6 +14,8 @@
             --star: #ffd700; --heart: #e84393; --event-yellow: #e67e22;
             --gasto: #9b59b6; --report: #1abc9c; --calendar: #e74c3c;
             --purple: #9b59b6; --purple-light: #d7bde2; --purple-dark: #8e44ad;
+            --bg-vencida: #ffe6e6; --bg-pendente: #e6ffe6; --bg-evento: #fff9e6; 
+            --bg-amor: #ffe6f2; --bg-gasto: #f2e6ff;
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; 
@@ -235,22 +237,49 @@
             transition: all 0.2s;
             min-height: 60px;
         }
-        .conta-item:hover, .gasto-item:hover, .evento-item:hover, 
-        .lista-item:hover, .saldo-item:hover { background: #fafafa; }
         
-        /* Cores das bordas */
-        .conta-item.vencida { border-left-color: var(--danger); }
-        .conta-item.pendente { border-left-color: var(--warning); }
+        /* Cores de fundo suaves */
+        .conta-item.vencida { 
+            border-left-color: var(--danger); 
+            background-color: var(--bg-vencida); 
+        }
+        .conta-item.pendente { 
+            border-left-color: var(--success); 
+            background-color: var(--bg-pendente); 
+        }
         .conta-item.paga { 
             border-left-color: var(--success); 
             opacity: 0.8;
+            background-color: #e6ffe6;
         }
         .conta-item.concluida { 
             border-left-color: var(--gray); 
             opacity: 0.6;
+            background-color: #f0f0f0;
         }
-        .gasto-item { border-left-color: var(--gasto); }
-        .evento-item { border-left-color: var(--warning); }
+        .conta-item.hoje { 
+            border-left-color: var(--warning); 
+            background-color: #fff9e6;
+        }
+        
+        .gasto-item { 
+            border-left-color: var(--gasto); 
+            background-color: var(--bg-gasto); 
+        }
+        .evento-item { 
+            border-left-color: var(--warning); 
+            background-color: var(--bg-evento); 
+        }
+        .evento-item.amor { 
+            border-left-color: var(--love); 
+            background-color: var(--bg-amor); 
+        }
+        
+        .conta-item:hover, .gasto-item:hover, .evento-item:hover, 
+        .lista-item:hover, .saldo-item:hover { 
+            opacity: 0.9; 
+            transform: translateX(2px);
+        }
         
         .conta-info, .gasto-info, .evento-info, .lista-info, .saldo-info { 
             flex: 1; 
@@ -316,6 +345,7 @@
         .lista-item.comprado {
             opacity: 0.7; 
             border-left-color: #bdc3c7;
+            background-color: #f0f0f0;
         }
         .lista-checkbox {
             width: 22px; height: 22px; border: 2px solid var(--purple);
@@ -480,6 +510,17 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        
+        /* Balões para contas no botão */
+        .contas-badges {
+            display: flex; gap: 8px; margin-top: 4px;
+        }
+        .conta-badge-small {
+            padding: 2px 6px; border-radius: 10px; font-size: 0.7em; font-weight: bold;
+            color: white; display: flex; align-items: center; gap: 3px;
+        }
+        .conta-badge-small.vencida { background: var(--danger); }
+        .conta-badge-small.pendente { background: var(--success); }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -562,7 +603,10 @@
                 <button class="filter-btn" data-filter="contas">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <span>Contas</span>
-                    <span class="filter-badge contas" id="badgeContas">0</span>
+                    <div class="contas-badges">
+                        <span class="conta-badge-small vencida" id="badgeContasVencidas">0</span>
+                        <span class="conta-badge-small pendente" id="badgeContasPendentes">0</span>
+                    </div>
                 </button>
                 <button class="filter-btn" data-filter="eventos">
                     <i class="fas fa-calendar-alt"></i>
@@ -623,8 +667,6 @@
                 <div id="dynamicContent"></div>
             </div>
         </div>
-        
-        <!-- BOTÃO FLUTUANTE PARA AÇÕES RÁPIDAS (removido da posição fixa) -->
     </div>
 
     <!-- MODAL PRINCIPAL -->
@@ -657,12 +699,12 @@
             supabase: null,
             currentUser: null,
             currentMonthOffset: 0,
-            currentFilter: null, // Nenhum filtro ativo por padrão
+            currentFilter: null,
             currentDayFilter: 'tudo',
             selectedDay: null,
             selectedMonth: null,
             selectedYear: null,
-            saldoPassword: '1234', // Senha padrão
+            saldoPassword: '1234',
             stats: {
                 contas: { pendentes: 0, vencidas: 0, pagas: 0, concluidas: 0, total: 0 },
                 eventos: { hoje: 0, futuros: 0, total: 0 },
@@ -670,7 +712,8 @@
                 saldos: { total: 0 },
                 gastos: { total: 0, porCategoria: {} }
             },
-            listaSelecionados: []
+            listaSelecionados: [],
+            historico: []
         };
         
         // ============================================
@@ -799,12 +842,49 @@
             try {
                 await updateCalendar();
                 await loadFilterData();
+                await loadHistorico(); // Carregar histórico
                 showContent();
                 showLoading(false);
                 
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
                 showLoading(false);
+            }
+        }
+        
+        async function loadHistorico() {
+            try {
+                const { data } = await app.supabase
+                    .from('historico')
+                    .select('*')
+                    .eq('user_id', app.currentUser.id)
+                    .order('data', { ascending: false })
+                    .limit(100);
+                
+                app.historico = data || [];
+            } catch (error) {
+                console.error('Erro ao carregar histórico:', error);
+                app.historico = [];
+            }
+        }
+        
+        async function addToHistorico(tipo, descricao) {
+            try {
+                const { error } = await app.supabase
+                    .from('historico')
+                    .insert({
+                        user_id: app.currentUser.id,
+                        tipo: tipo,
+                        descricao: descricao,
+                        data: new Date().toISOString(),
+                        added_by: app.currentUser.email.split('@')[0]
+                    });
+                
+                if (!error) {
+                    await loadHistorico(); // Recarregar histórico
+                }
+            } catch (error) {
+                console.error('Erro ao adicionar histórico:', error);
             }
         }
         
@@ -884,7 +964,6 @@
         }
         
         function getHeaderButtons() {
-            // Se não tem filtro ativo (mostrando tudo), não mostra botões de ação
             if (!app.currentFilter) {
                 return '';
             }
@@ -1119,7 +1198,7 @@
         }
         
         // ============================================
-        // 📅 EXIBIÇÃO DE TUDO NO MÊS (quando clica no título do mês)
+        // 📅 EXIBIÇÃO DE TUDO NO MÊS
         // ============================================
         async function showTudoDoMes(content, headerHtml) {
             const mesAtual = app.selectedMonth;
@@ -1251,9 +1330,10 @@
                         const isHoje = eventoDate.toDateString() === hoje.toDateString();
                         const icon = evento.tipo === 'amor' ? 'fa-heart' : 'fa-star';
                         const colorClass = evento.tipo === 'amor' ? 'love' : 'warning';
+                        const classeAmor = evento.tipo === 'amor' ? 'amor' : '';
                         
                         html += `
-                            <div class="evento-item" onclick="openEditarEventoModal('${evento.id}')">
+                            <div class="evento-item ${classeAmor}" onclick="openEditarEventoModal('${evento.id}')">
                                 <div class="evento-info">
                                     <div class="evento-desc text-truncate">
                                         <i class="fas ${icon}" style="color: var(--${colorClass});"></i>
@@ -1441,7 +1521,8 @@
         }
         
         function updateBadges() {
-            document.getElementById('badgeContas').textContent = app.stats.contas.pendentes;
+            document.getElementById('badgeContasVencidas').textContent = app.stats.contas.vencidas;
+            document.getElementById('badgeContasPendentes').textContent = app.stats.contas.pendentes;
             document.getElementById('badgeEventos').textContent = app.stats.eventos.futuros;
             document.getElementById('badgeLista').textContent = app.stats.lista.pendentes;
             document.getElementById('badgeGastos').textContent = app.stats.gastos.total;
@@ -1629,7 +1710,7 @@
             } else if (vencimento < hoje) {
                 return { texto: 'VENCIDA', classe: 'vencida', classeStatus: 'status-vencida' };
             } else if (vencimento.getTime() === hoje.getTime()) {
-                return { texto: 'HOJE', classe: 'pendente', classeStatus: 'status-hoje' };
+                return { texto: 'HOJE', classe: 'hoje', classeStatus: 'status-hoje' };
             } else {
                 return { texto: 'PENDENTE', classe: 'pendente', classeStatus: 'status-pendente' };
             }
@@ -1749,9 +1830,10 @@
                 const isHoje = eventoDate.toDateString() === hoje.toDateString();
                 const icon = evento.tipo === 'amor' ? 'fa-heart' : 'fa-star';
                 const colorClass = evento.tipo === 'amor' ? 'love' : 'warning';
+                const classeAmor = evento.tipo === 'amor' ? 'amor' : '';
                 
                 html += `
-                    <div class="evento-item" onclick="openEditarEventoModal('${evento.id}')">
+                    <div class="evento-item ${classeAmor}" onclick="openEditarEventoModal('${evento.id}')">
                         <div class="evento-info">
                             <div class="evento-desc text-truncate">
                                 <i class="fas ${icon}" style="color: var(--${colorClass});"></i>
@@ -1945,12 +2027,10 @@
                 if (data) {
                     app.saldoPassword = data.valor;
                 } else {
-                    // Se não tem senha salva, usar padrão e salvar
                     app.saldoPassword = '1234';
                     await saveSaldoPassword('1234');
                 }
             } catch (error) {
-                // Usar senha padrão
                 app.saldoPassword = '1234';
             }
         }
@@ -2060,8 +2140,6 @@
         function formatDate(dateString) {
             if (!dateString) return '';
             const date = new Date(dateString);
-            // Ajustar fuso horário para mostrar data correta
-            date.setHours(date.getHours() + 3); // Ajuste para GMT-3 (Brasília)
             return date.toLocaleDateString('pt-BR');
         }
         
@@ -2102,7 +2180,6 @@
                 calendarNavTimeout = setTimeout(() => { calendarNavTimeout = null; }, 500);
             });
             
-            // Ao clicar no título do mês, mostrar tudo e desmarcar filtros
             document.getElementById('calendarTitle').addEventListener('click', () => {
                 app.selectedDay = null;
                 desmarcarFiltros();
@@ -2254,16 +2331,136 @@
             document.getElementById('modalOverlay').style.display = 'flex';
         };
         
+        window.saveNovaConta = async function() {
+            const isMensal = document.getElementById('contaMensalForm').style.display === 'block';
+            
+            if (isMensal) {
+                await saveContaMensal();
+            } else {
+                await saveContaUnica();
+            }
+        };
+        
+        window.saveContaMensal = async function() {
+            const descricao = document.getElementById('novaDescricaoMensal').value.trim();
+            const dia = parseInt(document.getElementById('novaDiaMensal').value);
+            const valor = parseCurrency(document.getElementById('novaValorMensal').value);
+            const inicioMes = parseInt(document.getElementById('novaInicioMes').value);
+            const inicioAno = parseInt(document.getElementById('novaInicioAno').value);
+            const fimMes = document.getElementById('novaFimMes').value;
+            const fimAno = document.getElementById('novaFimAno').value;
+            
+            if (!descricao || !dia || !valor || !inicioMes || !inicioAno) {
+                alert('Preencha os campos obrigatórios');
+                return;
+            }
+            
+            // CORREÇÃO: Não subtrair 1 do mês para a data de início
+            const dataInicio = new Date(inicioAno, inicioMes - 1, 1); // CORRIGIDO
+            if (isNaN(dataInicio.getTime())) {
+                alert('Data de início inválida');
+                return;
+            }
+            
+            let dataFim = null;
+            if (fimMes && fimAno) {
+                // CORREÇÃO: Não subtrair 1 do mês para a data de fim
+                dataFim = new Date(parseInt(fimAno), parseInt(fimMes) - 1, 1); // CORRIGIDO
+                if (isNaN(dataFim.getTime()) || dataFim <= dataInicio) {
+                    alert('Data de fim deve ser posterior à data de início');
+                    return;
+                }
+            }
+            
+            try {
+                const contaData = {
+                    user_id: app.currentUser.id,
+                    descricao: descricao,
+                    dia_vencimento: dia,
+                    valor_original: valor,
+                    valor_pago: 0,
+                    mes: inicioMes, // CORRIGIDO: Usar mês correto
+                    ano: inicioAno,
+                    mensal: true,
+                    data_inicio: dataInicio.toISOString().split('T')[0],
+                    status: 'pendente',
+                    added_by: app.currentUser.email.split('@')[0],
+                    criado_em: new Date().toISOString()
+                };
+                
+                if (dataFim) {
+                    contaData.data_fim = dataFim.toISOString().split('T')[0];
+                }
+                
+                const { error } = await app.supabase
+                    .from('contas')
+                    .insert(contaData);
+                
+                if (error) throw error;
+                
+                await addToHistorico('criado', `Conta mensal criada: ${descricao} - ${formatCurrency(valor)}`);
+                
+                alert('✅ Conta mensal criada com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao criar conta mensal:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.saveContaUnica = async function() {
+            const descricao = document.getElementById('novaDescricao').value.trim();
+            const dia = parseInt(document.getElementById('novaDia').value);
+            const valor = parseCurrency(document.getElementById('novaValor').value);
+            const mes = parseInt(document.getElementById('novaMes').value);
+            const ano = parseInt(document.getElementById('novaAno').value);
+            
+            if (!descricao || !dia || !valor || !mes || !ano) {
+                alert('Preencha todos os campos');
+                return;
+            }
+            
+            try {
+                const { error } = await app.supabase
+                    .from('contas')
+                    .insert({
+                        user_id: app.currentUser.id,
+                        descricao: descricao,
+                        dia_vencimento: dia,
+                        valor_original: valor,
+                        valor_pago: 0,
+                        mes: mes,
+                        ano: ano,
+                        mensal: false,
+                        status: 'pendente',
+                        added_by: app.currentUser.email.split('@')[0],
+                        criado_em: new Date().toISOString()
+                    });
+                
+                if (error) throw error;
+                
+                await addToHistorico('criado', `Conta criada: ${descricao} - ${formatCurrency(valor)}`);
+                
+                alert('✅ Conta criada com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao criar conta:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
         window.openNovoGastoModal = function() {
             const hoje = new Date();
             const targetDate = new Date(hoje.getFullYear(), hoje.getMonth() + app.currentMonthOffset, 1);
             const mes = targetDate.getMonth() + 1;
             const ano = targetDate.getFullYear();
             
-            // Data padrão: dia selecionado ou hoje
             const defaultDay = app.selectedDay || hoje.getDate();
-            // Corrigir problema de fuso horário: usar UTC para evitar diferença de 1 dia
-            const defaultDate = new Date(Date.UTC(ano, mes - 1, defaultDay));
+            const defaultDate = new Date(ano, mes - 1, defaultDay);
             const defaultDateStr = defaultDate.toISOString().split('T')[0];
             
             const modalHTML = `
@@ -2362,7 +2559,6 @@
                     }
                 }
                 
-                // Corrigir problema de fuso horário: usar data como está (já corrigida no input)
                 const { error } = await app.supabase
                     .from('gastos')
                     .insert({
@@ -2376,6 +2572,8 @@
                     });
                 
                 if (error) throw error;
+                
+                await addToHistorico('criado', `Gasto registrado: ${descricaoFinal} - ${formatCurrency(valor)}`);
                 
                 alert('✅ Gasto registrado com sucesso!');
                 closeModal();
@@ -2402,7 +2600,7 @@
                 <div style="padding: 16px;">
                     <div class="form-group">
                         <label class="form-label"><i class="fas fa-heading"></i> Título</label>
-                        <input type="text" id="eventoTitulo" class="form-input" placeholder="${tipo === 'amor' ? 'Jantar romântico, etc.' : 'Reunião, Consulta, etc.'}">
+                            <input type="text" id="eventoTitulo" class="form-input" placeholder="${tipo === 'amor' ? 'Jantar romântico, etc.' : 'Reunião, Consulta, etc.'}">
                     </div>
                     
                     <div class="form-group">
@@ -2422,6 +2620,11 @@
                         </div>
                     </div>
                     
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-map-marker-alt"></i> Local (Opcional)</label>
+                            <input type="text" id="eventoLocal" class="form-input" placeholder="Local do evento">
+                    </div>
+                    
                     <input type="hidden" id="eventoTipo" value="${tipo}">
                     <input type="hidden" id="eventoMes" value="${mes}">
                     <input type="hidden" id="eventoAno" value="${ano}">
@@ -2439,6 +2642,52 @@
             
             document.getElementById('modalContent').innerHTML = modalHTML;
             document.getElementById('modalOverlay').style.display = 'flex';
+        };
+        
+        window.saveNovoEvento = async function() {
+            const titulo = document.getElementById('eventoTitulo').value.trim();
+            const descricao = document.getElementById('eventoDescricao').value.trim();
+            const dia = parseInt(document.getElementById('eventoDia').value);
+            const hora = document.getElementById('eventoHora').value;
+            const mes = parseInt(document.getElementById('eventoMes').value);
+            const ano = parseInt(document.getElementById('eventoAno').value);
+            const tipo = document.getElementById('eventoTipo').value;
+            const local = document.getElementById('eventoLocal').value.trim();
+            
+            if (!titulo || !dia) {
+                alert('Preencha título e dia');
+                return;
+            }
+            
+            try {
+                const { error } = await app.supabase
+                    .from('eventos')
+                    .insert({
+                        user_id: app.currentUser.id,
+                        titulo: titulo,
+                        descricao: descricao,
+                        dia: dia,
+                        mes: mes,
+                        ano: ano,
+                        hora: hora,
+                        local: local,
+                        tipo: tipo,
+                        added_by: app.currentUser.email.split('@')[0],
+                        criado_em: new Date().toISOString()
+                    });
+                
+                if (error) throw error;
+                
+                await addToHistorico('criado', `Evento criado: ${titulo} (${tipo === 'amor' ? 'Data Especial' : 'Evento'})`);
+                
+                alert('✅ Evento criado com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao criar evento:', error);
+                alert('❌ Erro: ' + error.message);
+            }
         };
         
         window.openNovoItemModal = function() {
@@ -2471,6 +2720,41 @@
             
             document.getElementById('modalContent').innerHTML = modalHTML;
             document.getElementById('modalOverlay').style.display = 'flex';
+        };
+        
+        window.saveNovoItem = async function() {
+            const quantidade = parseInt(document.getElementById('itemQuantidade').value);
+            const descricao = document.getElementById('itemDescricao').value.trim();
+            
+            if (!quantidade || !descricao) {
+                alert('Preencha quantidade e descrição');
+                return;
+            }
+            
+            try {
+                const { error } = await app.supabase
+                    .from('lista_compras')
+                    .insert({
+                        user_id: app.currentUser.id,
+                        quantidade: quantidade,
+                        descricao: descricao,
+                        comprado: false,
+                        added_by: app.currentUser.email.split('@')[0],
+                        criado_em: new Date().toISOString()
+                    });
+                
+                if (error) throw error;
+                
+                await addToHistorico('criado', `Item adicionado à lista: ${quantidade}x ${descricao}`);
+                
+                alert('✅ Item adicionado à lista!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao adicionar item:', error);
+                alert('❌ Erro: ' + error.message);
+            }
         };
         
         window.openNovoSaldoModal = function() {
@@ -2515,6 +2799,41 @@
             
             document.getElementById('modalContent').innerHTML = modalHTML;
             document.getElementById('modalOverlay').style.display = 'flex';
+        };
+        
+        window.saveNovoSaldo = async function() {
+            const nome = document.getElementById('saldoNome').value.trim();
+            const valor = parseCurrency(document.getElementById('saldoValor').value);
+            
+            if (!nome || !valor) {
+                alert('Preencha nome e valor');
+                return;
+            }
+            
+            try {
+                const { error } = await app.supabase
+                    .from('saldos')
+                    .insert({
+                        user_id: app.currentUser.id,
+                        nome: nome,
+                        valor: valor,
+                        data: new Date().toISOString().split('T')[0],
+                        added_by: app.currentUser.email.split('@')[0],
+                        criado_em: new Date().toISOString()
+                    });
+                
+                if (error) throw error;
+                
+                await addToHistorico('criado', `Saldo cadastrado: ${nome} - ${formatCurrency(valor)}`);
+                
+                alert('✅ Saldo salvo com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao salvar saldo:', error);
+                alert('❌ Erro: ' + error.message);
+            }
         };
         
         window.openSegurancaModal = function() {
@@ -2578,18 +2897,62 @@
             const mes = targetDate.getMonth() + 1;
             const ano = targetDate.getFullYear();
             
+            const modalHTML = `
+                <div class="modal-header">
+                    <div class="modal-title"><i class="fas fa-chart-bar"></i> Relatório e Histórico</div>
+                    <button class="close-modal" onclick="closeModal()">&times;</button>
+                </div>
+                <div style="padding: 16px;">
+                    <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 12px;">
+                        <div style="font-size: 1.2em; font-weight: bold; color: var(--dark); margin-bottom: 5px;">
+                            Relatório Financeiro
+                        </div>
+                        <div style="color: var(--gray); font-size: 0.9em;">
+                            Selecione o período
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-calendar"></i> Período</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="relatorioMes" class="form-select" style="flex: 1;">
+                                ${Array.from({length: 12}, (_, i) => `
+                                    <option value="${i+1}" ${i+1 === mes ? 'selected' : ''}>${getMonthName(i+1)}</option>
+                                `).join('')}
+                            </select>
+                            <input type="number" id="relatorioAno" class="form-input" value="${ano}" style="flex: 1;">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px; margin-top: 16px;">
+                        <button class="btn btn-primary" onclick="gerarRelatorio()" style="flex: 1;">
+                            <i class="fas fa-chart-bar"></i> Gerar Relatório
+                        </button>
+                        <button class="btn btn-warning" onclick="verHistoricoCompleto()" style="flex: 1;">
+                            <i class="fas fa-history"></i> Ver Histórico
+                        </button>
+                        <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = modalHTML;
+            document.getElementById('modalOverlay').style.display = 'flex';
+        };
+        
+        window.gerarRelatorio = async function() {
+            const mes = parseInt(document.getElementById('relatorioMes').value);
+            const ano = parseInt(document.getElementById('relatorioAno').value);
+            
             try {
                 const [
                     { data: contas },
-                    { data: gastos },
-                    { data: historico }
+                    { data: gastos }
                 ] = await Promise.all([
                     app.supabase.from('contas').select('*').eq('user_id', app.currentUser.id),
-                    app.supabase.from('gastos').select('*').eq('user_id', app.currentUser.id),
-                    app.supabase.from('historico').select('*').eq('user_id', app.currentUser.id)
-                        .gte('data', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
-                        .order('data', { ascending: false })
-                        .limit(50)
+                    app.supabase.from('gastos').select('*').eq('user_id', app.currentUser.id)
                 ]);
                 
                 const contasMes = filterContasPorMes(contas || [], mes, ano);
@@ -2612,7 +2975,7 @@
                 
                 const modalHTML = `
                     <div class="modal-header">
-                        <div class="modal-title"><i class="fas fa-chart-bar"></i> Relatório e Histórico</div>
+                        <div class="modal-title"><i class="fas fa-chart-bar"></i> Relatório - ${getMonthName(mes)}/${ano}</div>
                         <button class="close-modal" onclick="closeModal()">&times;</button>
                     </div>
                     <div style="padding: 16px;">
@@ -2677,30 +3040,19 @@
                         
                         <div style="margin-bottom: 20px;">
                             <div style="font-weight: bold; font-size: 1em; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
-                                Histórico (últimos 90 dias)
+                                Resumo Financeiro
                             </div>
-                            <div style="max-height: 200px; overflow-y: auto;">
-                                ${(historico || []).map(item => `
-                                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 0.85em;">
-                                        <div>
-                                            <i class="fas ${item.tipo === 'criado' ? 'fa-plus-circle' : item.tipo === 'editado' ? 'fa-edit' : 'fa-trash'}" 
-                                               style="color: ${item.tipo === 'criado' ? 'var(--success)' : item.tipo === 'editado' ? 'var(--warning)' : 'var(--danger)'}; margin-right: 6px;"></i>
-                                            ${item.descricao}
-                                        </div>
-                                        <div style="color: var(--gray); font-size: 0.8em;">
-                                            ${formatDate(item.data)}
-                                        </div>
-                                    </div>
-                                `).join('') || '<div style="text-align: center; padding: 20px; color: var(--gray);">Nenhum histórico encontrado</div>'}
+                            <div style="display: flex; justify-content: space-between; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px;">
+                                <div>Saldo Final Estimado:</div>
+                                <div style="font-weight: bold; color: ${saldoFinal < 0 ? 'var(--danger)' : 'var(--success)'}">
+                                    ${formatCurrency(saldoFinal, true)}
+                                </div>
                             </div>
                         </div>
                         
                         <div style="display: flex; gap: 8px; margin-top: 20px;">
                             <button class="btn btn-primary" onclick="imprimirRelatorio()" style="flex: 1;">
                                 <i class="fas fa-print"></i> Imprimir Relatório
-                            </button>
-                            <button class="btn btn-warning" onclick="verHistoricoCompleto()" style="flex: 1;">
-                                <i class="fas fa-history"></i> Ver Histórico
                             </button>
                             <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
                                 Fechar
@@ -2710,7 +3062,6 @@
                 `;
                 
                 document.getElementById('modalContent').innerHTML = modalHTML;
-                document.getElementById('modalOverlay').style.display = 'flex';
                 
             } catch (error) {
                 console.error('Erro ao gerar relatório:', error);
@@ -2718,227 +3069,48 @@
             }
         };
         
-        window.saveNovoEvento = async function() {
-            const titulo = document.getElementById('eventoTitulo').value.trim();
-            const descricao = document.getElementById('eventoDescricao').value.trim();
-            const dia = parseInt(document.getElementById('eventoDia').value);
-            const hora = document.getElementById('eventoHora').value;
-            const mes = parseInt(document.getElementById('eventoMes').value);
-            const ano = parseInt(document.getElementById('eventoAno').value);
-            const tipo = document.getElementById('eventoTipo').value;
-            
-            if (!titulo || !dia) {
-                alert('Preencha título e dia');
-                return;
-            }
-            
+        window.verHistoricoCompleto = async function() {
             try {
-                const { error } = await app.supabase
-                    .from('eventos')
-                    .insert({
-                        user_id: app.currentUser.id,
-                        titulo: titulo,
-                        descricao: descricao,
-                        dia: dia,
-                        mes: mes,
-                        ano: ano,
-                        hora: hora,
-                        tipo: tipo,
-                        added_by: app.currentUser.email.split('@')[0],
-                        criado_em: new Date().toISOString()
-                    });
+                await loadHistorico();
                 
-                if (error) throw error;
+                const modalHTML = `
+                    <div class="modal-header">
+                        <div class="modal-title"><i class="fas fa-history"></i> Histórico Completo</div>
+                        <button class="close-modal" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div style="font-weight: bold; font-size: 1em; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
+                            Últimas 100 atividades
+                        </div>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            ${app.historico.map(item => `
+                                <div style="padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 0.85em;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <i class="fas ${item.tipo === 'criado' ? 'fa-plus-circle' : item.tipo === 'editado' ? 'fa-edit' : 'fa-trash'}" 
+                                           style="color: ${item.tipo === 'criado' ? 'var(--success)' : item.tipo === 'editado' ? 'var(--warning)' : 'var(--danger)'};"></i>
+                                        <strong>${item.descricao}</strong>
+                                    </div>
+                                    <div style="color: var(--gray); font-size: 0.8em; display: flex; justify-content: space-between;">
+                                        <span>${item.added_by || 'Sistema'}</span>
+                                        <span>${formatDate(item.data)}</span>
+                                    </div>
+                                </div>
+                            `).join('') || '<div style="text-align: center; padding: 40px; color: var(--gray);">Nenhum histórico encontrado</div>'}
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 20px;">
+                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                `;
                 
-                alert('✅ Evento criado com sucesso!');
-                closeModal();
-                loadAppData();
+                document.getElementById('modalContent').innerHTML = modalHTML;
                 
             } catch (error) {
-                console.error('Erro ao criar evento:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.saveNovoItem = async function() {
-            const quantidade = parseInt(document.getElementById('itemQuantidade').value);
-            const descricao = document.getElementById('itemDescricao').value.trim();
-            
-            if (!quantidade || !descricao) {
-                alert('Preencha quantidade e descrição');
-                return;
-            }
-            
-            try {
-                const { error } = await app.supabase
-                    .from('lista_compras')
-                    .insert({
-                        user_id: app.currentUser.id,
-                        quantidade: quantidade,
-                        descricao: descricao,
-                        comprado: false,
-                        added_by: app.currentUser.email.split('@')[0],
-                        criado_em: new Date().toISOString()
-                    });
-                
-                if (error) throw error;
-                
-                alert('✅ Item adicionado à lista!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao adicionar item:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.saveNovoSaldo = async function() {
-            const nome = document.getElementById('saldoNome').value.trim();
-            const valor = parseCurrency(document.getElementById('saldoValor').value);
-            
-            if (!nome || !valor) {
-                alert('Preencha nome e valor');
-                return;
-            }
-            
-            try {
-                const { error } = await app.supabase
-                    .from('saldos')
-                    .insert({
-                        user_id: app.currentUser.id,
-                        nome: nome,
-                        valor: valor,
-                        data: new Date().toISOString().split('T')[0],
-                        added_by: app.currentUser.email.split('@')[0],
-                        criado_em: new Date().toISOString()
-                    });
-                
-                if (error) throw error;
-                
-                alert('✅ Saldo salvo com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao salvar saldo:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.saveNovaConta = function() {
-            const isMensal = document.getElementById('contaMensalForm').style.display === 'block';
-            
-            if (isMensal) {
-                saveContaMensal();
-            } else {
-                saveContaUnica();
-            }
-        };
-        
-        window.saveContaMensal = async function() {
-            const descricao = document.getElementById('novaDescricaoMensal').value.trim();
-            const dia = parseInt(document.getElementById('novaDiaMensal').value);
-            const valor = parseCurrency(document.getElementById('novaValorMensal').value);
-            const inicioMes = parseInt(document.getElementById('novaInicioMes').value);
-            const inicioAno = parseInt(document.getElementById('novaInicioAno').value);
-            const fimMes = document.getElementById('novaFimMes').value;
-            const fimAno = document.getElementById('novaFimAno').value;
-            
-            if (!descricao || !dia || !valor || !inicioMes || !inicioAno) {
-                alert('Preencha os campos obrigatórios');
-                return;
-            }
-            
-            const dataInicio = new Date(inicioAno, inicioMes - 1, 1);
-            if (isNaN(dataInicio.getTime())) {
-                alert('Data de início inválida');
-                return;
-            }
-            
-            let dataFim = null;
-            if (fimMes && fimAno) {
-                dataFim = new Date(parseInt(fimAno), parseInt(fimMes) - 1, 1);
-                if (isNaN(dataFim.getTime()) || dataFim <= dataInicio) {
-                    alert('Data de fim deve ser posterior à data de início');
-                    return;
-                }
-            }
-            
-            try {
-                const contaData = {
-                    user_id: app.currentUser.id,
-                    descricao: descricao,
-                    dia_vencimento: dia,
-                    valor_original: valor,
-                    valor_pago: 0,
-                    mes: inicioMes,
-                    ano: inicioAno,
-                    mensal: true,
-                    data_inicio: dataInicio.toISOString().split('T')[0],
-                    status: 'pendente',
-                    added_by: app.currentUser.email.split('@')[0],
-                    criado_em: new Date().toISOString()
-                };
-                
-                if (dataFim) {
-                    contaData.data_fim = dataFim.toISOString().split('T')[0];
-                }
-                
-                const { error } = await app.supabase
-                    .from('contas')
-                    .insert(contaData);
-                
-                if (error) throw error;
-                
-                alert('✅ Conta mensal criada com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao criar conta mensal:', error);
-                alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.saveContaUnica = async function() {
-            const descricao = document.getElementById('novaDescricao').value.trim();
-            const dia = parseInt(document.getElementById('novaDia').value);
-            const valor = parseCurrency(document.getElementById('novaValor').value);
-            const mes = parseInt(document.getElementById('novaMes').value);
-            const ano = parseInt(document.getElementById('novaAno').value);
-            
-            if (!descricao || !dia || !valor || !mes || !ano) {
-                alert('Preencha todos os campos');
-                return;
-            }
-            
-            try {
-                const { error } = await app.supabase
-                    .from('contas')
-                    .insert({
-                        user_id: app.currentUser.id,
-                        descricao: descricao,
-                        dia_vencimento: dia,
-                        valor_original: valor,
-                        valor_pago: 0,
-                        mes: mes,
-                        ano: ano,
-                        mensal: false,
-                        status: 'pendente',
-                        added_by: app.currentUser.email.split('@')[0],
-                        criado_em: new Date().toISOString()
-                    });
-                
-                if (error) throw error;
-                
-                alert('✅ Conta criada com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            } catch (error) {
-                console.error('Erro ao criar conta:', error);
-                alert('❌ Erro: ' + error.message);
+                console.error('Erro ao carregar histórico:', error);
+                alert('Erro ao carregar histórico: ' + error.message);
             }
         };
         
@@ -2977,16 +3149,27 @@
         
         window.toggleItemComprado = async function(itemId, compradoAtual) {
             try {
+                const { data: item } = await app.supabase
+                    .from('lista_compras')
+                    .select('*')
+                    .eq('id', itemId)
+                    .single();
+                
+                const novoStatus = !compradoAtual;
+                
                 const { error } = await app.supabase
                     .from('lista_compras')
                     .update({ 
-                        comprado: !compradoAtual,
-                        comprado_em: !compradoAtual ? new Date().toISOString() : null,
+                        comprado: novoStatus,
+                        comprado_em: novoStatus ? new Date().toISOString() : null,
                         atualizado_em: new Date().toISOString()
                     })
                     .eq('id', itemId);
                 
                 if (error) throw error;
+                
+                await addToHistorico(novoStatus ? 'editado' : 'editado', 
+                    `Item ${novoStatus ? 'marcado como comprado' : 'desmarcado'}: ${item.quantidade}x ${item.descricao}`);
                 
                 loadAppData();
                 
@@ -3004,12 +3187,22 @@
             if (!confirm(`Tem certeza que deseja deletar ${app.listaSelecionados.length} item(ns) selecionado(s)?`)) return;
             
             try {
+                const { data: items } = await app.supabase
+                    .from('lista_compras')
+                    .select('*')
+                    .in('id', app.listaSelecionados);
+                
                 const { error } = await app.supabase
                     .from('lista_compras')
                     .delete()
                     .in('id', app.listaSelecionados);
                 
                 if (error) throw error;
+                
+                // Adicionar ao histórico
+                items.forEach(item => {
+                    addToHistorico('deletado', `Item deletado da lista: ${item.quantidade}x ${item.descricao}`);
+                });
                 
                 app.listaSelecionados = [];
                 alert('✅ Itens deletados com sucesso!');
@@ -3018,56 +3211,6 @@
             } catch (error) {
                 console.error('Erro ao deletar itens:', error);
                 alert('❌ Erro: ' + error.message);
-            }
-        };
-        
-        window.verHistoricoCompleto = async function() {
-            try {
-                const { data: historico } = await app.supabase
-                    .from('historico')
-                    .select('*')
-                    .eq('user_id', app.currentUser.id)
-                    .order('data', { ascending: false })
-                    .limit(100);
-                
-                const modalHTML = `
-                    <div class="modal-header">
-                        <div class="modal-title"><i class="fas fa-history"></i> Histórico Completo</div>
-                        <button class="close-modal" onclick="closeModal()">&times;</button>
-                    </div>
-                    <div style="padding: 16px;">
-                        <div style="font-weight: bold; font-size: 1em; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
-                            Últimas 100 atividades
-                        </div>
-                        <div style="max-height: 400px; overflow-y: auto;">
-                            ${(historico || []).map(item => `
-                                <div style="padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 0.85em;">
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                        <i class="fas ${item.tipo === 'criado' ? 'fa-plus-circle' : item.tipo === 'editado' ? 'fa-edit' : 'fa-trash'}" 
-                                           style="color: ${item.tipo === 'criado' ? 'var(--success)' : item.tipo === 'editado' ? 'var(--warning)' : 'var(--danger)'};"></i>
-                                        <strong>${item.descricao}</strong>
-                                    </div>
-                                    <div style="color: var(--gray); font-size: 0.8em; display: flex; justify-content: space-between;">
-                                        <span>${item.added_by || 'Sistema'}</span>
-                                        <span>${formatDate(item.data)}</span>
-                                    </div>
-                                </div>
-                            `).join('') || '<div style="text-align: center; padding: 40px; color: var(--gray);">Nenhum histórico encontrado</div>'}
-                        </div>
-                        
-                        <div style="display: flex; gap: 8px; margin-top: 20px;">
-                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
-                                Fechar
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('modalContent').innerHTML = modalHTML;
-                
-            } catch (error) {
-                console.error('Erro ao carregar histórico:', error);
-                alert('Erro ao carregar histórico: ' + error.message);
             }
         };
         
@@ -3099,7 +3242,9 @@
             }, 500);
         };
         
-        // Funções de edição (simplificadas para manter o código mais limpo)
+        // ============================================
+        // ✏️ FUNÇÕES DE EDIÇÃO
+        // ============================================
         window.openEditarContaModal = async function(id) {
             try {
                 const { data: conta, error } = await app.supabase
@@ -3113,7 +3258,7 @@
                 const opcoesPagamento = `
                     <option value="0.00" ${conta.valor_pago === 0 && conta.status !== 'concluida' ? 'selected' : ''}>Não pago</option>
                     <option value="concluir" ${conta.status === 'concluida' ? 'selected' : ''}>Concluir sem pagar</option>
-                    <option value="outro">Outro valor</option>
+                    <option value="outro" ${conta.valor_pago > 0 ? 'selected' : ''}>Outro valor</option>
                 `;
                 
                 const modalHTML = `
@@ -3172,6 +3317,17 @@
             }
         };
         
+        window.handleSituacaoPagamentoChange = function() {
+            const situacao = document.getElementById('editarSituacaoPagamento').value;
+            const container = document.getElementById('editarValorPagoContainer');
+            
+            if (situacao === 'outro') {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        };
+        
         window.saveEditarConta = async function(id) {
             const descricao = document.getElementById('editarDescricao').value.trim();
             const dia = parseInt(document.getElementById('editarDia').value);
@@ -3214,6 +3370,8 @@
                 
                 if (error) throw error;
                 
+                await addToHistorico('editado', `Conta editada: ${descricao} - ${formatCurrency(valorOriginal)}`);
+                
                 alert('✅ Conta atualizada com sucesso!');
                 closeModal();
                 loadAppData();
@@ -3228,6 +3386,12 @@
             if (!confirm('Tem certeza que deseja excluir esta conta?')) return;
             
             try {
+                const { data: conta } = await app.supabase
+                    .from('contas')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
                 const { error } = await app.supabase
                     .from('contas')
                     .delete()
@@ -3235,12 +3399,625 @@
                 
                 if (error) throw error;
                 
+                await addToHistorico('deletado', `Conta excluída: ${conta.descricao} - ${formatCurrency(conta.valor_original)}`);
+                
                 alert('✅ Conta excluída com sucesso!');
                 closeModal();
                 loadAppData();
                 
             } catch (error) {
                 console.error('Erro ao excluir conta:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.openEditarGastoModal = async function(id) {
+            try {
+                const { data: gasto, error } = await app.supabase
+                    .from('gastos')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                if (error) throw error;
+                
+                const categoria = CATEGORIAS_GASTOS.find(c => c.id === gasto.categoria) || CATEGORIAS_GASTOS[5];
+                const dataGasto = new Date(gasto.data);
+                const dataStr = dataGasto.toISOString().split('T')[0];
+                
+                const modalHTML = `
+                    <div class="modal-header">
+                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Gasto</div>
+                        <button class="close-modal" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
+                            <input type="text" id="editarGastoDescricao" class="form-input" value="${gasto.descricao}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
+                            <input type="text" id="editarGastoValor" class="form-input" value="${gasto.valor.toFixed(2).replace('.', ',')}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-calendar-day"></i> Data</label>
+                            <input type="date" id="editarGastoData" class="form-input" value="${dataStr}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-tags"></i> Categoria</label>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;">
+                                ${CATEGORIAS_GASTOS.map(cat => `
+                                    <button class="btn categoria-btn-editar ${cat.id === gasto.categoria ? 'active' : ''}" data-categoria="${cat.id}" onclick="selectCategoriaEditar('${cat.id}')" style="display: flex; align-items: center; gap: 6px; justify-content: center; padding: 8px; font-size: 12px; ${cat.id === gasto.categoria ? 'background: var(--gasto); color: white;' : 'background: #f8f9fa; color: var(--dark);'}">
+                                        <i class="fas ${cat.icon}"></i> ${cat.nome}
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <input type="hidden" id="editarGastoCategoria" value="${gasto.categoria}">
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 16px;">
+                            <button class="btn btn-primary" onclick="saveEditarGasto('${gasto.id}')" style="flex: 1;">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteGasto('${gasto.id}')" style="flex: 1;">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('modalContent').innerHTML = modalHTML;
+                document.getElementById('modalOverlay').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Erro ao abrir modal de edição de gasto:', error);
+                alert('Erro ao carregar dados do gasto.');
+            }
+        };
+        
+        window.selectCategoriaEditar = function(categoriaId) {
+            document.querySelectorAll('.categoria-btn-editar').forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = '#f8f9fa';
+                btn.style.color = 'var(--dark)';
+            });
+            
+            const selectedBtn = document.querySelector(`.categoria-btn-editar[data-categoria="${categoriaId}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('active');
+                selectedBtn.style.background = 'var(--gasto)';
+                selectedBtn.style.color = 'white';
+            }
+            
+            document.getElementById('editarGastoCategoria').value = categoriaId;
+        };
+        
+        window.saveEditarGasto = async function(id) {
+            const descricao = document.getElementById('editarGastoDescricao').value.trim();
+            const valor = parseCurrency(document.getElementById('editarGastoValor').value);
+            const categoria = document.getElementById('editarGastoCategoria').value;
+            const data = document.getElementById('editarGastoData').value;
+            
+            if (!descricao || !valor || !data) {
+                alert('Preencha descrição, valor e data');
+                return;
+            }
+            
+            try {
+                const updateData = {
+                    descricao: descricao,
+                    valor: valor,
+                    categoria: categoria,
+                    data: data,
+                    atualizado_em: new Date().toISOString()
+                };
+                
+                const { error } = await app.supabase
+                    .from('gastos')
+                    .update(updateData)
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                await addToHistorico('editado', `Gasto editado: ${descricao} - ${formatCurrency(valor)}`);
+                
+                alert('✅ Gasto atualizado com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao atualizar gasto:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.deleteGasto = async function(id) {
+            if (!confirm('Tem certeza que deseja excluir este gasto?')) return;
+            
+            try {
+                const { data: gasto } = await app.supabase
+                    .from('gastos')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                const { error } = await app.supabase
+                    .from('gastos')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                await addToHistorico('deletado', `Gasto excluído: ${gasto.descricao} - ${formatCurrency(gasto.valor)}`);
+                
+                alert('✅ Gasto excluído com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao excluir gasto:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.openEditarEventoModal = async function(id) {
+            try {
+                const { data: evento, error } = await app.supabase
+                    .from('eventos')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                if (error) throw error;
+                
+                const modalHTML = `
+                    <div class="modal-header">
+                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Evento</div>
+                        <button class="close-modal" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-heading"></i> Título</label>
+                            <input type="text" id="editarEventoTitulo" class="form-input" value="${evento.titulo}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
+                            <textarea id="editarEventoDescricao" class="form-input" rows="2">${evento.descricao || ''}</textarea>
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px;">
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label>
+                                <input type="number" id="editarEventoDia" class="form-input" min="1" max="31" value="${evento.dia}">
+                            </div>
+                            
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label"><i class="fas fa-clock"></i> Hora</label>
+                                <input type="time" id="editarEventoHora" class="form-input" value="${evento.hora || '19:00'}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-map-marker-alt"></i> Local (Opcional)</label>
+                            <input type="text" id="editarEventoLocal" class="form-input" value="${evento.local || ''}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-heart"></i> Tipo de Evento</label>
+                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                <button class="btn ${evento.tipo === 'normal' ? 'btn-warning' : ''}" onclick="selectTipoEvento('normal')" style="flex: 1;">
+                                    <i class="fas fa-star"></i> Normal
+                                </button>
+                                <button class="btn ${evento.tipo === 'amor' ? 'btn-love' : ''}" onclick="selectTipoEvento('amor')" style="flex: 1;">
+                                    <i class="fas fa-heart"></i> Data Especial
+                                </button>
+                            </div>
+                            <input type="hidden" id="editarEventoTipo" value="${evento.tipo}">
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 16px;">
+                            <button class="btn btn-primary" onclick="saveEditarEvento('${evento.id}')" style="flex: 1;">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteEvento('${evento.id}')" style="flex: 1;">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('modalContent').innerHTML = modalHTML;
+                document.getElementById('modalOverlay').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Erro ao abrir modal de edição de evento:', error);
+                alert('Erro ao carregar dados do evento.');
+            }
+        };
+        
+        window.selectTipoEvento = function(tipo) {
+            const btnNormal = document.querySelector('.btn:nth-child(1)');
+            const btnAmor = document.querySelector('.btn:nth-child(2)');
+            
+            if (tipo === 'normal') {
+                btnNormal.classList.add('btn-warning');
+                btnNormal.classList.remove('btn-love');
+                btnAmor.classList.remove('btn-love', 'btn-warning');
+                btnAmor.style.background = '#f8f9fa';
+                btnAmor.style.color = 'var(--dark)';
+            } else {
+                btnAmor.classList.add('btn-love');
+                btnAmor.classList.remove('btn-warning');
+                btnNormal.classList.remove('btn-warning', 'btn-love');
+                btnNormal.style.background = '#f8f9fa';
+                btnNormal.style.color = 'var(--dark)';
+            }
+            
+            document.getElementById('editarEventoTipo').value = tipo;
+        };
+        
+        window.saveEditarEvento = async function(id) {
+            const titulo = document.getElementById('editarEventoTitulo').value.trim();
+            const descricao = document.getElementById('editarEventoDescricao').value.trim();
+            const dia = parseInt(document.getElementById('editarEventoDia').value);
+            const hora = document.getElementById('editarEventoHora').value;
+            const local = document.getElementById('editarEventoLocal').value.trim();
+            const tipo = document.getElementById('editarEventoTipo').value;
+            
+            if (!titulo || !dia) {
+                alert('Preencha título e dia');
+                return;
+            }
+            
+            try {
+                // Primeiro obtenha o evento atual para saber mês e ano
+                const { data: eventoAtual } = await app.supabase
+                    .from('eventos')
+                    .select('mes, ano')
+                    .eq('id', id)
+                    .single();
+                
+                const updateData = {
+                    titulo: titulo,
+                    descricao: descricao,
+                    dia: dia,
+                    hora: hora,
+                    local: local,
+                    tipo: tipo,
+                    atualizado_em: new Date().toISOString()
+                };
+                
+                const { error } = await app.supabase
+                    .from('eventos')
+                    .update(updateData)
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                await addToHistorico('editado', `Evento editado: ${titulo} (${tipo === 'amor' ? 'Data Especial' : 'Evento'})`);
+                
+                alert('✅ Evento atualizado com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao atualizar evento:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.deleteEvento = async function(id) {
+            if (!confirm('Tem certeza que deseja excluir este evento?')) return;
+            
+            try {
+                const { data: evento } = await app.supabase
+                    .from('eventos')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                const { error } = await app.supabase
+                    .from('eventos')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                await addToHistorico('deletado', `Evento excluído: ${evento.titulo}`);
+                
+                alert('✅ Evento excluído com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao excluir evento:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.openEditarItemModal = async function(id) {
+            try {
+                const { data: item, error } = await app.supabase
+                    .from('lista_compras')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                if (error) throw error;
+                
+                const modalHTML = `
+                    <div class="modal-header">
+                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Item</div>
+                        <button class="close-modal" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-hashtag"></i> Quantidade</label>
+                            <input type="number" id="editarItemQuantidade" class="form-input" min="1" value="${item.quantidade}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-box"></i> Item</label>
+                            <input type="text" id="editarItemDescricao" class="form-input" value="${item.descricao}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-check-circle"></i> Status</label>
+                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                <button class="btn ${!item.comprado ? 'btn-primary' : ''}" onclick="selectItemStatus(false)" style="flex: 1;">
+                                    Pendente
+                                </button>
+                                <button class="btn ${item.comprado ? 'btn-success' : ''}" onclick="selectItemStatus(true)" style="flex: 1;">
+                                    Comprado
+                                </button>
+                            </div>
+                            <input type="hidden" id="editarItemStatus" value="${item.comprado}">
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 16px;">
+                            <button class="btn btn-primary" onclick="saveEditarItem('${item.id}')" style="flex: 1;">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteItem('${item.id}')" style="flex: 1;">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('modalContent').innerHTML = modalHTML;
+                document.getElementById('modalOverlay').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Erro ao abrir modal de edição de item:', error);
+                alert('Erro ao carregar dados do item.');
+            }
+        };
+        
+        window.selectItemStatus = function(status) {
+            const btnPendente = document.querySelector('.btn:nth-child(1)');
+            const btnComprado = document.querySelector('.btn:nth-child(2)');
+            
+            if (!status) {
+                btnPendente.classList.add('btn-primary');
+                btnPendente.classList.remove('btn-success');
+                btnComprado.classList.remove('btn-success', 'btn-primary');
+                btnComprado.style.background = '#f8f9fa';
+                btnComprado.style.color = 'var(--dark)';
+            } else {
+                btnComprado.classList.add('btn-success');
+                btnComprado.classList.remove('btn-primary');
+                btnPendente.classList.remove('btn-primary', 'btn-success');
+                btnPendente.style.background = '#f8f9fa';
+                btnPendente.style.color = 'var(--dark)';
+            }
+            
+            document.getElementById('editarItemStatus').value = status;
+        };
+        
+        window.saveEditarItem = async function(id) {
+            const quantidade = parseInt(document.getElementById('editarItemQuantidade').value);
+            const descricao = document.getElementById('editarItemDescricao').value.trim();
+            const comprado = document.getElementById('editarItemStatus').value === 'true';
+            
+            if (!quantidade || !descricao) {
+                alert('Preencha quantidade e descrição');
+                return;
+            }
+            
+            try {
+                const updateData = {
+                    quantidade: quantidade,
+                    descricao: descricao,
+                    comprado: comprado,
+                    comprado_em: comprado ? new Date().toISOString() : null,
+                    atualizado_em: new Date().toISOString()
+                };
+                
+                const { error } = await app.supabase
+                    .from('lista_compras')
+                    .update(updateData)
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                await addToHistorico('editado', `Item editado: ${quantidade}x ${descricao}`);
+                
+                alert('✅ Item atualizado com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao atualizar item:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.deleteItem = async function(id) {
+            if (!confirm('Tem certeza que deseja excluir este item?')) return;
+            
+            try {
+                const { data: item } = await app.supabase
+                    .from('lista_compras')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                const { error } = await app.supabase
+                    .from('lista_compras')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                await addToHistorico('deletado', `Item excluído: ${item.quantidade}x ${item.descricao}`);
+                
+                alert('✅ Item excluído com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao excluir item:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.openEditarSaldoModal = async function(id) {
+            // Verificar senha primeiro
+            const password = prompt("Digite a senha de 4 dígitos para editar saldos (padrão: 1234):");
+            
+            if (!password || password.length !== 4 || isNaN(password)) {
+                alert("Senha inválida! Deve ter 4 dígitos numéricos.");
+                return;
+            }
+            
+            if (password !== app.saldoPassword) {
+                alert("Senha incorreta!");
+                return;
+            }
+            
+            try {
+                const { data: saldo, error } = await app.supabase
+                    .from('saldos')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                if (error) throw error;
+                
+                const modalHTML = `
+                    <div class="modal-header">
+                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Saldo</div>
+                        <button class="close-modal" onclick="closeModal()">&times;</button>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-tag"></i> Nome do Saldo</label>
+                            <input type="text" id="editarSaldoNome" class="form-input" value="${saldo.nome}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
+                            <input type="text" id="editarSaldoValor" class="form-input" value="${saldo.valor.toFixed(2).replace('.', ',')}">
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 16px;">
+                            <button class="btn btn-primary" onclick="saveEditarSaldo('${saldo.id}')" style="flex: 1;">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteSaldo('${saldo.id}')" style="flex: 1;">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                            <button class="btn" onclick="closeModal()" style="flex: 1; background: #95a5a6; color: white;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('modalContent').innerHTML = modalHTML;
+                document.getElementById('modalOverlay').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Erro ao abrir modal de edição de saldo:', error);
+                alert('Erro ao carregar dados do saldo.');
+            }
+        };
+        
+        window.saveEditarSaldo = async function(id) {
+            const nome = document.getElementById('editarSaldoNome').value.trim();
+            const valor = parseCurrency(document.getElementById('editarSaldoValor').value);
+            
+            if (!nome || !valor) {
+                alert('Preencha nome e valor');
+                return;
+            }
+            
+            try {
+                const updateData = {
+                    nome: nome,
+                    valor: valor,
+                    data: new Date().toISOString().split('T')[0],
+                    atualizado_em: new Date().toISOString()
+                };
+                
+                const { error } = await app.supabase
+                    .from('saldos')
+                    .update(updateData)
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                await addToHistorico('editado', `Saldo editado: ${nome} - ${formatCurrency(valor)}`);
+                
+                alert('✅ Saldo atualizado com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao atualizar saldo:', error);
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+        
+        window.deleteSaldo = async function(id) {
+            if (!confirm('Tem certeza que deseja excluir este saldo?')) return;
+            
+            try {
+                const { data: saldo } = await app.supabase
+                    .from('saldos')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                const { error } = await app.supabase
+                    .from('saldos')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                await addToHistorico('deletado', `Saldo excluído: ${saldo.nome} - ${formatCurrency(saldo.valor)}`);
+                
+                alert('✅ Saldo excluído com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            } catch (error) {
+                console.error('Erro ao excluir saldo:', error);
                 alert('❌ Erro: ' + error.message);
             }
         };
