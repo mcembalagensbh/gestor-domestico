@@ -436,18 +436,41 @@ let app={
         gastos:{total:0,porCategoria:{}}
     },listaSelecionados:[],historico:[]
 }
-async function initApp(){
-    try{
-        console.log('🚀 Inicializando Home Life...')
-        app.supabase=window.supabase.createClient(SUPABASE_CONFIG.url,SUPABASE_CONFIG.key)
-        const{data:{session}}=await app.supabase.auth.getSession()
-        if(session){
-            app.currentUser=session.user
-            await loadPasswords()
-            showMainApp()
-        }else{showAuthScreen()}
-        setupEventListeners()
-    }catch(error){console.error('❌ Erro na inicialização:',error);alert('Erro ao iniciar aplicativo.')}}
+async function initApp() {
+    try {
+        console.log('🚀 Inicializando Home Life...');
+        
+        // Inicializar Supabase
+        app.supabase = window.supabase.createClient(
+            SUPABASE_CONFIG.url,
+            SUPABASE_CONFIG.key
+        );
+        console.log('Supabase inicializado');
+        
+        // Verificar sessão existente
+        const { data: { session }, error } = await app.supabase.auth.getSession();
+        
+        if (error) {
+            console.error('Erro ao verificar sessão:', error);
+        }
+        
+        if (session) {
+            console.log('Sessão encontrada:', session.user.email);
+            app.currentUser = session.user;
+            await loadPasswords();
+            showMainApp();
+        } else {
+            console.log('Nenhuma sessão encontrada');
+            showAuthScreen();
+        }
+        
+        setupEventListeners();
+        
+    } catch (error) {
+        console.error('❌ Erro na inicialização:', error);
+        alert('Erro ao iniciar aplicativo: ' + error.message);
+    }
+}
 async function loadPasswords(){
     try{
         const{data:config}=await app.supabase.from('configuracoes').select('*').eq('user_id',app.currentUser.id)
@@ -1103,7 +1126,7 @@ function desmarcarFiltros(){
     app.currentFilter=null
     if(app.currentFilter!=='saldos'){app.saldoAuthenticated=false}}
 function setupEventListeners(){
-    document.getElementById('btnLogin').addEventListener('click',handleLogin)
+    document.getElementById('btnLogin').addEventListener('click', handleLogin)
     document.getElementById('btnRegister').addEventListener('click',handleRegister)
     document.getElementById('btnLogout').addEventListener('click',handleLogout)
     document.getElementById('linkRegister').addEventListener('click',showRegisterForm)
