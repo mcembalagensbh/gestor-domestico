@@ -346,6 +346,26 @@
             historico:[]
         };
         
+        // FUNÇÕES AUXILIARES PARA DATAS - CORRIGIDAS
+        function criarDataLocal(ano, mes, dia) {
+            // Cria uma data local sem problemas de fuso horário
+            mes = parseInt(mes) - 1; // Ajusta para índice 0-based
+            return new Date(ano, mes, dia, 12, 0, 0); // Meio-dia para evitar problemas de fuso
+        }
+        
+        function formatarDataISO(data) {
+            // Formata data para YYYY-MM-DD garantindo o dia correto
+            const ano = data.getFullYear();
+            const mes = String(data.getMonth() + 1).padStart(2, '0');
+            const dia = String(data.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        }
+        
+        function getDiasNoMes(ano, mes) {
+            return new Date(ano, mes, 0).getDate();
+        }
+        
+        // FUNÇÕES PRINCIPAIS
         async function initApp(){
             try{
                 app.supabase=window.supabase.createClient(SUPABASE_CONFIG.url,SUPABASE_CONFIG.key);
@@ -782,7 +802,7 @@
                     html+=`<div style="padding:12px;background:#f8f9fa;margin-bottom:8px;border-radius:6px;">`;
                     html+=`<div style="font-weight:bold;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="fas fa-calendar-day"></i> Dia ${dia}</div>`;
                     contasDoDia.forEach(conta=>{
-                        const status=getContaStatus(conta);
+                        const status=getContaStatus(conta, mesAtual, anoAtual);
                         const valorOriginal=formatCurrency(conta.valor_original);
                         const isMensal=conta.mensal;
                         html+=`
@@ -896,7 +916,7 @@
             
             contasFiltradas.forEach(conta=>{
                 if(conta.valor_pago===0&&conta.status!=='concluida'){
-                    const vencimento=new Date(conta.ano,conta.mes-1,conta.dia_vencimento);
+                    const vencimento=criarDataLocal(anoAtual, mesAtual, conta.dia_vencimento);
                     vencimento.setHours(0,0,0,0);
                     if(vencimento<hoje){
                         contasVencidas++;
@@ -916,7 +936,7 @@
             app.stats.eventos.total=eventosMes.length;
             
             const eventosHoje=eventosMes.filter(e=>{
-                const eventoDate=new Date(e.ano,e.mes-1,e.dia);
+                const eventoDate=criarDataLocal(e.ano, e.mes, e.dia);
                 eventoDate.setHours(0,0,0,0);
                 return eventoDate.getTime()===hoje.getTime();
             });
@@ -924,7 +944,7 @@
             
             // CORREÇÃO: Contar eventos futuros por tipo
             const eventosFuturos=eventosMes.filter(e=>{
-                const dataEvento=new Date(e.ano,e.mes-1,e.dia);
+                const dataEvento=criarDataLocal(e.ano, e.mes, e.dia);
                 dataEvento.setHours(0,0,0,0);
                 return dataEvento>=hoje;
             });
@@ -952,27 +972,37 @@
             updateBadges();
         }
         
+        // FUNÇÃO CORRIGIDA: Filtrar contas por mês com datas corretas
         function filterContasPorMes(contas,mes,ano){
             return (contas||[]).filter(conta=>{
                 if(!conta.mensal){
                     return conta.mes===mes&&conta.ano===ano;
                 }
+                
+                // Para contas mensais, verificar se está dentro do período
                 const dataInicio=new Date(conta.data_inicio);
                 const inicioMes=dataInicio.getMonth()+1;
                 const inicioAno=dataInicio.getFullYear();
-                if(!conta.data_fim){
+                
+                // Se a conta tem data fim
+                if(conta.data_fim){
+                    const dataFim=new Date(conta.data_fim);
+                    const fimMes=dataFim.getMonth()+1;
+                    const fimAno=dataFim.getFullYear();
+                    
+                    // Verificar se o mês/ano atual está dentro do intervalo
+                    if(ano<inicioAno) return false;
+                    if(ano===inicioAno&&mes<inicioMes) return false;
+                    if(ano>fimAno) return false;
+                    if(ano===fimAno&&mes>fimMes) return false;
+                    return true;
+                }
+                // Sem data fim - verificar se começou antes ou no mês atual
+                else{
                     if(ano<inicioAno) return false;
                     if(ano===inicioAno&&mes<inicioMes) return false;
                     return true;
                 }
-                const dataFim=new Date(conta.data_fim);
-                const fimMes=dataFim.getMonth()+1;
-                const fimAno=dataFim.getFullYear();
-                if(ano<inicioAno) return false;
-                if(ano===inicioAno&&mes<inicioMes) return false;
-                if(ano>fimAno) return false;
-                if(ano===fimAno&&mes>fimMes) return false;
-                return true;
             });
         }
         
@@ -1035,14 +1065,14 @@
                 if(app.selectedDay){
                     contasFiltradas=contasFiltradas.filter(conta=>conta.dia_vencimento===app.selectedDay);
                 }
-                displayContas(content,headerHtml,contasFiltradas);
+                displayContas(content,headerHtml,contasFiltradas, mesAtual, anoAtual);
             }catch(error){
                 console.error('Erro ao carregar contas:',error);
                 content.innerHTML=headerHtml+'<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><div>Erro ao carregar contas</div></div>';
             }
         }
         
-        function displayContas(content,headerHtml,contas){
+        function displayContas(content,headerHtml,contas, mesAtual, anoAtual){
             if(!contas.length){
                 content.innerHTML=headerHtml+'<div class="empty-state"><i class="fas fa-check-circle"></i><div>Nenhuma conta encontrada</div></div>';
                 return;
@@ -1057,15 +1087,15 @@
             const contasPagas=contas.filter(conta=>conta.valor_pago>0);
             const contasConcluidas=contas.filter(conta=>conta.status==='concluida');
             contasAtivas.sort((a,b)=>{
-                const dataA=new Date(a.ano,a.mes-1,a.dia_vencimento);
-                const dataB=new Date(b.ano,b.mes-1,b.dia_vencimento);
+                const dataA=criarDataLocal(anoAtual, mesAtual, a.dia_vencimento);
+                const dataB=criarDataLocal(anoAtual, mesAtual, b.dia_vencimento);
                 if(dataA<hoje&&dataB>=hoje) return -1;
                 if(dataA>=hoje&&dataB<hoje) return 1;
                 return dataA-dataB;
             });
             let html=headerHtml+'<div class="contas-list">';
             contasAtivas.forEach(conta=>{
-                const status=getContaStatus(conta);
+                const status=getContaStatus(conta, mesAtual, anoAtual);
                 const valorOriginal=formatCurrency(conta.valor_original);
                 const isMensal=conta.mensal;
                 html+=`
@@ -1076,7 +1106,7 @@
                                 ${isMensal?'<span class="badge-mensal">Mensal</span>':''}
                             </div>
                             <div class="conta-details">
-                                Vence dia ${conta.dia_vencimento} de ${getMonthName(conta.mes)}
+                                Vence dia ${conta.dia_vencimento} de ${getMonthName(mesAtual)}${isMensal?' (mensal)':''}
                             </div>
                             <div class="conta-value">${valorOriginal}</div>
                         </div>
@@ -1147,23 +1177,27 @@
             content.innerHTML=html;
         }
         
-        function getContaStatus(conta){
+        // FUNÇÃO CORRIGIDA: Status da conta considerando o mês atual
+        function getContaStatus(conta, mesAtual, anoAtual){
             const hoje=new Date();
             hoje.setHours(0,0,0,0);
-            if(conta.mensal){
-                const mesAtual=app.selectedMonth;
-                const anoAtual=app.selectedYear;
-                if(conta.mes!==mesAtual||conta.ano!==anoAtual){
-                    return{texto:'PENDENTE',classe:'pendente',classeStatus:'status-pendente'};
-                }
-            }
-            const vencimento=new Date(conta.ano,conta.mes-1,conta.dia_vencimento);
-            vencimento.setHours(0,0,0,0);
+            
             if(conta.valor_pago>0){
                 return{texto:'PAGA',classe:'paga',classeStatus:'status-paga'};
             }else if(conta.status==='concluida'){
                 return{texto:'CONCLUÍDA',classe:'concluida',classeStatus:'status-concluida'};
-            }else if(vencimento<hoje){
+            }
+            
+            // Para contas mensais, usar o mês atual para calcular vencimento
+            let vencimento;
+            if(conta.mensal){
+                vencimento=criarDataLocal(anoAtual, mesAtual, conta.dia_vencimento);
+            }else{
+                vencimento=criarDataLocal(conta.ano, conta.mes, conta.dia_vencimento);
+            }
+            vencimento.setHours(0,0,0,0);
+            
+            if(vencimento<hoje){
                 return{texto:'VENCIDA',classe:'vencida',classeStatus:'status-vencida'};
             }else if(vencimento.getTime()===hoje.getTime()){
                 return{texto:'HOJE',classe:'hoje',classeStatus:'status-hoje'};
@@ -1248,7 +1282,7 @@
             let html=headerHtml+'<div class="contas-list">';
             eventos.forEach(evento=>{
                 const hoje=new Date();
-                const eventoDate=new Date(evento.ano,evento.mes-1,evento.dia);
+                const eventoDate=criarDataLocal(evento.ano, evento.mes, evento.dia);
                 const isPassado=eventoDate<hoje;
                 const isHoje=eventoDate.toDateString()===hoje.toDateString();
                 const icon=evento.tipo==='amor'?'fa-heart':evento.tipo==='rotina'?'fa-redo':'fa-star';
@@ -1876,472 +1910,7 @@
             });
         }
         
-        // CORREÇÃO: Adicionar campo de data fim para rotina no modal
-        window.openNovoEventoModal=function(tipo='normal'){
-            const mes=app.selectedMonth;
-            const ano=app.selectedYear;
-            
-            // HTML com campo de data fim para rotina
-            const rotinaExtraFields=tipo==='rotina'?`
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-calendar-times"></i> Data Fim (Opcional)</label>
-                    <input type="date" id="eventoDataFim" class="form-input" onchange="app.modalHasChanges=true">
-                    <small style="color:var(--gray);font-size:0.8em;">Deixe em branco para continuar indefinidamente</small>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-history"></i> Repetição</label>
-                    <div style="display:flex;gap:8px;margin-top:8px;">
-                        <button type="button" class="btn btn-primary" id="btnFreqUnico" onclick="selectFrequenciaEvento('unico')" style="flex:1;">Único</button>
-                        <button type="button" class="btn" id="btnFreqSemanal" onclick="selectFrequenciaEvento('semanal')" style="flex:1;">Semanal</button>
-                        <button type="button" class="btn" id="btnFreqMensal" onclick="selectFrequenciaEvento('mensal')" style="flex:1;">Mensal</button>
-                    </div>
-                    <input type="hidden" id="eventoFrequencia" value="unico">
-                </div>
-            `:'';
-            
-            const modalHTML=`
-                <div class="modal-header">
-                    <div class="modal-title">
-                        <i class="fas ${tipo==='amor'?'fa-heart':tipo==='rotina'?'fa-redo':'fa-calendar-plus'}"></i>
-                        ${tipo==='amor'?'Nova Data Especial':tipo==='rotina'?'Nova Rotina':'Novo Evento'}
-                    </div>
-                    <button class="close-modal" onclick="closeModalWithCheck()">&times;</button>
-                </div>
-                <div style="padding:16px;">
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-heading"></i> Título</label>
-                        <input type="text" id="eventoTitulo" class="form-input" placeholder="${tipo==='amor'?'Jantar romântico, etc.':tipo==='rotina'?'Academia, Treino, etc.':'Reunião, Consulta, etc.'}" oninput="app.modalHasChanges=true">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
-                        <textarea id="eventoDescricao" class="form-input" rows="2" placeholder="Detalhes..." oninput="app.modalHasChanges=true"></textarea>
-                    </div>
-                    
-                    <div style="display:flex;gap:8px;">
-                        <div class="form-group" style="flex:1;">
-                            <label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label>
-                            <input type="number" id="eventoDia" class="form-input" min="1" max="31" value="${app.selectedDay||new Date().getDate()}" oninput="app.modalHasChanges=true">
-                        </div>
-                        
-                        <div class="form-group" style="flex:1;">
-                            <label class="form-label"><i class="fas fa-clock"></i> Hora</label>
-                            <input type="time" id="eventoHora" class="form-input" value="19:00" onchange="app.modalHasChanges=true">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-map-marker-alt"></i> Local (Opcional)</label>
-                        <input type="text" id="eventoLocal" class="form-input" placeholder="Local" oninput="app.modalHasChanges=true">
-                    </div>
-                    
-                    ${rotinaExtraFields}
-                    
-                    <input type="hidden" id="eventoTipo" value="${tipo}">
-                    <input type="hidden" id="eventoMes" value="${mes}">
-                    <input type="hidden" id="eventoAno" value="${ano}">
-                    
-                    <div style="display:flex;gap:8px;margin-top:16px;">
-                        <button class="btn btn-primary" onclick="saveNovoEvento()" style="flex:1;">
-                            <i class="fas fa-save"></i> Salvar
-                        </button>
-                        <button class="btn" onclick="closeModalWithCheck()" style="flex:1;background:#95a5a6;color:white;">
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('modalContent').innerHTML=modalHTML;
-            document.getElementById('modalOverlay').style.display='flex';
-            app.modalHasChanges=false;
-            
-            if(tipo==='rotina'){
-                selectFrequenciaEvento('unico');
-            }
-        };
-        
-        // CORREÇÃO: Função para selecionar frequência com mudança de cor
-        window.selectFrequenciaEvento=function(frequencia){
-            const buttons=['btnFreqUnico','btnFreqSemanal','btnFreqMensal'];
-            buttons.forEach(btnId=>{
-                const btn=document.getElementById(btnId);
-                if(btn){
-                    btn.classList.remove('btn-primary');
-                    btn.style.background='#f8f9fa';
-                    btn.style.color='var(--dark)';
-                }
-            });
-            
-            const activeBtn=document.getElementById(`btnFreq${frequencia.charAt(0).toUpperCase()+frequencia.slice(1)}`);
-            if(activeBtn){
-                activeBtn.classList.add('btn-primary');
-                activeBtn.style.background='';
-                activeBtn.style.color='white';
-            }
-            
-            document.getElementById('eventoFrequencia').value=frequencia;
-            app.modalHasChanges=true;
-        };
-        
-        // CORREÇÃO: Salvar evento com data fim para rotina
-        window.saveNovoEvento=async function(){
-            const titulo=document.getElementById('eventoTitulo').value.trim();
-            const descricao=document.getElementById('eventoDescricao').value.trim();
-            const dia=parseInt(document.getElementById('eventoDia').value);
-            const hora=document.getElementById('eventoHora').value;
-            const mes=parseInt(document.getElementById('eventoMes').value);
-            const ano=parseInt(document.getElementById('eventoAno').value);
-            const tipo=document.getElementById('eventoTipo').value;
-            const local=document.getElementById('eventoLocal').value.trim();
-            
-            if(!titulo||!dia){
-                alert('Preencha título e dia');
-                return;
-            }
-            
-            try{
-                const eventosParaSalvar=[];
-                const eventoBase={
-                    user_id:app.currentUser.id,
-                    titulo:titulo,
-                    descricao:descricao,
-                    dia:dia,
-                    mes:mes,
-                    ano:ano,
-                    hora:hora,
-                    local:local,
-                    tipo:tipo,
-                    added_by:app.currentUser.email.split('@')[0],
-                    criado_em:new Date().toISOString()
-                };
-                
-                // Para rotina, verificar data fim e frequência
-                if(tipo==='rotina'){
-                    const dataFimInput=document.getElementById('eventoDataFim');
-                    const frequencia=document.getElementById('eventoFrequencia').value;
-                    
-                    if(dataFimInput&&dataFimInput.value){
-                        eventoBase.data_fim=dataFimInput.value;
-                    }
-                    
-                    if(frequencia==='unico'){
-                        eventosParaSalvar.push(eventoBase);
-                    }else if(frequencia==='semanal'){
-                        for(let i=0;i<12;i++){
-                            const dataEvento=new Date(ano,mes-1,dia);
-                            dataEvento.setDate(dataEvento.getDate()+(i*7));
-                            const eventoCopy={...eventoBase};
-                            eventoCopy.dia=dataEvento.getDate();
-                            eventoCopy.mes=dataEvento.getMonth()+1;
-                            eventoCopy.ano=dataEvento.getFullYear();
-                            eventoCopy.titulo=titulo+(i>0?` (Semana ${i+1})`:'');
-                            eventosParaSalvar.push(eventoCopy);
-                        }
-                    }else if(frequencia==='mensal'){
-                        for(let i=0;i<12;i++){
-                            const dataEvento=new Date(ano,mes-1+i,dia);
-                            const eventoCopy={...eventoBase};
-                            eventoCopy.dia=dataEvento.getDate();
-                            eventoCopy.mes=dataEvento.getMonth()+1;
-                            eventoCopy.ano=dataEvento.getFullYear();
-                            eventoCopy.titulo=titulo+(i>0?` (Mês ${i+1})`:'');
-                            eventosParaSalvar.push(eventoCopy);
-                        }
-                    }
-                }else{
-                    eventosParaSalvar.push(eventoBase);
-                }
-                
-                // Inserir todos os eventos
-                for(const evento of eventosParaSalvar){
-                    const {error}=await app.supabase.from('eventos').insert(evento);
-                    if(error) throw error;
-                }
-                
-                await addToHistorico('criado',`Evento criado: ${titulo} (${tipo==='amor'?'Data Especial':tipo==='rotina'?'Rotina':'Evento'})`);
-                
-                alert(`✅ ${eventosParaSalvar.length} evento(s) criado(s) com sucesso!`);
-                closeModal();
-                loadAppData();
-                
-            }catch(error){
-                console.error('Erro ao criar evento:',error);
-                alert('❌ Erro: '+error.message);
-            }
-        };
-        
-        // CORREÇÃO: Ajustar data para gastos (remover o +1 que causava problema)
-        window.openNovoGastoModal=function(){
-            const hoje=new Date();
-            const targetDate=new Date(hoje.getFullYear(),hoje.getMonth()+app.currentMonthOffset,1);
-            const mes=targetDate.getMonth()+1;
-            const ano=targetDate.getFullYear();
-            
-            const defaultDay=app.selectedDay||hoje.getDate();
-            // CORREÇÃO: Criar data correta sem adicionar +1
-            const defaultDate=new Date(ano,mes-1,defaultDay);
-            // Ajustar para garantir que não ultrapasse os dias do mês
-            const daysInMonth=new Date(ano,mes,0).getDate();
-            const adjustedDay=Math.min(defaultDay,daysInMonth);
-            const finalDate=new Date(ano,mes-1,adjustedDay);
-            
-            const defaultDateStr=finalDate.toISOString().split('T')[0];
-            
-            const modalHTML=`
-                <div class="modal-header">
-                    <div class="modal-title"><i class="fas fa-shopping-bag"></i> Novo Gasto</div>
-                    <button class="close-modal" onclick="closeModalWithCheck()">&times;</button>
-                </div>
-                <div style="padding:16px;">
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
-                        <input type="text" id="gastoDescricao" class="form-input" placeholder="Ex: Supermercado, Restaurante, Cinema" oninput="app.modalHasChanges=true">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
-                        <input type="text" id="gastoValor" class="form-input" placeholder="0,00" oninput="app.modalHasChanges=true">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-calendar-day"></i> Data</label>
-                        <input type="date" id="gastoData" class="form-input" value="${defaultDateStr}" onchange="app.modalHasChanges=true">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-tags"></i> Categoria</label>
-                        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;">
-                            ${CATEGORIAS_GASTOS.map(cat=>`
-                                <button class="btn categoria-btn ${cat.id==='outros'?'active':''}" data-categoria="${cat.id}" onclick="selectCategoriaModal('${cat.id}')" style="display:flex;align-items:center;gap:6px;justify-content:center;padding:8px;font-size:12px;${cat.id==='outros'?'background:var(--gasto);color:white;':'background:#f8f9fa;color:var(--dark);'}">
-                                    <i class="fas ${cat.icon}"></i> ${cat.nome}
-                                </button>
-                            `).join('')}
-                        </div>
-                        <input type="hidden" id="gastoCategoria" value="outros" onchange="app.modalHasChanges=true">
-                        <div id="outrosDescContainer" style="display:none;margin-top:8px;">
-                            <label class="form-label"><i class="fas fa-pen"></i> Descrição do "Outros"</label>
-                            <input type="text" id="outrosDesc" class="form-input" placeholder="Descreva o que foi" oninput="app.modalHasChanges=true">
-                        </div>
-                    </div>
-                    
-                    <div style="display:flex;gap:8px;margin-top:16px;">
-                        <button class="btn btn-primary" onclick="saveNovoGasto()" style="flex:1;">
-                            <i class="fas fa-save"></i> Salvar
-                        </button>
-                        <button class="btn" onclick="closeModalWithCheck()" style="flex:1;background:#95a5a6;color:white;">
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('modalContent').innerHTML=modalHTML;
-            document.getElementById('modalOverlay').style.display='flex';
-            app.modalHasChanges=false;
-        };
-        
-        // CORREÇÃO: Ajustar também na edição de gastos
-        window.openEditarGastoModal=async function(id){
-            try{
-                const {data:gasto,error}=await app.supabase.from('gastos').select('*').eq('id',id).single();
-                if(error) throw error;
-                const categoria=CATEGORIAS_GASTOS.find(c=>c.id===gasto.categoria)||CATEGORIAS_GASTOS[5];
-                const dataGasto=new Date(gasto.data);
-                // CORREÇÃO: Usar a data correta sem ajustes
-                const dataStr=dataGasto.toISOString().split('T')[0];
-                
-                const modalHTML=`
-                    <div class="modal-header">
-                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Gasto</div>
-                        <button class="close-modal" onclick="closeModalWithCheck()">&times;</button>
-                    </div>
-                    <div style="padding:16px;">
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
-                            <input type="text" id="editarGastoDescricao" class="form-input" value="${gasto.descricao}" oninput="app.modalHasChanges=true">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
-                            <input type="text" id="editarGastoValor" class="form-input" value="${gasto.valor.toFixed(2).replace('.',',')}" oninput="app.modalHasChanges=true">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-calendar-day"></i> Data</label>
-                            <input type="date" id="editarGastoData" class="form-input" value="${dataStr}" onchange="app.modalHasChanges=true">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label"><i class="fas fa-tags"></i> Categoria</label>
-                            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;">
-                                ${CATEGORIAS_GASTOS.map(cat=>`
-                                    <button class="btn categoria-btn-editar ${cat.id===gasto.categoria?'active':''}" data-categoria="${cat.id}" onclick="selectCategoriaEditar('${cat.id}')" style="display:flex;align-items:center;gap:6px;justify-content:center;padding:8px;font-size:12px;${cat.id===gasto.categoria?'background:var(--gasto);color:white;':'background:#f8f9fa;color:var(--dark);'}">
-                                        <i class="fas ${cat.icon}"></i> ${cat.nome}
-                                    </button>
-                                `).join('')}
-                            </div>
-                            <input type="hidden" id="editarGastoCategoria" value="${gasto.categoria}" onchange="app.modalHasChanges=true">
-                        </div>
-                        
-                        <div style="display:flex;gap:8px;margin-top:16px;">
-                            <button class="btn btn-primary" onclick="saveEditarGasto('${gasto.id}')" style="flex:1;">
-                                <i class="fas fa-save"></i> Salvar
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteGasto('${gasto.id}')" style="flex:1;">
-                                <i class="fas fa-trash"></i> Excluir
-                            </button>
-                            <button class="btn" onclick="closeModalWithCheck()" style="flex:1;background:#95a5a6;color:white;">
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('modalContent').innerHTML=modalHTML;
-                document.getElementById('modalOverlay').style.display='flex';
-                app.modalHasChanges=false;
-                
-            }catch(error){
-                console.error('Erro ao abrir modal de edição de gasto:',error);
-                alert('Erro ao carregar dados do gasto.');
-            }
-        };
-        
-        window.selectCategoriaModal=function(categoriaId){
-            document.querySelectorAll('.categoria-btn').forEach(btn=>{
-                btn.classList.remove('active');
-                btn.style.background='#f8f9fa';
-                btn.style.color='var(--dark)';
-            });
-            const selectedBtn=document.querySelector(`.categoria-btn[data-categoria="${categoriaId}"]`);
-            if(selectedBtn){
-                selectedBtn.classList.add('active');
-                selectedBtn.style.background='var(--gasto)';
-                selectedBtn.style.color='white';
-            }
-            document.getElementById('gastoCategoria').value=categoriaId;
-            app.modalHasChanges=true;
-            const outrosContainer=document.getElementById('outrosDescContainer');
-            if(categoriaId==='outros'){
-                outrosContainer.style.display='block';
-            }else{
-                outrosContainer.style.display='none';
-            }
-        };
-        
-        window.saveNovoGasto=async function(){
-            const descricao=document.getElementById('gastoDescricao').value.trim();
-            const valor=parseCurrency(document.getElementById('gastoValor').value);
-            const categoria=document.getElementById('gastoCategoria').value;
-            const data=document.getElementById('gastoData').value;
-            
-            if(!descricao||!valor||!data){
-                alert('Preencha descrição, valor e data');
-                return;
-            }
-            
-            try{
-                let descricaoFinal=descricao;
-                if(categoria==='outros'){
-                    const outrosDesc=document.getElementById('outrosDesc').value.trim();
-                    if(outrosDesc){
-                        descricaoFinal=outrosDesc;
-                    }
-                }
-                
-                const {error}=await app.supabase.from('gastos').insert({
-                    user_id:app.currentUser.id,
-                    descricao:descricaoFinal,
-                    valor:valor,
-                    categoria:categoria,
-                    data:data,
-                    added_by:app.currentUser.email.split('@')[0],
-                    criado_em:new Date().toISOString()
-                });
-                
-                if(error) throw error;
-                
-                await addToHistorico('criado',`Gasto registrado: ${descricaoFinal} - ${formatCurrency(valor)}`);
-                
-                alert('✅ Gasto registrado com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            }catch(error){
-                console.error('Erro ao registrar gasto:',error);
-                alert('❌ Erro: '+error.message);
-            }
-        };
-        
-        window.selectCategoriaEditar=function(categoriaId){
-            document.querySelectorAll('.categoria-btn-editar').forEach(btn=>{
-                btn.classList.remove('active');
-                btn.style.background='#f8f9fa';
-                btn.style.color='var(--dark)';
-            });
-            const selectedBtn=document.querySelector(`.categoria-btn-editar[data-categoria="${categoriaId}"]`);
-            if(selectedBtn){
-                selectedBtn.classList.add('active');
-                selectedBtn.style.background='var(--gasto)';
-                selectedBtn.style.color='white';
-            }
-            document.getElementById('editarGastoCategoria').value=categoriaId;
-            app.modalHasChanges=true;
-        };
-        
-        window.saveEditarGasto=async function(id){
-            const descricao=document.getElementById('editarGastoDescricao').value.trim();
-            const valor=parseCurrency(document.getElementById('editarGastoValor').value);
-            const categoria=document.getElementById('editarGastoCategoria').value;
-            const data=document.getElementById('editarGastoData').value;
-            
-            if(!descricao||!valor||!data){
-                alert('Preencha descrição, valor e data');
-                return;
-            }
-            
-            try{
-                const updateData={
-                    descricao:descricao,
-                    valor:valor,
-                    categoria:categoria,
-                    data:data,
-                    atualizado_em:new Date().toISOString()
-                };
-                
-                const {error}=await app.supabase.from('gastos').update(updateData).eq('id',id);
-                if(error) throw error;
-                
-                await addToHistorico('editado',`Gasto editado: ${descricao} - ${formatCurrency(valor)}`);
-                
-                alert('✅ Gasto atualizado com sucesso!');
-                closeModal();
-                loadAppData();
-                
-            }catch(error){
-                console.error('Erro ao atualizar gasto:',error);
-                alert('❌ Erro: '+error.message);
-            }
-        };
-        
-        window.deleteGasto=async function(id){
-            if(!confirm('Tem certeza que deseja excluir este gasto?')) return;
-            try{
-                const {data:gasto}=await app.supabase.from('gastos').select('*').eq('id',id).single();
-                const {error}=await app.supabase.from('gastos').delete().eq('id',id);
-                if(error) throw error;
-                await addToHistorico('deletado',`Gasto excluído: ${gasto.descricao} - ${formatCurrency(gasto.valor)}`);
-                alert('✅ Gasto excluído com sucesso!');
-                closeModal();
-                loadAppData();
-            }catch(error){
-                console.error('Erro ao excluir gasto:',error);
-                alert('❌ Erro: '+error.message);
-            }
-        };
-        
+        // CORREÇÃO: Modal para nova conta com datas corrigidas
         window.openNovaContaModal=function(){
             const hoje=new Date();
             const targetDate=new Date(hoje.getFullYear(),hoje.getMonth()+app.currentMonthOffset,1);
@@ -2447,6 +2016,7 @@
             }
         };
         
+        // FUNÇÃO CORRIGIDA: Salvar conta mensal com datas corretas
         window.saveContaMensal=async function(){
             const descricao=document.getElementById('novaDescricaoMensal').value.trim();
             const dia=parseInt(document.getElementById('novaDiaMensal').value);
@@ -2461,7 +2031,13 @@
                 return;
             }
             
-            const dataInicio=new Date(inicioAno,inicioMes-1,1);
+            // Ajustar dia para o máximo do mês se necessário
+            const diasNoMesInicio=getDiasNoMes(inicioAno, inicioMes);
+            const diaAjustado=Math.min(dia, diasNoMesInicio);
+            
+            // Criar data de início CORRETA
+            const dataInicio=criarDataLocal(inicioAno, inicioMes, diaAjustado);
+            
             if(isNaN(dataInicio.getTime())){
                 alert('Data de início inválida');
                 return;
@@ -2469,7 +2045,9 @@
             
             let dataFim=null;
             if(fimMes&&fimAno){
-                dataFim=new Date(parseInt(fimAno),parseInt(fimMes)-1,1);
+                const diasNoMesFim=getDiasNoMes(parseInt(fimAno), parseInt(fimMes));
+                const diaFimAjustado=Math.min(dia, diasNoMesFim);
+                dataFim=criarDataLocal(parseInt(fimAno), parseInt(fimMes), diaFimAjustado);
                 if(isNaN(dataFim.getTime())||dataFim<=dataInicio){
                     alert('Data de fim deve ser posterior à data de início');
                     return;
@@ -2480,20 +2058,20 @@
                 const contaData={
                     user_id:app.currentUser.id,
                     descricao:descricao,
-                    dia_vencimento:dia,
+                    dia_vencimento:diaAjustado,
                     valor_original:valor,
                     valor_pago:0,
                     mes:inicioMes,
                     ano:inicioAno,
                     mensal:true,
-                    data_inicio:dataInicio.toISOString().split('T')[0],
+                    data_inicio:formatarDataISO(dataInicio),
                     status:'pendente',
                     added_by:app.currentUser.email.split('@')[0],
                     criado_em:new Date().toISOString()
                 };
                 
                 if(dataFim){
-                    contaData.data_fim=dataFim.toISOString().split('T')[0];
+                    contaData.data_fim=formatarDataISO(dataFim);
                 }
                 
                 const {error}=await app.supabase.from('contas').insert(contaData);
@@ -2523,11 +2101,15 @@
                 return;
             }
             
+            // Ajustar dia para o máximo do mês
+            const diasNoMes=getDiasNoMes(ano, mes);
+            const diaAjustado=Math.min(dia, diasNoMes);
+            
             try{
                 const {error}=await app.supabase.from('contas').insert({
                     user_id:app.currentUser.id,
                     descricao:descricao,
-                    dia_vencimento:dia,
+                    dia_vencimento:diaAjustado,
                     valor_original:valor,
                     valor_pago:0,
                     mes:mes,
@@ -2722,18 +2304,390 @@
             }
         };
         
+        // CORREÇÃO: Modal para novo gasto com data corrigida
+        window.openNovoGastoModal=function(){
+            const hoje=new Date();
+            const targetDate=new Date(hoje.getFullYear(),hoje.getMonth()+app.currentMonthOffset,1);
+            const mes=targetDate.getMonth()+1;
+            const ano=targetDate.getFullYear();
+            
+            // Usar a função criarDataLocal para evitar problemas de fuso horário
+            const defaultDay=app.selectedDay||hoje.getDate();
+            const defaultDate=criarDataLocal(ano, mes, defaultDay);
+            
+            // Ajustar para garantir que não ultrapasse os dias do mês
+            const daysInMonth=getDiasNoMes(ano, mes);
+            const adjustedDay=Math.min(defaultDay, daysInMonth);
+            const finalDate=criarDataLocal(ano, mes, adjustedDay);
+            
+            const defaultDateStr=formatarDataISO(finalDate);
+            
+            const modalHTML=`
+                <div class="modal-header">
+                    <div class="modal-title"><i class="fas fa-shopping-bag"></i> Novo Gasto</div>
+                    <button class="close-modal" onclick="closeModalWithCheck()">&times;</button>
+                </div>
+                <div style="padding:16px;">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
+                        <input type="text" id="gastoDescricao" class="form-input" placeholder="Ex: Supermercado, Restaurante, Cinema" oninput="app.modalHasChanges=true">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
+                        <input type="text" id="gastoValor" class="form-input" placeholder="0,00" oninput="app.modalHasChanges=true">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-calendar-day"></i> Data</label>
+                        <input type="date" id="gastoData" class="form-input" value="${defaultDateStr}" onchange="app.modalHasChanges=true">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-tags"></i> Categoria</label>
+                        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;">
+                            ${CATEGORIAS_GASTOS.map(cat=>`
+                                <button class="btn categoria-btn ${cat.id==='outros'?'active':''}" data-categoria="${cat.id}" onclick="selectCategoriaModal('${cat.id}')" style="display:flex;align-items:center;gap:6px;justify-content:center;padding:8px;font-size:12px;${cat.id==='outros'?'background:var(--gasto);color:white;':'background:#f8f9fa;color:var(--dark);'}">
+                                    <i class="fas ${cat.icon}"></i> ${cat.nome}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <input type="hidden" id="gastoCategoria" value="outros" onchange="app.modalHasChanges=true">
+                        <div id="outrosDescContainer" style="display:none;margin-top:8px;">
+                            <label class="form-label"><i class="fas fa-pen"></i> Descrição do "Outros"</label>
+                            <input type="text" id="outrosDesc" class="form-input" placeholder="Descreva o que foi" oninput="app.modalHasChanges=true">
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex;gap:8px;margin-top:16px;">
+                        <button class="btn btn-primary" onclick="saveNovoGasto()" style="flex:1;">
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                        <button class="btn" onclick="closeModalWithCheck()" style="flex:1;background:#95a5a6;color:white;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML=modalHTML;
+            document.getElementById('modalOverlay').style.display='flex';
+            app.modalHasChanges=false;
+        };
+        
+        // CORREÇÃO: Modal para editar gasto com data corrigida
+        window.openEditarGastoModal=async function(id){
+            try{
+                const {data:gasto,error}=await app.supabase.from('gastos').select('*').eq('id',id).single();
+                if(error) throw error;
+                const categoria=CATEGORIAS_GASTOS.find(c=>c.id===gasto.categoria)||CATEGORIAS_GASTOS[5];
+                const dataGasto=new Date(gasto.data);
+                // Usar a função formatarDataISO para garantir formato correto
+                const dataStr=formatarDataISO(dataGasto);
+                
+                const modalHTML=`
+                    <div class="modal-header">
+                        <div class="modal-title"><i class="fas fa-edit"></i> Editar Gasto</div>
+                        <button class="close-modal" onclick="closeModalWithCheck()">&times;</button>
+                    </div>
+                    <div style="padding:16px;">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
+                            <input type="text" id="editarGastoDescricao" class="form-input" value="${gasto.descricao}" oninput="app.modalHasChanges=true">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
+                            <input type="text" id="editarGastoValor" class="form-input" value="${gasto.valor.toFixed(2).replace('.',',')}" oninput="app.modalHasChanges=true">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-calendar-day"></i> Data</label>
+                            <input type="date" id="editarGastoData" class="form-input" value="${dataStr}" onchange="app.modalHasChanges=true">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-tags"></i> Categoria</label>
+                            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;">
+                                ${CATEGORIAS_GASTOS.map(cat=>`
+                                    <button class="btn categoria-btn-editar ${cat.id===gasto.categoria?'active':''}" data-categoria="${cat.id}" onclick="selectCategoriaEditar('${cat.id}')" style="display:flex;align-items:center;gap:6px;justify-content:center;padding:8px;font-size:12px;${cat.id===gasto.categoria?'background:var(--gasto);color:white;':'background:#f8f9fa;color:var(--dark);'}">
+                                        <i class="fas ${cat.icon}"></i> ${cat.nome}
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <input type="hidden" id="editarGastoCategoria" value="${gasto.categoria}" onchange="app.modalHasChanges=true">
+                        </div>
+                        
+                        <div style="display:flex;gap:8px;margin-top:16px;">
+                            <button class="btn btn-primary" onclick="saveEditarGasto('${gasto.id}')" style="flex:1;">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteGasto('${gasto.id}')" style="flex:1;">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                            <button class="btn" onclick="closeModalWithCheck()" style="flex:1;background:#95a5a6;color:white;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('modalContent').innerHTML=modalHTML;
+                document.getElementById('modalOverlay').style.display='flex';
+                app.modalHasChanges=false;
+                
+            }catch(error){
+                console.error('Erro ao abrir modal de edição de gasto:',error);
+                alert('Erro ao carregar dados do gasto.');
+            }
+        };
+        
+        window.selectCategoriaModal=function(categoriaId){
+            document.querySelectorAll('.categoria-btn').forEach(btn=>{
+                btn.classList.remove('active');
+                btn.style.background='#f8f9fa';
+                btn.style.color='var(--dark)';
+            });
+            const selectedBtn=document.querySelector(`.categoria-btn[data-categoria="${categoriaId}"]`);
+            if(selectedBtn){
+                selectedBtn.classList.add('active');
+                selectedBtn.style.background='var(--gasto)';
+                selectedBtn.style.color='white';
+            }
+            document.getElementById('gastoCategoria').value=categoriaId;
+            app.modalHasChanges=true;
+            const outrosContainer=document.getElementById('outrosDescContainer');
+            if(categoriaId==='outros'){
+                outrosContainer.style.display='block';
+            }else{
+                outrosContainer.style.display='none';
+            }
+        };
+        
+        window.saveNovoGasto=async function(){
+            const descricao=document.getElementById('gastoDescricao').value.trim();
+            const valor=parseCurrency(document.getElementById('gastoValor').value);
+            const categoria=document.getElementById('gastoCategoria').value;
+            const data=document.getElementById('gastoData').value;
+            
+            if(!descricao||!valor||!data){
+                alert('Preencha descrição, valor e data');
+                return;
+            }
+            
+            try{
+                let descricaoFinal=descricao;
+                if(categoria==='outros'){
+                    const outrosDesc=document.getElementById('outrosDesc').value.trim();
+                    if(outrosDesc){
+                        descricaoFinal=outrosDesc;
+                    }
+                }
+                
+                const {error}=await app.supabase.from('gastos').insert({
+                    user_id:app.currentUser.id,
+                    descricao:descricaoFinal,
+                    valor:valor,
+                    categoria:categoria,
+                    data:data,
+                    added_by:app.currentUser.email.split('@')[0],
+                    criado_em:new Date().toISOString()
+                });
+                
+                if(error) throw error;
+                
+                await addToHistorico('criado',`Gasto registrado: ${descricaoFinal} - ${formatCurrency(valor)}`);
+                
+                alert('✅ Gasto registrado com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            }catch(error){
+                console.error('Erro ao registrar gasto:',error);
+                alert('❌ Erro: '+error.message);
+            }
+        };
+        
+        window.selectCategoriaEditar=function(categoriaId){
+            document.querySelectorAll('.categoria-btn-editar').forEach(btn=>{
+                btn.classList.remove('active');
+                btn.style.background='#f8f9fa';
+                btn.style.color='var(--dark)';
+            });
+            const selectedBtn=document.querySelector(`.categoria-btn-editar[data-categoria="${categoriaId}"]`);
+            if(selectedBtn){
+                selectedBtn.classList.add('active');
+                selectedBtn.style.background='var(--gasto)';
+                selectedBtn.style.color='white';
+            }
+            document.getElementById('editarGastoCategoria').value=categoriaId;
+            app.modalHasChanges=true;
+        };
+        
+        window.saveEditarGasto=async function(id){
+            const descricao=document.getElementById('editarGastoDescricao').value.trim();
+            const valor=parseCurrency(document.getElementById('editarGastoValor').value);
+            const categoria=document.getElementById('editarGastoCategoria').value;
+            const data=document.getElementById('editarGastoData').value;
+            
+            if(!descricao||!valor||!data){
+                alert('Preencha descrição, valor e data');
+                return;
+            }
+            
+            try{
+                const updateData={
+                    descricao:descricao,
+                    valor:valor,
+                    categoria:categoria,
+                    data:data,
+                    atualizado_em:new Date().toISOString()
+                };
+                
+                const {error}=await app.supabase.from('gastos').update(updateData).eq('id',id);
+                if(error) throw error;
+                
+                await addToHistorico('editado',`Gasto editado: ${descricao} - ${formatCurrency(valor)}`);
+                
+                alert('✅ Gasto atualizado com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            }catch(error){
+                console.error('Erro ao atualizar gasto:',error);
+                alert('❌ Erro: '+error.message);
+            }
+        };
+        
+        window.deleteGasto=async function(id){
+            if(!confirm('Tem certeza que deseja excluir este gasto?')) return;
+            try{
+                const {data:gasto}=await app.supabase.from('gastos').select('*').eq('id',id).single();
+                const {error}=await app.supabase.from('gastos').delete().eq('id',id);
+                if(error) throw error;
+                await addToHistorico('deletado',`Gasto excluído: ${gasto.descricao} - ${formatCurrency(gasto.valor)}`);
+                alert('✅ Gasto excluído com sucesso!');
+                closeModal();
+                loadAppData();
+            }catch(error){
+                console.error('Erro ao excluir gasto:',error);
+                alert('❌ Erro: '+error.message);
+            }
+        };
+        
+        // Restante das funções permanece igual...
+        window.openNovoEventoModal=function(tipo='normal'){
+            const mes=app.selectedMonth;
+            const ano=app.selectedYear;
+            
+            const modalHTML=`
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="fas ${tipo==='amor'?'fa-heart':tipo==='rotina'?'fa-redo':'fa-calendar-plus'}"></i>
+                        ${tipo==='amor'?'Nova Data Especial':tipo==='rotina'?'Nova Rotina':'Novo Evento'}
+                    </div>
+                    <button class="close-modal" onclick="closeModalWithCheck()">&times;</button>
+                </div>
+                <div style="padding:16px;">
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-heading"></i> Título</label>
+                        <input type="text" id="eventoTitulo" class="form-input" placeholder="${tipo==='amor'?'Jantar romântico, etc.':tipo==='rotina'?'Academia, Treino, etc.':'Reunião, Consulta, etc.'}" oninput="app.modalHasChanges=true">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
+                        <textarea id="eventoDescricao" class="form-input" rows="2" placeholder="Detalhes..." oninput="app.modalHasChanges=true"></textarea>
+                    </div>
+                    
+                    <div style="display:flex;gap:8px;">
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label"><i class="fas fa-calendar-day"></i> Dia</label>
+                            <input type="number" id="eventoDia" class="form-input" min="1" max="31" value="${app.selectedDay||new Date().getDate()}" oninput="app.modalHasChanges=true">
+                        </div>
+                        
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label"><i class="fas fa-clock"></i> Hora</label>
+                            <input type="time" id="eventoHora" class="form-input" value="19:00" onchange="app.modalHasChanges=true">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-map-marker-alt"></i> Local (Opcional)</label>
+                        <input type="text" id="eventoLocal" class="form-input" placeholder="Local" oninput="app.modalHasChanges=true">
+                    </div>
+                    
+                    <input type="hidden" id="eventoTipo" value="${tipo}">
+                    <input type="hidden" id="eventoMes" value="${mes}">
+                    <input type="hidden" id="eventoAno" value="${ano}">
+                    
+                    <div style="display:flex;gap:8px;margin-top:16px;">
+                        <button class="btn btn-primary" onclick="saveNovoEvento()" style="flex:1;">
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                        <button class="btn" onclick="closeModalWithCheck()" style="flex:1;background:#95a5a6;color:white;">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML=modalHTML;
+            document.getElementById('modalOverlay').style.display='flex';
+            app.modalHasChanges=false;
+        };
+        
+        window.saveNovoEvento=async function(){
+            const titulo=document.getElementById('eventoTitulo').value.trim();
+            const descricao=document.getElementById('eventoDescricao').value.trim();
+            const dia=parseInt(document.getElementById('eventoDia').value);
+            const hora=document.getElementById('eventoHora').value;
+            const mes=parseInt(document.getElementById('eventoMes').value);
+            const ano=parseInt(document.getElementById('eventoAno').value);
+            const tipo=document.getElementById('eventoTipo').value;
+            const local=document.getElementById('eventoLocal').value.trim();
+            
+            if(!titulo||!dia){
+                alert('Preencha título e dia');
+                return;
+            }
+            
+            // Ajustar dia para o máximo do mês
+            const diasNoMes=getDiasNoMes(ano, mes);
+            const diaAjustado=Math.min(dia, diasNoMes);
+            
+            try{
+                const {error}=await app.supabase.from('eventos').insert({
+                    user_id:app.currentUser.id,
+                    titulo:titulo,
+                    descricao:descricao,
+                    dia:diaAjustado,
+                    mes:mes,
+                    ano:ano,
+                    hora:hora,
+                    local:local,
+                    tipo:tipo,
+                    added_by:app.currentUser.email.split('@')[0],
+                    criado_em:new Date().toISOString()
+                });
+                
+                if(error) throw error;
+                
+                await addToHistorico('criado',`Evento criado: ${titulo} (${tipo==='amor'?'Data Especial':tipo==='rotina'?'Rotina':'Evento'})`);
+                
+                alert('✅ Evento criado com sucesso!');
+                closeModal();
+                loadAppData();
+                
+            }catch(error){
+                console.error('Erro ao criar evento:',error);
+                alert('❌ Erro: '+error.message);
+            }
+        };
+        
         window.openEditarEventoModal=async function(id){
             try{
                 const {data:evento,error}=await app.supabase.from('eventos').select('*').eq('id',id).single();
                 if(error) throw error;
-                
-                // HTML com campo de data fim para rotina
-                const rotinaExtraFields=evento.tipo==='rotina'?`
-                    <div class="form-group">
-                        <label class="form-label"><i class="fas fa-calendar-times"></i> Data Fim (Opcional)</label>
-                        <input type="date" id="editarEventoDataFim" class="form-input" value="${evento.data_fim||''}" onchange="app.modalHasChanges=true">
-                    </div>
-                `:'';
                 
                 const modalHTML=`
                     <div class="modal-header">
@@ -2767,8 +2721,6 @@
                             <label class="form-label"><i class="fas fa-map-marker-alt"></i> Local (Opcional)</label>
                             <input type="text" id="editarEventoLocal" class="form-input" value="${evento.local||''}" oninput="app.modalHasChanges=true">
                         </div>
-                        
-                        ${rotinaExtraFields}
                         
                         <div class="form-group">
                             <label class="form-label"><i class="fas fa-heart"></i> Tipo de Evento</label>
@@ -2859,16 +2811,6 @@
                     tipo:tipo,
                     atualizado_em:new Date().toISOString()
                 };
-                
-                // Adicionar data_fim se for rotina
-                if(tipo==='rotina'){
-                    const dataFimInput=document.getElementById('editarEventoDataFim');
-                    if(dataFimInput&&dataFimInput.value){
-                        updateData.data_fim=dataFimInput.value;
-                    }else{
-                        updateData.data_fim=null;
-                    }
-                }
                 
                 const {error}=await app.supabase.from('eventos').update(updateData).eq('id',id);
                 if(error) throw error;
@@ -3220,7 +3162,7 @@
                     
                     <div class="form-group">
                         <label class="form-label"><i class="fas fa-money-bill-wave"></i> Valor</label>
-                        <input type="text" id="saldoValor" class="form-input" placeholder="0,00" oninput="app.modalHasChanges=true">
+                            <input type="text" id="saldoValor" class="form-input" placeholder="0,00" oninput="app.modalHasChanges=true">
                     </div>
                     
                     <div style="display:flex;gap:8px;margin-top:16px;">
