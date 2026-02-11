@@ -1300,11 +1300,11 @@ window.saveNovoEvento=async function(){
                     data_fim:dataFim,added_by:app.currentUser.email.split('@')[0],
                     criado_em:new Date().toISOString()
                 })
-            }else if(frequencia==='semanal'){
-                let dataEvento=new Date(ano,mes-1,dia)
-                let semana=1
-                while((!dataFimObj||dataEvento<=dataFimObj)&&semana<=52){
-                    eventosParaSalvar.push({
+        }else if(frequencia==='semanal'){
+    let dataEvento=new Date(ano,mes-1,dia);
+    let semana=1;
+    while((!dataFimObj||dataEvento<=dataFimObj)&&semana<=52){
+        eventosParaSalvar.push({
                         user_id:app.currentUser.id,
                         titulo:titulo+(semana>1?` (Semana ${semana})`:''),
                         descricao:descricao,dia:dataEvento.getDate(),
