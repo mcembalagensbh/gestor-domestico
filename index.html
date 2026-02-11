@@ -472,17 +472,39 @@ async function savePassword(chave,valor){
         if(chave==='login_password')app.loginPassword=valor
         return true
     }catch(error){console.error('Erro ao salvar senha:',error);return false}}
-async function handleLogin(){
-    const email=document.getElementById('loginEmail').value.trim()
-    const password=document.getElementById('loginPassword').value
-    if(!email||!password){alert('Preencha email e senha');return}
-    try{
-        const{data,error}=await app.supabase.auth.signInWithPassword({email,password})
-        if(error)throw error
-        app.currentUser=data.user
-        await loadPasswords()
-        showMainApp()
-    }catch(error){alert('Erro: '+error.message)}}
+async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    
+    console.log('Tentando login com:', email); // DEBUG
+    
+    if (!email || !password) {
+        alert('Preencha email e senha');
+        return;
+    }
+    
+    try {
+        const { data, error } = await app.supabase.auth.signInWithPassword({ 
+            email: email, 
+            password: password 
+        });
+        
+        if (error) {
+            console.error('Erro Supabase:', error);
+            alert('Erro no login: ' + error.message);
+            return;
+        }
+        
+        console.log('Login bem-sucedido:', data.user.email);
+        app.currentUser = data.user;
+        await loadPasswords();
+        showMainApp();
+        
+    } catch (error) {
+        console.error('Erro no login:', error);
+        alert('Erro ao fazer login: ' + error.message);
+    }
+}
 async function handleRegister(){
     const name=document.getElementById('registerName').value.trim()
     const email=document.getElementById('registerEmail').value.trim()
