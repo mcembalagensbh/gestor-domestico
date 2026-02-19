@@ -783,53 +783,48 @@
     
    function inicializarFabMovel() {
     const fab = document.getElementById('fabContainer');
-    if (!fab) return;
-    
     const fabMain = document.getElementById('fabMain');
-    const fabOptions = document.querySelector('.fab-options');
+    const fabOptions = document.querySelectorAll('.fab-option');
+    
+    if (!fab || !fabMain) return;
     
     let isDragging = false;
-    let dragThreshold = 5; // pixels de movimento para considerar como drag
+    let dragStarted = false;
     let startX, startY, startLeft, startTop;
-    let hasMoved = false;
-    let longPressTimer;
+    let clickTimer;
     
-    // Função para abrir/fechar o menu
-    const toggleFabMenu = (show) => {
-        if (show === undefined) {
-            fab.classList.toggle('open');
-        } else if (show) {
-            fab.classList.add('open');
-        } else {
-            fab.classList.remove('open');
-        }
-    };
-    
-    // Previne que cliques nos botões secundários fechem o menu
-    fabOptions.addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
-    
-    fabOptions.addEventListener('touchstart', (e) => {
-        e.stopPropagation();
-    }, { passive: true });
-    
-    // Evento de clique normal no botão principal (para abrir/fechar)
-    fabMain.addEventListener('click', (e) => {
+    // Eventos para os botões secundários (diretos, sem interferência)
+    document.querySelector('.fab-option.contas').addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        // Só abre/fecha se não houve drag
-        if (!hasMoved) {
-            toggleFabMenu();
-        }
-        hasMoved = false;
+        abrirNovaConta();
+        fab.classList.remove('open');
     });
     
+    document.querySelector('.fab-option.eventos').addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        abrirNovoEventoUnificado();
+        fab.classList.remove('open');
+    });
+    
+    document.querySelector('.fab-option.gastos').addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        abrirNovoGasto();
+        fab.classList.remove('open');
+    });
+    
+    document.querySelector('.fab-option.lista').addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        abrirNovoItemLista();
+        fab.classList.remove('open');
+    });
+    
+    // Eventos para touch (mobile)
     fabMain.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        e.stopPropagation();
-        
         const touch = e.touches[0];
         startX = touch.clientX;
         startY = touch.clientY;
@@ -839,30 +834,21 @@
         startTop = rect.top;
         
         isDragging = false;
-        hasMoved = false;
+        dragStarted = false;
         
-        // Timer para detectar long press (se quiser implementar drag só após segurar)
-        longPressTimer = setTimeout(() => {
-            if (!hasMoved) {
-                isDragging = true;
-                fab.style.transition = 'none';
-                fab.style.cursor = 'grabbing';
+        // Timer para decidir se é clique ou drag
+        clickTimer = setTimeout(() => {
+            if (!isDragging) {
+                // Se passou 200ms sem mover, considera como clique
+                if (!dragStarted) {
+                    fab.classList.toggle('open');
+                }
             }
-        }, 300);
+        }, 200);
     }, { passive: false });
     
     fabMain.addEventListener('touchmove', (e) => {
         e.preventDefault();
-        e.stopPropagation();
-        
-        if (!isDragging) {
-            // Se moveu antes do long press, cancela o timer e inicia drag imediatamente
-            clearTimeout(longPressTimer);
-            isDragging = true;
-            fab.style.transition = 'none';
-            fab.style.cursor = 'grabbing';
-        }
-        
         const touch = e.touches[0];
         const currentX = touch.clientX;
         const currentY = touch.clientY;
@@ -873,17 +859,19 @@
             Math.pow(currentY - startY, 2)
         );
         
-        if (distance > dragThreshold) {
-            hasMoved = true;
+        if (distance > 10) { // Se moveu mais que 10px
+            dragStarted = true;
+            isDragging = true;
+            clearTimeout(clickTimer); // Cancela o clique
             
             // Fecha o menu se estiver aberto
-            toggleFabMenu(false);
+            fab.classList.remove('open');
             
-            // Calcula nova posição
+            // Move o botão
             let newLeft = currentX - (startX - startLeft);
             let newTop = currentY - (startY - startTop);
             
-            // Limita às bordas da tela
+            // Limita às bordas
             newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - fab.offsetWidth));
             newTop = Math.max(0, Math.min(newTop, window.innerHeight - fab.offsetHeight));
             
@@ -896,47 +884,34 @@
     
     fabMain.addEventListener('touchend', (e) => {
         e.preventDefault();
-        e.stopPropagation();
-        
-        clearTimeout(longPressTimer);
+        clearTimeout(clickTimer);
         
         if (isDragging) {
-            isDragging = false;
-            fab.style.transition = '';
-            fab.style.cursor = 'move';
-            
-            // Salva a posição se houve movimento
-            if (hasMoved) {
-                const pos = {
-                    left: fab.style.left,
-                    top: fab.style.top,
-                    right: 'auto',
-                    bottom: 'auto'
-                };
-                localStorage.setItem('fabPosition', JSON.stringify(pos));
-            }
+            // Salva posição
+            const pos = {
+                left: fab.style.left,
+                top: fab.style.top,
+                right: 'auto',
+                bottom: 'auto'
+            };
+            localStorage.setItem('fabPosition', JSON.stringify(pos));
         }
         
-        // Reseta as flags
-        setTimeout(() => {
-            hasMoved = false;
-        }, 100);
+        // Reset
+        isDragging = false;
+        dragStarted = false;
     }, { passive: false });
     
     fabMain.addEventListener('touchcancel', (e) => {
         e.preventDefault();
-        e.stopPropagation();
-        clearTimeout(longPressTimer);
+        clearTimeout(clickTimer);
         isDragging = false;
-        fab.style.transition = '';
-        fab.style.cursor = 'move';
+        dragStarted = false;
     }, { passive: false });
     
-    // Versão para mouse (desktop)
+    // Eventos para mouse (desktop)
     fabMain.addEventListener('mousedown', (e) => {
         e.preventDefault();
-        e.stopPropagation();
-        
         startX = e.clientX;
         startY = e.clientY;
         
@@ -944,15 +919,18 @@
         startLeft = rect.left;
         startTop = rect.top;
         
-        isDragging = true;
-        hasMoved = false;
-        fab.style.transition = 'none';
-        fab.style.cursor = 'grabbing';
+        isDragging = false;
+        dragStarted = false;
+        
+        clickTimer = setTimeout(() => {
+            if (!isDragging && !dragStarted) {
+                fab.classList.toggle('open');
+            }
+        }, 200);
     });
     
     document.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        e.preventDefault();
+        if (!startX) return;
         
         const currentX = e.clientX;
         const currentY = e.clientY;
@@ -962,9 +940,12 @@
             Math.pow(currentY - startY, 2)
         );
         
-        if (distance > dragThreshold) {
-            hasMoved = true;
-            toggleFabMenu(false);
+        if (distance > 5) {
+            dragStarted = true;
+            isDragging = true;
+            clearTimeout(clickTimer);
+            
+            fab.classList.remove('open');
             
             let newLeft = currentX - (startX - startLeft);
             let newTop = currentY - (startY - startTop);
@@ -980,12 +961,10 @@
     });
     
     document.addEventListener('mouseup', (e) => {
-        if (isDragging) {
-            isDragging = false;
-            fab.style.transition = '';
-            fab.style.cursor = 'move';
+        if (startX) {
+            clearTimeout(clickTimer);
             
-            if (hasMoved) {
+            if (isDragging) {
                 const pos = {
                     left: fab.style.left,
                     top: fab.style.top,
@@ -995,17 +974,21 @@
                 localStorage.setItem('fabPosition', JSON.stringify(pos));
             }
             
-            setTimeout(() => {
-                hasMoved = false;
-            }, 100);
+            startX = null;
+            isDragging = false;
+            dragStarted = false;
         }
     });
 }
 
-// Substitua a chamada no final do init() por:
-setTimeout(() => {
-    inicializarFabMovel();
-}, 200);
+// No final do init(), substitua a chamada por:
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(inicializarFabMovel, 300);
+    });
+} else {
+    setTimeout(inicializarFabMovel, 300);
+}
     
     function resetarParaHoje(){let hoje=new Date();App.currentMonthOffset=0;App.selectedDay=hoje.getDate();App.currentFilter='all';document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));document.querySelector('[data-filter="all"]').classList.add('active');atualizarCalendario();mostrarConteudo();}
     
