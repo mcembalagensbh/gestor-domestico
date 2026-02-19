@@ -442,11 +442,11 @@
         
         if (badges.length > 0) {
             titulo += ` <span class="item-badge badge-recorrente">${badges.join(' • ')}</span>`;
-        }
+                }
         
         detalhes=`${item.dia} ${getNomeMes(item.mes)}/${item.ano}`;if(item.hora)detalhes+=` | ${item.hora}`;if(item.local)detalhes+=` | ${item.local}`;
         
-        return`<div class="item-card ${classe}" onclick="editarItem('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.isIndividual||false},'${item.individual_id||''}')"><div class="item-info"><div class="item-title"><span class="event-emoji">${iconeEvento}</span> ${titulo}</div><div class="item-details">${detalhes}</div></div>${valor?`<div class="item-value">${valor}</div>`:''}<div class="item-actions">${botoes}<button class="action-btn edit" onclick="event.stopPropagation();editarItem('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.isIndividual||false},'${item.individual_id||''}')"><i class="fas fa-edit"></i></button><button class="action-btn delete" onclick="event.stopPropagation();confirmarExclusao('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.dia||0},${item.mes||0},${item.ano||0},${item.isIndividual||false},'${item.individual_id||''}')"><i class="fas fa-trash"></i></button></div></div>`;}else if(item.tipo==='gasto'){classe='gasto';icone='fa-shopping-bag';titulo=item.descricao||'Gasto sem descrição';let cat=CONFIG.categoriasGastos.find(c=>c.id===item.categoria)||CONFIG.categoriasGastos[5];let catNome=cat.nome;if(item.categoria_customizada&&item.categoria==='outros')catNome=item.categoria_customizada;titulo+=` <span class="item-badge">${catNome}</span>`;detalhes=`${item.dia} ${getNomeMes(item.mes)}/${item.ano}`;valor=formatCurrency(item.valor||0);botoes=`<button class="action-btn delete" onclick="event.stopPropagation();cancelarGasto('${item.id}','${item.descricao}',${item.valor})"><i class="fas fa-undo-alt"></i></button>`;}
+        return`<div class="item-card ${classe}" onclick="editarItem('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.isIndividual||false},'${item.individual_id||''}')"><div class="item-info"><div class="item-title"><span class="event-emoji">${iconeEvento}</span> ${titulo}</div><div class="item-details">${detalhes}</div></div>${valor?`<div class="item-value">${valor}</div>`:''}<div class="item-actions">${botoes}<button class="action-btn edit" onclick="event.stopPropagation();editarItem('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.isIndividual||false},'${item.individual_id||''}')"><i class="fas fa-edit"></i></button><button class="action-btn delete" onclick="event.stopPropagation();confirmarExclusao('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.dia||0},${item.mes||0},${item.ano||0},${item.isIndividual||false},'${item.individual_id||''}')"><i class="fas fa-trash"></i></button></div></div>`;}else if(item.tipo==='gasto'){classe='gasto';icone='fa-shopping-bag';titulo=item.descricao||'Gasto sem descrição';let cat=CONFIG.categoriasGastos.find(c=>c.id===item.categoria)||CONFIG.categoriasGastos[5];let catNome=cat.nome;if(item.categoria_customizada&&item.categoria==='outros')catNome=item.categoria_customizada;titulo+=` <span class="item-badge">${catNome}</span>`;detalhes=`${item.dia} ${getNomeMes(item.mes)}/${item.ano}`;valor=formatCurrency(item.valor||0);botoes=`<button class="action-btn delete" onclick="event.stopPropagation();cancelarGasto('${item.id}','${item.descricao}',${item.valor})"><i class="fas fa-undo-alt"></i></button><button class="action-btn edit" onclick="event.stopPropagation();editarItem('${item.id}','gasto',false,'',false,'')"><i class="fas fa-edit"></i></button>`;return`<div class="item-card ${classe}" onclick="editarItem('${item.id}','gasto',false,'',false,'')"><div class="item-info"><div class="item-title"><span class="event-emoji"><i class="fas ${icone}"></i></span> ${titulo}</div><div class="item-details">${detalhes}</div></div>${valor?`<div class="item-value">${valor}</div>`:''}<div class="item-actions">${botoes}</div></div>`;}
         return`<div class="item-card ${classe}" onclick="editarItem('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.isIndividual||false},'${item.individual_id||''}')"><div class="item-info"><div class="item-title"><span class="event-emoji"><i class="fas ${icone}"></i></span> ${titulo}</div><div class="item-details">${detalhes}</div></div>${valor?`<div class="item-value">${valor}</div>`:''}<div class="item-actions">${botoes}<button class="action-btn edit" onclick="event.stopPropagation();editarItem('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.isIndividual||false},'${item.individual_id||''}')"><i class="fas fa-edit"></i></button><button class="action-btn delete" onclick="event.stopPropagation();confirmarExclusao('${item.id}','${item.tipo}',${item.isRecorrente||false},'${item.regra_id||''}',${item.dia||0},${item.mes||0},${item.ano||0},${item.isIndividual||false},'${item.individual_id||''}')"><i class="fas fa-trash"></i></button></div></div>`;}
     
     function abrirModal(titulo,icone,conteudo){let modal=document.getElementById('modalContent');modal.innerHTML=`<div class="modal-header"><div class="modal-title"><i class="fas ${icone}"></i> ${titulo}</div><button class="close-modal" onclick="fecharModal()">&times;</button></div><div class="modal-body">${conteudo}</div>`;document.getElementById('modalOverlay').style.display='flex';App.modalHasChanges=false;}
@@ -463,20 +463,137 @@
         if(App.saldoCentral.id){let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',App.saldoCentral.id).single();if(saldoAtual){let novoValor=saldoAtual.valor-valor;await App.supabase.from('saldos').update({valor:novoValor,data:dataPagamento}).eq('id',App.saldoCentral.id);App.saldoCentral.valor=novoValor;atualizarSaldoHeader();}}
         showToast('Pagamento registrado com sucesso!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){console.error('Erro ao processar pagamento:',error);showToast('Erro ao processar pagamento: '+error.message,'error');}}
     
-    async function cancelarGasto(id,descricao,valor){if(!confirm(`Deseja realmente cancelar o gasto "${descricao}" no valor de ${formatCurrency(valor)}? O valor será restaurado ao saldo central.`))return;try{await App.supabase.from('gastos').delete().eq('id',id);if(App.saldoCentral.id){let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',App.saldoCentral.id).single();if(saldoAtual){let novoValor=saldoAtual.valor+valor;await App.supabase.from('saldos').update({valor:novoValor}).eq('id',App.saldoCentral.id);App.saldoCentral.valor=novoValor;atualizarSaldoHeader();}}
+        async function cancelarGasto(id,descricao,valor){if(!confirm(`Deseja realmente cancelar o gasto "${descricao}" no valor de ${formatCurrency(valor)}? O valor será restaurado ao saldo central.`))return;try{await App.supabase.from('gastos').delete().eq('id',id);if(App.saldoCentral.id){let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',App.saldoCentral.id).single();if(saldoAtual){let novoValor=saldoAtual.valor+valor;await App.supabase.from('saldos').update({valor:novoValor}).eq('id',App.saldoCentral.id);App.saldoCentral.valor=novoValor;atualizarSaldoHeader();}}
         await registrarHistorico('cancelamento_gasto',`Cancelamento de gasto: ${descricao}`,{id,descricao,valor});showToast('Gasto cancelado com sucesso!','success');await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){console.error('Erro ao cancelar gasto:',error);showToast('Erro ao cancelar gasto: '+error.message,'error');}}
     
-    function confirmarExclusao(id,tipo,isRecorrente,regraId='',dia=0,mes=0,ano=0,isIndividual=false,individualId=''){if(isIndividual){if(confirm('Tem certeza que deseja excluir esta ocorrência específica?'))deletarItem(id,tipo,'individual',regraId,dia,mes,ano,individualId);return;}
+    function confirmarExclusao(id,tipo,isRecorrente,regraId='',dia=0,mes=0,ano=0,isIndividual=false,individualId=''){
+        // Se for gasto, não permite exclusão - usa apenas cancelamento
+        if(tipo === 'gasto') {
+            showToast('Use o botão de cancelar para reverter gastos', 'warning');
+            return;
+        }
+        
+        if(isIndividual){if(confirm('Tem certeza que deseja excluir esta ocorrência específica?'))deletarItem(id,tipo,'individual',regraId,dia,mes,ano,individualId);return;}
         if(!isRecorrente){if(confirm('Tem certeza que deseja excluir este item?'))deletarItem(id,tipo,'unico',regraId,dia,mes,ano);return;}
         App.pendingDelete={id,tipo,regraId,dia,mes,ano,individualId};let conteudo=`<p style="margin-bottom:16px">Este item é recorrente. Como deseja excluir?</p><div class="delete-option" onclick="selecionarOpcaoExclusao('unico')"><strong><i class="fas fa-times-circle"></i> Excluir apenas esta ocorrência</strong><div class="delete-confirm-text">Exclui apenas este item específico, mantendo as futuras ocorrências</div></div><div class="delete-option" onclick="selecionarOpcaoExclusao('futuro')"><strong><i class="fas fa-forward"></i> Excluir desta data em diante</strong><div class="delete-confirm-text">Exclui este e todos os itens futuros desta recorrência</div></div><div class="delete-option warning" onclick="selecionarOpcaoExclusao('todas')"><strong><i class="fas fa-ban"></i> Excluir todas as ocorrências</strong><div class="delete-confirm-text">Exclui permanentemente a regra e todas as suas ocorrências</div></div><div class="btn-group" style="margin-top:20px"><button class="btn" onclick="fecharModal()" style="background:var(--gray);color:#fff;flex:1">Cancelar</button></div>`;abrirModal('Opções de Exclusão','fa-exclamation-triangle',conteudo);}
     
     function selecionarOpcaoExclusao(opcao){if(!App.pendingDelete)return;let {id,tipo,regraId,dia,mes,ano,individualId}=App.pendingDelete;if(confirm(`Tem certeza que deseja ${opcao==='unico'?'excluir apenas esta ocorrência':opcao==='futuro'?'excluir esta e todas as futuras':'EXCLUIR PERMANENTEMENTE todas as ocorrências'}?`)){deletarItem(id,tipo,opcao,regraId,dia,mes,ano,individualId);}}
     
-    async function deletarItem(id,tipo,opcao='unico',regraId='',dia=0,mes=0,ano=0,individualId=''){try{if(tipo==='conta'){if(id.toString().startsWith('regra_')){let regraIdReal=id.split('_')[1];let regra=App.dataCache.regrasContas.find(r=>r.id===regraIdReal);let dataExcecao=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;if(opcao==='todas'){await App.supabase.from('regras_contas').delete().eq('id',regraIdReal);}else if(opcao==='futuro'){if(regra){let dataInicio=new Date(regra.data_inicio+'T12:00:00');let dataExcl=new Date(dataExcecao+'T12:00:00');if(dataExcl<=dataInicio){await App.supabase.from('regras_contas').delete().eq('id',regraIdReal);}else{let dataFim=new Date(dataExcl);dataFim.setDate(dataFim.getDate()-1);await App.supabase.from('regras_contas').update({data_fim:dataFim.toISOString().split('T')[0]}).eq('id',regraIdReal);}}}
-            if(opcao==='unico'){await App.supabase.from('excecoes_recorrencia').upsert({user_id:App.currentUser.id,regra_id:regraIdReal,data_excecao:dataExcecao,acao:'excluir'},{onConflict:'user_id,regra_id,data_excecao'});}}else{let conta=App.dataCache.contas.find(c=>c.id===id);if(conta&&conta.valor_pago>0){let opcao=await new Promise(res=>{abrirModal('Excluir Conta Paga','fa-exclamation-triangle',`<p style="margin-bottom:20px">Esta conta já foi paga (valor: ${formatCurrency(conta.valor_pago)}).</p><div class="delete-option" onclick="fecharModal();res({restaurar:true})"><strong><i class="fas fa-undo-alt"></i> Excluir e devolver valor à carteira</strong><div>O valor de ${formatCurrency(conta.valor_pago)} será restituído ao saldo central.</div></div><div class="delete-option" onclick="fecharModal();res({restaurar:false})"><strong><i class="fas fa-trash-alt"></i> Excluir sem devolver valor</strong><div>A conta será removida sem alterar o saldo.</div></div><div class="btn-group" style="margin-top:20px"><button class="btn" onclick="fecharModal();res(null)" style="background:var(--gray);color:#fff;flex:1">Cancelar</button></div>`);window.res=res;});if(!opcao)return;if(opcao.restaurar&&App.saldoCentral.id){let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',App.saldoCentral.id).single();if(saldoAtual){let novoValor=saldoAtual.valor+conta.valor_pago;await App.supabase.from('saldos').update({valor:novoValor}).eq('id',App.saldoCentral.id);App.saldoCentral.valor=novoValor;atualizarSaldoHeader();}}}
-            await App.supabase.from('contas').delete().eq('id',id);}}else if(tipo==='evento'){if(id.toString().startsWith('regra_evento_')){let regraIdReal=id.split('_')[2];let regra=App.dataCache.regrasEventos.find(r=>r.id===regraIdReal);let dataExcecao=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;if(opcao==='todas'){await App.supabase.from('regras_eventos').delete().eq('id',regraIdReal);}else if(opcao==='futuro'){if(regra){let dataInicio=new Date(regra.data_inicio+'T12:00:00');let dataExcl=new Date(dataExcecao+'T12:00:00');if(dataExcl<=dataInicio){await App.supabase.from('regras_eventos').delete().eq('id',regraIdReal);}else{let dataFim=new Date(dataExcl);dataFim.setDate(dataFim.getDate()-1);await App.supabase.from('regras_eventos').update({data_fim:dataFim.toISOString().split('T')[0]}).eq('id',regraIdReal);}}}
-            if(opcao==='unico'){await App.supabase.from('excecoes_recorrencia').upsert({user_id:App.currentUser.id,regra_id:regraIdReal,data_excecao:dataExcecao,acao:'excluir'},{onConflict:'user_id,regra_id,data_excecao'});}}else if(individualId){await App.supabase.from('eventos_individuais').delete().eq('id',individualId);}else{await App.supabase.from('eventos').delete().eq('id',id);}}else if(tipo==='gasto'){await App.supabase.from('gastos').delete().eq('id',id);}
-        await registrarHistorico('exclusao','Item excluído',{id,tipo,opcao});showToast('Item excluído com sucesso!','success');fecharModal();await carregarDados(true);await atualizarCalendario();await mostrarConteudo();}catch(error){console.error('Erro ao excluir:',error);showToast('Erro ao excluir item: '+error.message,'error');}}
+    async function deletarItem(id,tipo,opcao='unico',regraId='',dia=0,mes=0,ano=0,individualId=''){
+        try{
+            // Impede exclusão direta de gastos - deve usar cancelamento
+            if(tipo === 'gasto') {
+                showToast('Use o botão de cancelar para reverter gastos', 'warning');
+                return;
+            }
+            
+            if(tipo==='conta'){
+                if(id.toString().startsWith('regra_')){
+                    let regraIdReal=id.split('_')[1];
+                    let regra=App.dataCache.regrasContas.find(r=>r.id===regraIdReal);
+                    let dataExcecao=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+                    if(opcao==='todas'){
+                        await App.supabase.from('regras_contas').delete().eq('id',regraIdReal);
+                    }else if(opcao==='futuro'){
+                        if(regra){
+                            let dataInicio=new Date(regra.data_inicio+'T12:00:00');
+                            let dataExcl=new Date(dataExcecao+'T12:00:00');
+                            if(dataExcl<=dataInicio){
+                                await App.supabase.from('regras_contas').delete().eq('id',regraIdReal);
+                            }else{
+                                let dataFim=new Date(dataExcl);
+                                dataFim.setDate(dataFim.getDate()-1);
+                                await App.supabase.from('regras_contas').update({data_fim:dataFim.toISOString().split('T')[0]}).eq('id',regraIdReal);
+                            }
+                        }
+                    }
+                    if(opcao==='unico'){
+                        await App.supabase.from('excecoes_recorrencia').upsert({
+                            user_id:App.currentUser.id,
+                            regra_id:regraIdReal,
+                            data_excecao:dataExcecao,
+                            acao:'excluir'
+                        },{onConflict:'user_id,regra_id,data_excecao'});
+                    }
+                }else{
+                    let conta=App.dataCache.contas.find(c=>c.id===id);
+                    if(conta&&conta.valor_pago>0){
+                        let opcao=await new Promise(res=>{
+                            abrirModal('Excluir Conta Paga','fa-exclamation-triangle',
+                                `<p style="margin-bottom:20px">Esta conta já foi paga (valor: ${formatCurrency(conta.valor_pago)}).</p>
+                                <div class="delete-option" onclick="fecharModal();res({restaurar:true})">
+                                    <strong><i class="fas fa-undo-alt"></i> Excluir e devolver valor à carteira</strong>
+                                    <div>O valor de ${formatCurrency(conta.valor_pago)} será restituído ao saldo central.</div>
+                                </div>
+                                <div class="delete-option" onclick="fecharModal();res({restaurar:false})">
+                                    <strong><i class="fas fa-trash-alt"></i> Excluir sem devolver valor</strong>
+                                    <div>A conta será removida sem alterar o saldo.</div>
+                                </div>
+                                <div class="btn-group" style="margin-top:20px">
+                                    <button class="btn" onclick="fecharModal();res(null)" style="background:var(--gray);color:#fff;flex:1">Cancelar</button>
+                                </div>`);
+                            window.res=res;
+                        });
+                        if(!opcao)return;
+                        if(opcao.restaurar&&App.saldoCentral.id){
+                            let {data:saldoAtual}=await App.supabase.from('saldos').select('valor').eq('id',App.saldoCentral.id).single();
+                            if(saldoAtual){
+                                let novoValor=saldoAtual.valor+conta.valor_pago;
+                                await App.supabase.from('saldos').update({valor:novoValor}).eq('id',App.saldoCentral.id);
+                                App.saldoCentral.valor=novoValor;
+                                atualizarSaldoHeader();
+                            }
+                        }
+                    }
+                    await App.supabase.from('contas').delete().eq('id',id);
+                }
+            }else if(tipo==='evento'){
+                if(id.toString().startsWith('regra_evento_')){
+                    let regraIdReal=id.split('_')[2];
+                    let regra=App.dataCache.regrasEventos.find(r=>r.id===regraIdReal);
+                    let dataExcecao=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+                    if(opcao==='todas'){
+                        await App.supabase.from('regras_eventos').delete().eq('id',regraIdReal);
+                    }else if(opcao==='futuro'){
+                        if(regra){
+                            let dataInicio=new Date(regra.data_inicio+'T12:00:00');
+                            let dataExcl=new Date(dataExcecao+'T12:00:00');
+                            if(dataExcl<=dataInicio){
+                                await App.supabase.from('regras_eventos').delete().eq('id',regraIdReal);
+                            }else{
+                                let dataFim=new Date(dataExcl);
+                                dataFim.setDate(dataFim.getDate()-1);
+                                await App.supabase.from('regras_eventos').update({data_fim:dataFim.toISOString().split('T')[0]}).eq('id',regraIdReal);
+                            }
+                        }
+                    }
+                    if(opcao==='unico'){
+                        await App.supabase.from('excecoes_recorrencia').upsert({
+                            user_id:App.currentUser.id,
+                            regra_id:regraIdReal,
+                            data_excecao:dataExcecao,
+                            acao:'excluir'
+                        },{onConflict:'user_id,regra_id,data_excecao'});
+                    }
+                }else if(individualId){
+                    await App.supabase.from('eventos_individuais').delete().eq('id',individualId);
+                }else{
+                    await App.supabase.from('eventos').delete().eq('id',id);
+                }
+            }
+            // Removido o bloco else if(tipo==='gasto') - gastos agora usam apenas cancelamento
+            
+            await registrarHistorico('exclusao','Item excluído',{id,tipo,opcao});
+            showToast('Item excluído com sucesso!','success');
+            fecharModal();
+            await carregarDados(true);
+            await atualizarCalendario();
+            await mostrarConteudo();
+        }catch(error){
+            console.error('Erro ao excluir:',error);
+            showToast('Erro ao excluir item: '+error.message,'error');
+        }
+    }
     
     function abrirNovoEventoUnificado(){let {mes,ano}=getMesAnoAtual();let tipos=`<div class="btn-group" style="margin-bottom:16px"><button class="event-type-btn normal active" onclick="selecionarTipoEvento('normal')"><i class="fas fa-star"></i> Evento</button><button class="event-type-btn amor" onclick="selecionarTipoEvento('amor')"><i class="fas fa-heart"></i> Data Especial</button><button class="event-type-btn rotina" onclick="selecionarTipoEvento('rotina')"><i class="fas fa-redo"></i> Rotina</button><button class="event-type-btn medico" onclick="selecionarTipoEvento('medico')"><i class="fas fa-user-md"></i> Médico</button></div>`;let frequencias=['unico','semanal','mensal','anual'].map(f=>`<button class="frequency-btn ${f==='unico'?'active':''}" onclick="selecionarFrequenciaEvento('${f}')">${f}</button>`).join('');let conteudo=`${tipos}<input type="hidden" id="eventoTipoSelecionado" value="normal"><div class="form-group"><label class="form-label"><i class="fas fa-heading"></i> Título</label><input type="text" id="eventoTitulo" class="form-input" placeholder="Título"></div><div class="form-group"><label class="form-label"><i class="fas fa-align-left"></i> Descrição</label><textarea id="eventoDescricao" class="form-textarea" rows="2"></textarea></div><div id="rotinaFields" style="display:none"><div class="form-group"><label class="form-label"><i class="fas fa-repeat"></i> Frequência</label><div class="btn-group">${frequencias}</div><input type="hidden" id="eventoFrequencia" value="unico"></div><div class="form-group" id="eventoFimContainer" style="display:none"><label class="form-label"><i class="fas fa-calendar-times"></i> Data de Fim (Opcional)</label><div style="display:flex;gap:8px"><select id="eventoFimMes" class="form-select" style="flex:1"><option value="">Indefinido</option>${CONFIG.meses.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select><input type="number" id="eventoFimAno" class="form-input" placeholder="Ano" style="flex:1" inputmode="numeric"></div></div></div><div id="eventoUnicoFields"><div class="form-group"><label class="form-label"><i class="fas fa-calendar-alt"></i> Período do Evento</label><div class="date-range"><div class="form-group"><label class="form-label" style="font-size:11px">Início</label><input type="number" id="eventoDiaInicio" class="form-input" min="1" max="31" value="${App.selectedDay||new Date().getDate()}" inputmode="numeric" placeholder="Dia"></div><div class="form-group"><label class="form-label" style="font-size:11px">Fim</label><input type="number" id="eventoDiaFim" class="form-input" min="1" max="31" value="${App.selectedDay||new Date().getDate()}" inputmode="numeric" placeholder="Dia"></div></div></div><div class="form-group"><div class="date-range"><div class="form-group"><select id="eventoMes" class="form-select">${CONFIG.meses.map((m,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${m}</option>`).join('')}</select></div><div class="form-group"><input type="number" id="eventoAno" class="form-input" value="${ano}" inputmode="numeric" placeholder="Ano"></div></div></div></div><div style="display:flex;gap:8px"><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-clock"></i> Hora</label><input type="time" id="eventoHora" class="form-input" value="19:00"></div><div class="form-group" style="flex:1"><label class="form-label"><i class="fas fa-map-marker-alt"></i> Local</label><input type="text" id="eventoLocal" class="form-input"></div></div><div class="btn-group" style="margin-top:20px"><button class="btn btn-primary" onclick="salvarNovoEvento()" style="flex:2"><i class="fas fa-save"></i> Salvar</button><button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button></div>`;abrirModal('Novo Evento','fa-calendar-plus',conteudo);}
     
@@ -665,39 +782,54 @@
     }
     
     function inicializarFabMovel() {
-        const fab = document.getElementById('fabContainer');
-        if (!fab) return;
+    const fab = document.getElementById('fabContainer');
+    if (!fab) return;
+    
+    let isDragging = false;
+    let dragThreshold = 5; // pixels de movimento para considerar como drag
+    let startX, startY, startLeft, startTop;
+    let hasMoved = false;
+    
+    const startDrag = (e) => {
+        e.preventDefault();
+        isDragging = true;
+        hasMoved = false;
         
-        let isDragging = false;
-        let startX, startY, startLeft, startTop;
+        const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
         
-        const startDrag = (e) => {
-            e.preventDefault();
-            isDragging = true;
-            
-            const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
-            
-            const rect = fab.getBoundingClientRect();
-            startLeft = rect.left;
-            startTop = rect.top;
-            
-            startX = clientX - startLeft;
-            startY = clientY - startTop;
-            
-            fab.style.transition = 'none';
-            fab.style.cursor = 'grabbing';
-        };
+        const rect = fab.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
         
-        const onDrag = (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
+        startX = clientX - startLeft;
+        startY = clientY - startTop;
+        
+        fab.style.transition = 'none';
+        fab.style.cursor = 'grabbing';
+    };
+    
+    const onDrag = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+        
+        // Calcula a distância movida
+        const currentLeft = clientX - startX;
+        const currentTop = clientY - startY;
+        const distance = Math.sqrt(
+            Math.pow(currentLeft - startLeft, 2) + 
+            Math.pow(currentTop - startTop, 2)
+        );
+        
+        // Se moveu mais que o threshold, marca como drag
+        if (distance > dragThreshold) {
+            hasMoved = true;
             
-            const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
-            
-            let newLeft = clientX - startX;
-            let newTop = clientY - startY;
+            let newLeft = currentLeft;
+            let newTop = currentTop;
             
             newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - fab.offsetWidth));
             newTop = Math.max(0, Math.min(newTop, window.innerHeight - fab.offsetHeight));
@@ -706,14 +838,23 @@
             fab.style.top = newTop + 'px';
             fab.style.right = 'auto';
             fab.style.bottom = 'auto';
-        };
-        
-        const stopDrag = () => {
-            if (isDragging) {
-                isDragging = false;
-                fab.style.transition = '';
-                fab.style.cursor = 'move';
-                
+        }
+    };
+    
+    const stopDrag = (e) => {
+        if (isDragging) {
+            // Se não houve movimento significativo, considera como clique
+            if (!hasMoved && e.type === 'touchend') {
+                // Dispara o clique manualmente
+                document.getElementById('fabContainer').classList.toggle('open');
+            }
+            
+            isDragging = false;
+            fab.style.transition = '';
+            fab.style.cursor = 'move';
+            
+            // Se houve movimento, salva a posição
+            if (hasMoved) {
                 const pos = {
                     left: fab.style.left,
                     top: fab.style.top,
@@ -721,26 +862,28 @@
                     bottom: 'auto'
                 };
                 
-                if (fab.style.left === '' || fab.style.left === 'auto') {
-                    pos.bottom = '180px';
-                    pos.right = '20px';
-                    pos.left = 'auto';
-                    pos.top = 'auto';
-                }
-                
                 localStorage.setItem('fabPosition', JSON.stringify(pos));
             }
-        };
-        
-        fab.addEventListener('mousedown', startDrag);
-        document.addEventListener('mousemove', onDrag);
-        document.addEventListener('mouseup', stopDrag);
-        
-        fab.addEventListener('touchstart', startDrag, { passive: false });
-        document.addEventListener('touchmove', onDrag, { passive: false });
-        document.addEventListener('touchend', stopDrag);
-        document.addEventListener('touchcancel', stopDrag);
-    }
+        }
+    };
+    
+    // Previne o clique padrão no mobile para não conflitar
+    fab.addEventListener('click', (e) => {
+        if (hasMoved) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
+    
+    fab.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', stopDrag);
+    
+    fab.addEventListener('touchstart', startDrag, { passive: false });
+    document.addEventListener('touchmove', onDrag, { passive: false });
+    document.addEventListener('touchend', stopDrag);
+    document.addEventListener('touchcancel', stopDrag);
+}
     
     function resetarParaHoje(){let hoje=new Date();App.currentMonthOffset=0;App.selectedDay=hoje.getDate();App.currentFilter='all';document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));document.querySelector('[data-filter="all"]').classList.add('active');atualizarCalendario();mostrarConteudo();}
     
@@ -891,3 +1034,5 @@
 </script>
 </body>
 </html>
+
+
