@@ -786,13 +786,20 @@
     if (!fab) return;
     
     let isDragging = false;
-    let dragThreshold = 5; // pixels de movimento para considerar como drag
+    let dragThreshold = 5;
     let startX, startY, startLeft, startTop;
     let hasMoved = false;
+    let dragStarted = false;
     
     const startDrag = (e) => {
+        // Permite que o clique normal aconteça se for nos botões secundários
+        if (e.target.closest('.fab-option')) {
+            return;
+        }
+        
         e.preventDefault();
         isDragging = true;
+        dragStarted = false;
         hasMoved = false;
         
         const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
@@ -811,12 +818,17 @@
     
     const onDrag = (e) => {
         if (!isDragging) return;
+        
+        // Verifica se o alvo do evento é um botão secundário
+        if (e.target.closest('.fab-option')) {
+            return;
+        }
+        
         e.preventDefault();
         
         const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
         const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
         
-        // Calcula a distância movida
         const currentLeft = clientX - startX;
         const currentTop = clientY - startY;
         const distance = Math.sqrt(
@@ -824,8 +836,8 @@
             Math.pow(currentTop - startTop, 2)
         );
         
-        // Se moveu mais que o threshold, marca como drag
         if (distance > dragThreshold) {
+            dragStarted = true;
             hasMoved = true;
             
             let newLeft = currentLeft;
@@ -843,36 +855,50 @@
     
     const stopDrag = (e) => {
         if (isDragging) {
-            // Se não houve movimento significativo, considera como clique
-            if (!hasMoved && e.type === 'touchend') {
-                // Dispara o clique manualmente
-                document.getElementById('fabContainer').classList.toggle('open');
-            }
-            
-            isDragging = false;
-            fab.style.transition = '';
-            fab.style.cursor = 'move';
-            
-            // Se houve movimento, salva a posição
+            // Se houve movimento, considera como drag
             if (hasMoved) {
+                e.preventDefault();
                 const pos = {
                     left: fab.style.left,
                     top: fab.style.top,
                     right: 'auto',
                     bottom: 'auto'
                 };
-                
                 localStorage.setItem('fabPosition', JSON.stringify(pos));
             }
+            
+            isDragging = false;
+            dragStarted = false;
+            fab.style.transition = '';
+            fab.style.cursor = 'move';
         }
     };
     
-    // Previne o clique padrão no mobile para não conflitar
-    fab.addEventListener('click', (e) => {
-        if (hasMoved) {
-            e.preventDefault();
+    // Tratamento especial para cliques nos botões secundários
+    const options = fab.querySelectorAll('.fab-option');
+    options.forEach(option => {
+        option.addEventListener('click', (e) => {
+            e.stopPropagation(); // Impede que o clique chegue ao contêiner
+            
+            // Executa a ação correspondente
+            if (option.classList.contains('contas')) {
+                abrirNovaConta();
+            } else if (option.classList.contains('eventos')) {
+                abrirNovoEventoUnificado();
+            } else if (option.classList.contains('gastos')) {
+                abrirNovoGasto();
+            } else if (option.classList.contains('lista')) {
+                abrirNovoItemLista();
+            }
+            
+            // Fecha o menu flutuante
+            document.getElementById('fabContainer').classList.remove('open');
+        });
+        
+        // Previne que o sistema de drag interfira nos toques dos botões
+        option.addEventListener('touchstart', (e) => {
             e.stopPropagation();
-        }
+        }, { passive: true });
     });
     
     fab.addEventListener('mousedown', startDrag);
@@ -1022,7 +1048,10 @@
                 if(e.target===e.currentTarget) fecharModal();
             });
             
-            inicializarFabMovel();
+            // Pequeno atraso para garantir que o DOM esteja completamente carregado
+setTimeout(() => {
+    inicializarFabMovel();
+}, 100);
             
         } catch(error){
             console.error('Erro na inicialização:',error);
