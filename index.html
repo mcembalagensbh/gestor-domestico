@@ -1956,8 +1956,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 
-    <!-- Instascan - baseado no ZBar (usado por muitos apps) -->
-<script src="https://unpkg.com/instascan@1.0.1/instascan.min.js"></script>
+   <!-- Html5Qrcode - leitor de código de barras (funciona em tempo real) -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 
 </head>
@@ -9940,119 +9940,129 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ============================================
-// FUNÇÃO PARA LER CÓDIGO DE BARRAS (câmera + digitação manual)
+// FUNÇÃO PARA LER CÓDIGO DE BARRAS (Html5Qrcode - em tempo real)
 // ============================================
+let html5QrCode = null;
+let isScanning = false;
 
 function abrirCameraCodigo(inputId) {
-    console.log('🔵 Abrindo câmera para ler código de barras');
+    console.log('🔵 Abrindo câmera para leitura de código de barras');
     
-    // Criar um input de arquivo que abre a câmera nativa
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.capture = 'environment'; // Usa a câmera traseira
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showToast('Seu navegador não suporta acesso à câmera', 'warning');
+        return;
+    }
     
-    fileInput.style.display = 'none';
-    document.body.appendChild(fileInput);
+    // Criar o modal
+    const modal = document.createElement('div');
+    modal.id = 'qrModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.95);
+        z-index: 10001;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    `;
     
-    // Quando o usuário tirar a foto
-    fileInput.onchange = function(event) {
-        const file = event.target.files[0];
-        if (!file) {
-            document.body.removeChild(fileInput);
-            return;
-        }
-        
-        console.log('📸 Foto capturada');
-        
-        // Criar URL da imagem
-        const imageUrl = URL.createObjectURL(file);
-        
-        // Criar modal para mostrar a imagem e digitar o código
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 10001;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        `;
-        
-        modal.innerHTML = `
-            <div style="background: #fff; max-width: 90%; width: 350px; border-radius: 12px; overflow: hidden;">
-                <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; color: #fff; text-align: center;">
-                    <h3 style="margin: 0;"><i class="fas fa-barcode"></i> Código da fatura</h3>
-                </div>
-                <div style="padding: 20px; text-align: center;">
-                    <img src="${imageUrl}" style="max-width: 100%; max-height: 180px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd;">
-                    <p style="margin-bottom: 10px; color: #333; font-size: 14px;">
-                        <i class="fas fa-info-circle"></i> Digite o código de barras da fatura:
+    modal.innerHTML = `
+        <div style="background: #fff; width: 95%; max-width: 500px; border-radius: 12px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;"><i class="fas fa-barcode"></i> Leia o código de barras</h3>
+                <button onclick="fecharCameraQr()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div style="padding: 15px;">
+                <div id="qr-reader" style="width: 100%; min-height: 300px;"></div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <p style="font-size: 12px; color: #666;">
+                        <i class="fas fa-info-circle"></i> Centralize o código de barras na área de leitura
                     </p>
-                    <input type="text" id="codigoManual" class="form-input" placeholder="Ex: 756914487101235393..." style="width: 100%; margin-bottom: 15px; text-align: center; font-family: monospace; font-size: 14px;">
-                    <div style="display: flex; gap: 10px;">
-                        <button onclick="confirmarCodigoManual('${inputId}')" class="btn btn-primary" style="flex: 2; background: linear-gradient(135deg, #667eea, #764ba2);">
-                            <i class="fas fa-check"></i> Confirmar
-                        </button>
-                        <button onclick="fecharModalCodigo()" class="btn" style="flex: 1; background: #6c757d; color: #fff;">
-                            Cancelar
-                        </button>
-                    </div>
-                    <p style="margin-top: 12px; font-size: 11px; color: #999;">
-                        💡 O código de barras tem 44 dígitos (boletos) ou 47-48 dígitos (linha digitável)
-                    </p>
+                    <button onclick="fecharCameraQr()" class="btn btn-sm" style="background: #6c757d; color: #fff;">Cancelar</button>
                 </div>
             </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // Focar no campo de texto automaticamente
-        setTimeout(() => {
-            const input = document.getElementById('codigoManual');
-            if (input) input.focus();
-        }, 100);
-        
-        // Função para confirmar o código digitado
-        window.confirmarCodigoManual = function(inputId) {
-            const codigo = document.getElementById('codigoManual').value.trim();
-            const targetInput = document.getElementById(inputId);
-            
-            if (!codigo) {
-                showToast('Digite o código de barras', 'warning');
-                return;
-            }
-            
-            // Verificar se é um código válido (pelo menos 10 dígitos)
-            if (codigo.length < 10) {
-                showToast('Código muito curto. Verifique e digite novamente.', 'warning');
-                return;
-            }
-            
-            if (targetInput) {
-                targetInput.value = codigo;
-                showToast('✅ Código salvo!', 'success');
-            }
-            
-            fecharModalCodigo();
-        };
-        
-        // Função para fechar o modal
-        window.fecharModalCodigo = function() {
-            const modalEl = document.querySelector('div[style*="position: fixed"][style*="z-index: 10001"]');
-            if (modalEl) modalEl.remove();
-            document.body.removeChild(fileInput);
-            URL.revokeObjectURL(imageUrl);
-        };
-    };
+        </div>
+    `;
     
-    // Abrir a câmera
-    fileInput.click();
+    document.body.appendChild(modal);
+    
+    // Inicializar o leitor
+    if (window.Html5Qrcode) {
+        const qrReader = new Html5Qrcode("qr-reader");
+        html5QrCode = qrReader;
+        
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 100 },
+            aspectRatio: 1.0,
+            formatsToSupport: [ 
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.CODE_93,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.ITF,
+                Html5QrcodeSupportedFormats.CODABAR
+            ]
+        };
+        
+        qrReader.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+                console.log('✅ Código detectado:', decodedText);
+                console.log('📏 Tamanho:', decodedText.length);
+                
+                // Preencher o campo
+                const targetInput = document.getElementById(inputId);
+                if (targetInput) {
+                    targetInput.value = decodedText;
+                    showToast('✅ Código capturado!', 'success');
+                }
+                
+                // Fechar a câmera
+                fecharCameraQr();
+            },
+            (errorMessage) => {
+                // Ignorar erros de leitura
+                // console.log('Erro:', errorMessage);
+            }
+        ).catch(err => {
+            console.error('Erro ao iniciar câmera:', err);
+            showToast('Erro ao iniciar a câmera', 'error');
+            fecharCameraQr();
+        });
+        
+    } else {
+        console.error('Html5Qrcode não carregado');
+        showToast('Erro ao carregar leitor', 'error');
+        fecharCameraQr();
+    }
+}
+
+function fecharCameraQr() {
+    console.log('🔵 Fechando câmera...');
+    
+    if (html5QrCode) {
+        try {
+            html5QrCode.stop().catch(e => console.log('Erro ao parar:', e));
+        } catch(e) {}
+        html5QrCode = null;
+    }
+    
+    const modal = document.getElementById('qrModal');
+    if (modal) modal.remove();
+}
+
+// Alias para compatibilidade
+function fecharCameraZXing() {
+    fecharCameraQr();
 }
 
 </script>
