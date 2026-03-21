@@ -1959,6 +1959,9 @@
     <!-- ZXing - Biblioteca para leitura de códigos de barras e QR Code -->
 <script src="https://unpkg.com/@zxing/library@0.21.1/umd/index.min.js"></script>
 
+<!-- QuaggaJS - Especializado em códigos de barras lineares (boletos) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
 
 </head>
 <body>
@@ -9940,14 +9943,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ============================================
-// FUNÇÃO PARA ABRIR CÂMERA E LER QUALQUER CÓDIGO (AUTOMÁTICO)
+// FUNÇÃO PARA ABRIR CÂMERA E LER CÓDIGO DE BARRAS (COM QUAGGAJS - ESPECIALISTA EM BOLETOS)
 // ============================================
-let zxingReader = null;
 let isDecoding = false;
 let scanTimeout = null;
 
 function abrirCameraCodigo(inputId) {
-    console.log('🔵 Abrindo câmera para leitura de código de barras');
+    console.log('🔵 Abrindo câmera para leitura de código de barras (QuaggaJS)');
     
     // Verificar suporte
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -9962,19 +9964,19 @@ function abrirCameraCodigo(inputId) {
     modal.innerHTML = `
         <div class="zxing-modal-content">
             <div class="zxing-modal-header">
-                <h3><i class="fas fa-barcode"></i> Leia o código de barras</h3>
-                <button onclick="fecharCameraZXing()">&times;</button>
+                <h3><i class="fas fa-barcode"></i> Leia o código de barras da fatura</h3>
+                <button onclick="fecharCameraQuagga()">&times;</button>
             </div>
-            <div class="zxing-video-container">
-                <video id="zxing-video" autoplay playsinline></video>
+            <div class="zxing-video-container" id="quagga-container">
+                <video id="quagga-video" autoplay playsinline></video>
                 <div class="zxing-overlay" style="border: 2px solid #ffc107; border-radius: 8px; width: 90%; height: 40%;"></div>
-                <button class="zxing-close-btn" onclick="fecharCameraZXing()">✕</button>
+                <button class="zxing-close-btn" onclick="fecharCameraQuagga()">✕</button>
             </div>
             <div class="zxing-footer">
-                <p><i class="fas fa-info-circle"></i> Aponte a câmera para o código de barras</p>
-                <p style="font-size: 11px; margin-top: 5px; color: #ffc107;">🔍 Centralize o código dentro da área amarela</p>
-                <p style="font-size: 10px; margin-top: 5px;">✅ Leitura automática - o código será preenchido assim que detectado</p>
-                <button onclick="fecharCameraZXing()" class="btn btn-sm">Cancelar</button>
+                <p><i class="fas fa-info-circle"></i> Aponte a câmera para o <strong>CÓDIGO DE BARRAS</strong> da fatura</p>
+                <p style="font-size: 11px; margin-top: 5px; color: #ffc107;">📱 Centralize o código dentro da área amarela</p>
+                <p style="font-size: 10px; margin-top: 5px;">💡 Mantenha o código bem iluminado e estável</p>
+                <button onclick="fecharCameraQuagga()" class="btn btn-sm">Cancelar</button>
             </div>
         </div>
     `;
@@ -9983,118 +9985,98 @@ function abrirCameraCodigo(inputId) {
     
     if (scanTimeout) clearTimeout(scanTimeout);
     
-    // Iniciar câmera
-    navigator.mediaDevices.getUserMedia({ 
-        video: { 
-            facingMode: { exact: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-        }
-    }).then(function(stream) {
-        console.log('✅ Câmera ativada');
+    // Inicializar QuaggaJS
+    if (window.Quagga) {
+        console.log('🔵 Inicializando QuaggaJS para leitura de boletos...');
         
-        const video = document.getElementById('zxing-video');
-        if (!video) {
-            fecharCameraZXing();
-            return;
-        }
-        
-        video.srcObject = stream;
-        video.play();
-        
-        if (window.ZXing) {
-            console.log('🔵 Inicializando leitor universal...');
-            
-            // Configurar para ler TODOS os formatos possíveis
-            const hints = new Map();
-            const formats = [
-                window.ZXing.BarcodeFormat.CODE_128,
-                window.ZXing.BarcodeFormat.CODE_39,
-                window.ZXing.BarcodeFormat.CODE_93,
-                window.ZXing.BarcodeFormat.EAN_13,
-                window.ZXing.BarcodeFormat.EAN_8,
-                window.ZXing.BarcodeFormat.UPC_A,
-                window.ZXing.BarcodeFormat.UPC_E,
-                window.ZXing.BarcodeFormat.ITF,
-                window.ZXing.BarcodeFormat.CODABAR,
-                window.ZXing.BarcodeFormat.PDF_417,
-                window.ZXing.BarcodeFormat.QR_CODE,
-                window.ZXing.BarcodeFormat.AZTEC,
-                window.ZXing.BarcodeFormat.DATA_MATRIX,
-                window.ZXing.BarcodeFormat.MAXICODE,
-                window.ZXing.BarcodeFormat.RSS_14,
-                window.ZXing.BarcodeFormat.RSS_EXPANDED
-            ];
-            hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
-            hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
-            
-            zxingReader = new window.ZXing.BrowserMultiFormatReader(hints);
-            
-            // Ler continuamente
-            zxingReader.decodeFromVideoDevice(null, video, (result, err) => {
-                if (result && !isDecoding) {
-                    const detectedCode = result.text;
-                    console.log('✅ Código detectado:', detectedCode);
-                    console.log('📌 Formato:', result.format);
-                    
-                    isDecoding = true;
-                    
-                    // Preencher o campo
-                    const targetInput = document.getElementById(inputId);
-                    if (targetInput) {
-                        targetInput.value = detectedCode;
-                        showToast('✅ Código capturado!', 'success');
-                    }
-                    
-                    // Fechar a câmera
-                    setTimeout(() => {
-                        fecharCameraZXing();
-                        isDecoding = false;
-                    }, 500);
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector('#quagga-container'),
+                constraints: {
+                    width: { min: 640 },
+                    height: { min: 480 },
+                    facingMode: "environment",
+                    aspectRatio: { min: 1, max: 2 }
                 }
-            }).catch(err => {
-                console.warn('Erro no leitor:', err);
-            });
-        } else {
-            showToast('Erro ao carregar leitor', 'error');
-            fecharCameraZXing();
-        }
+            },
+            decoder: {
+                readers: [
+                    "code_128_reader",
+                    "ean_reader",
+                    "ean_8_reader",
+                    "code_39_reader",
+                    "code_93_reader",
+                    "codabar_reader",
+                    "i2of5_reader",      // 🔴 Interleaved 2 of 5 (boletos)
+                    "i2of5_reader",
+                    "code_39_vin_reader",
+                    "upc_reader",
+                    "upc_e_reader"
+                ],
+                debug: {
+                    drawBoundingBox: true,
+                    showFrequency: true,
+                    drawScanline: true,
+                    showPattern: true
+                }
+            },
+            locate: true
+        }, function(err) {
+            if (err) {
+                console.error('❌ Erro ao iniciar Quagga:', err);
+                showToast('Erro ao iniciar a câmera', 'error');
+                fecharCameraQuagga();
+                return;
+            }
+            console.log('✅ QuaggaJS iniciado!');
+            Quagga.start();
+        });
+        
+        // Quando um código é detectado
+        Quagga.onDetected(function(result) {
+            if (isDecoding) return;
+            
+            const code = result.codeResult.code;
+            console.log('✅ Código detectado pelo Quagga:', code);
+            console.log('📌 Formato:', result.codeResult.format);
+            
+            isDecoding = true;
+            
+            // Preencher o campo
+            const targetInput = document.getElementById(inputId);
+            if (targetInput) {
+                targetInput.value = code;
+                showToast('✅ Código de barras capturado!', 'success');
+            }
+            
+            // Fechar a câmera
+            setTimeout(() => {
+                fecharCameraQuagga();
+                isDecoding = false;
+            }, 500);
+        });
         
         // Timeout de 30 segundos
         scanTimeout = setTimeout(() => {
             if (document.getElementById('zxingModal')) {
                 showToast('Nenhum código detectado. Tente novamente.', 'warning');
-                fecharCameraZXing();
+                fecharCameraQuagga();
             }
         }, 30000);
         
-    }).catch(function(err) {
-        console.error('Erro na câmera:', err);
-        
-        if (err.name === 'NotAllowedError') {
-            showToast('Permissão negada. Autorize o acesso à câmera.', 'error');
-        } else if (err.name === 'OverconstrainedError') {
-            // Tentar câmera frontal
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-                .then(function(stream2) {
-                    const video = document.getElementById('zxing-video');
-                    if (video) {
-                        video.srcObject = stream2;
-                        video.play();
-                        // Reiniciar leitor...
-                    }
-                }).catch(() => {
-                    showToast('Não foi possível acessar a câmera.', 'error');
-                    fecharCameraZXing();
-                });
-        } else {
-            showToast('Erro ao acessar a câmera.', 'error');
-            fecharCameraZXing();
-        }
-    });
+    } else {
+        console.error('❌ QuaggaJS não carregado');
+        showToast('Erro ao carregar leitor de código', 'error');
+        fecharCameraQuagga();
+    }
 }
 
-function fecharCameraZXing() {
+// ============================================
+// FUNÇÃO PARA FECHAR O MODAL DA CÂMERA
+// ============================================
+function fecharCameraQuagga() {
     console.log('🔵 Fechando câmera...');
     isDecoding = false;
     
@@ -10103,22 +10085,24 @@ function fecharCameraZXing() {
         scanTimeout = null;
     }
     
-    const video = document.getElementById('zxing-video');
-    if (video && video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
+    // Parar o Quagga
+    if (window.Quagga) {
+        try {
+            Quagga.stop();
+        } catch(e) {}
     }
     
-    if (zxingReader) {
-        try { zxingReader.reset(); } catch(e) {}
-        zxingReader = null;
-    }
-    
+    // Remover o modal
     const modal = document.getElementById('zxingModal');
     if (modal) modal.remove();
 }
 
 
+
+// Alias para compatibilidade
+function fecharCameraZXing() {
+    fecharCameraQuagga();
+}
 
 </script>
 
