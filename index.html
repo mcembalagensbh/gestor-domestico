@@ -9943,13 +9943,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ============================================
-// FUNÇÃO PARA ABRIR CÂMERA E LER CÓDIGO DE BARRAS (COM QUAGGAJS - ESPECIALISTA EM BOLETOS)
+// FUNÇÃO PARA ABRIR CÂMERA E LER CÓDIGO DE BARRAS (VERSÃO CORRIGIDA)
 // ============================================
 let isDecoding = false;
 let scanTimeout = null;
+let currentQuagga = null;
 
 function abrirCameraCodigo(inputId) {
-    console.log('🔵 Abrindo câmera para leitura de código de barras (QuaggaJS)');
+    console.log('🔵 Abrindo câmera para leitura de código de barras');
     
     // Verificar suporte
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -9957,7 +9958,7 @@ function abrirCameraCodigo(inputId) {
         return;
     }
     
-    // Criar o modal
+    // Criar o modal com container corrigido
     const modal = document.createElement('div');
     modal.id = 'zxingModal';
     modal.className = 'zxing-modal';
@@ -9967,10 +9968,10 @@ function abrirCameraCodigo(inputId) {
                 <h3><i class="fas fa-barcode"></i> Leia o código de barras da fatura</h3>
                 <button onclick="fecharCameraQuagga()">&times;</button>
             </div>
-            <div class="zxing-video-container" id="quagga-container">
-                <video id="quagga-video" autoplay playsinline></video>
-                <div class="zxing-overlay" style="border: 2px solid #ffc107; border-radius: 8px; width: 90%; height: 40%;"></div>
-                <button class="zxing-close-btn" onclick="fecharCameraQuagga()">✕</button>
+            <div style="background: #000; position: relative; min-height: 300px;">
+                <div id="quagga-container" style="width: 100%; height: auto; min-height: 300px;"></div>
+                <div class="zxing-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 30%; border: 2px solid #ffc107; border-radius: 8px; pointer-events: none;"></div>
+                <button class="zxing-close-btn" onclick="fecharCameraQuagga()" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; z-index: 10;">✕</button>
             </div>
             <div class="zxing-footer">
                 <p><i class="fas fa-info-circle"></i> Aponte a câmera para o <strong>CÓDIGO DE BARRAS</strong> da fatura</p>
@@ -9985,92 +9986,118 @@ function abrirCameraCodigo(inputId) {
     
     if (scanTimeout) clearTimeout(scanTimeout);
     
-    // Inicializar QuaggaJS
-    if (window.Quagga) {
-        console.log('🔵 Inicializando QuaggaJS para leitura de boletos...');
+    // Aguardar o DOM carregar o container
+    setTimeout(() => {
+        const container = document.querySelector('#quagga-container');
+        if (!container) {
+            console.error('❌ Container não encontrado');
+            showToast('Erro ao iniciar câmera', 'error');
+            fecharCameraQuagga();
+            return;
+        }
         
-        Quagga.init({
-            inputStream: {
-                name: "Live",
-                type: "LiveStream",
-                target: document.querySelector('#quagga-container'),
-                constraints: {
-                    width: { min: 640 },
-                    height: { min: 480 },
-                    facingMode: "environment",
-                    aspectRatio: { min: 1, max: 2 }
+        console.log('✅ Container encontrado:', container);
+        
+        // Inicializar QuaggaJS com configuração otimizada
+        if (window.Quagga) {
+            console.log('🔵 Inicializando QuaggaJS...');
+            
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: container,
+                    constraints: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: "environment"
+                    }
+                },
+                locator: {
+                    patchSize: "medium",
+                    halfSample: true
+                },
+                numOfWorkers: 4,
+                decoder: {
+                    readers: [
+                        "i2of5_reader",      // PRIORIDADE: boletos
+                        "code_128_reader",   // códigos comuns
+                        "ean_reader",        // código de produtos
+                        "code_39_reader"
+                    ],
+                    debug: {
+                        drawBoundingBox: false,
+                        showFrequency: false,
+                        drawScanline: false
+                    }
+                },
+                locate: true
+            }, function(err) {
+                if (err) {
+                    console.error('❌ Erro ao iniciar Quagga:', err);
+                    showToast('Erro ao iniciar a câmera', 'error');
+                    fecharCameraQuagga();
+                    return;
                 }
-            },
-            decoder: {
-                readers: [
-                    "code_128_reader",
-                    "ean_reader",
-                    "ean_8_reader",
-                    "code_39_reader",
-                    "code_93_reader",
-                    "codabar_reader",
-                    "i2of5_reader",      // 🔴 Interleaved 2 of 5 (boletos)
-                    "i2of5_reader",
-                    "code_39_vin_reader",
-                    "upc_reader",
-                    "upc_e_reader"
-                ],
-                debug: {
-                    drawBoundingBox: true,
-                    showFrequency: true,
-                    drawScanline: true,
-                    showPattern: true
+                console.log('✅ QuaggaJS iniciado!');
+                Quagga.start();
+            });
+            
+            // Quando um código é detectado
+            Quagga.onDetected(function(result) {
+                if (isDecoding) return;
+                
+                const code = result.codeResult.code;
+                console.log('✅ Código detectado:', code);
+                console.log('📌 Formato:', result.codeResult.format);
+                
+                // Verificar se é código de boleto (44 dígitos)
+                if (code && code.length >= 44) {
+                    console.log('🎯 Código de boleto detectado!');
+                    isDecoding = true;
+                    
+                    const targetInput = document.getElementById(inputId);
+                    if (targetInput) {
+                        targetInput.value = code;
+                        showToast('✅ Código de boleto capturado!', 'success');
+                    }
+                    
+                    setTimeout(() => {
+                        fecharCameraQuagga();
+                        isDecoding = false;
+                    }, 500);
+                } else if (code && code.length >= 10) {
+                    // Outros códigos
+                    console.log('📦 Código comum detectado');
+                    isDecoding = true;
+                    
+                    const targetInput = document.getElementById(inputId);
+                    if (targetInput) {
+                        targetInput.value = code;
+                        showToast('✅ Código capturado!', 'success');
+                    }
+                    
+                    setTimeout(() => {
+                        fecharCameraQuagga();
+                        isDecoding = false;
+                    }, 500);
                 }
-            },
-            locate: true
-        }, function(err) {
-            if (err) {
-                console.error('❌ Erro ao iniciar Quagga:', err);
-                showToast('Erro ao iniciar a câmera', 'error');
-                fecharCameraQuagga();
-                return;
-            }
-            console.log('✅ QuaggaJS iniciado!');
-            Quagga.start();
-        });
-        
-        // Quando um código é detectado
-        Quagga.onDetected(function(result) {
-            if (isDecoding) return;
+            });
             
-            const code = result.codeResult.code;
-            console.log('✅ Código detectado pelo Quagga:', code);
-            console.log('📌 Formato:', result.codeResult.format);
+            // Timeout de 30 segundos
+            scanTimeout = setTimeout(() => {
+                if (document.getElementById('zxingModal')) {
+                    showToast('Nenhum código detectado. Tente novamente.', 'warning');
+                    fecharCameraQuagga();
+                }
+            }, 30000);
             
-            isDecoding = true;
-            
-            // Preencher o campo
-            const targetInput = document.getElementById(inputId);
-            if (targetInput) {
-                targetInput.value = code;
-                showToast('✅ Código de barras capturado!', 'success');
-            }
-            
-            // Fechar a câmera
-            setTimeout(() => {
-                fecharCameraQuagga();
-                isDecoding = false;
-            }, 500);
-        });
-        
-        // Timeout de 30 segundos
-        scanTimeout = setTimeout(() => {
-            if (document.getElementById('zxingModal')) {
-                showToast('Nenhum código detectado. Tente novamente.', 'warning');
-                fecharCameraQuagga();
-            }
-        }, 30000);
-        
-    } else {
-        console.error('❌ QuaggaJS não carregado');
-        showToast('Erro ao carregar leitor de código', 'error');
-        fecharCameraQuagga();
-    }
+        } else {
+            console.error('❌ QuaggaJS não carregado');
+            showToast('Erro ao carregar leitor de código', 'error');
+            fecharCameraQuagga();
+        }
+    }, 100);
 }
 
 // ============================================
@@ -10089,7 +10116,9 @@ function fecharCameraQuagga() {
     if (window.Quagga) {
         try {
             Quagga.stop();
-        } catch(e) {}
+        } catch(e) {
+            console.warn('Erro ao parar Quagga:', e);
+        }
     }
     
     // Remover o modal
@@ -10097,12 +10126,12 @@ function fecharCameraQuagga() {
     if (modal) modal.remove();
 }
 
-
-
 // Alias para compatibilidade
 function fecharCameraZXing() {
     fecharCameraQuagga();
 }
+
+
 
 </script>
 
