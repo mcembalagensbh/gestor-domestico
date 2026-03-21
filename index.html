@@ -1955,8 +1955,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-
-   <!-- Html5Qrcode - leitor de código de barras (funciona em tempo real) -->
+<!-- Html5Qrcode - leitor de código de barras -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 
@@ -9990,60 +9989,65 @@ function abrirCameraCodigo(inputId) {
     
     document.body.appendChild(modal);
     
-    // Inicializar o leitor
-    if (window.Html5Qrcode) {
-        const qrReader = new Html5Qrcode("qr-reader");
-        html5QrCode = qrReader;
-        
-        const config = {
-            fps: 10,
-            qrbox: { width: 250, height: 100 },
-            aspectRatio: 1.0,
-            formatsToSupport: [ 
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.CODE_93,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.ITF,
-                Html5QrcodeSupportedFormats.CODABAR
-            ]
-        };
-        
-        qrReader.start(
-            { facingMode: "environment" },
-            config,
-            (decodedText) => {
-                console.log('✅ Código detectado:', decodedText);
-                console.log('📏 Tamanho:', decodedText.length);
-                
-                // Preencher o campo
-                const targetInput = document.getElementById(inputId);
-                if (targetInput) {
-                    targetInput.value = decodedText;
-                    showToast('✅ Código capturado!', 'success');
+    // Aguardar um pouco para o DOM carregar
+    setTimeout(() => {
+        // Inicializar o leitor
+        if (window.Html5Qrcode) {
+            const qrReader = new Html5Qrcode("qr-reader");
+            html5QrCode = qrReader;
+            
+            // Definir os formatos suportados
+            const formats = [
+                "CODE_128",
+                "CODE_39", 
+                "CODE_93",
+                "EAN_13",
+                "EAN_8",
+                "UPC_A",
+                "UPC_E",
+                "ITF",
+                "CODABAR"
+            ];
+            
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 100 },
+                aspectRatio: 1.0,
+                formatsToSupport: formats
+            };
+            
+            qrReader.start(
+                { facingMode: "environment" },
+                config,
+                (decodedText) => {
+                    console.log('✅ Código detectado:', decodedText);
+                    console.log('📏 Tamanho:', decodedText.length);
+                    
+                    // Preencher o campo
+                    const targetInput = document.getElementById(inputId);
+                    if (targetInput) {
+                        targetInput.value = decodedText;
+                        showToast('✅ Código capturado!', 'success');
+                    }
+                    
+                    // Fechar a câmera
+                    fecharCameraQr();
+                },
+                (errorMessage) => {
+                    // Ignorar erros de leitura (não mostrar no console)
                 }
-                
-                // Fechar a câmera
+            ).catch(err => {
+                console.error('Erro ao iniciar câmera:', err);
+                showToast('Erro ao iniciar a câmera', 'error');
                 fecharCameraQr();
-            },
-            (errorMessage) => {
-                // Ignorar erros de leitura
-                // console.log('Erro:', errorMessage);
-            }
-        ).catch(err => {
-            console.error('Erro ao iniciar câmera:', err);
-            showToast('Erro ao iniciar a câmera', 'error');
+            });
+            
+        } else {
+            console.error('Html5Qrcode não carregado');
+            showToast('Erro ao carregar leitor', 'error');
             fecharCameraQr();
-        });
-        
-    } else {
-        console.error('Html5Qrcode não carregado');
-        showToast('Erro ao carregar leitor', 'error');
-        fecharCameraQr();
-    }
+        }
+    }, 100);
 }
 
 function fecharCameraQr() {
@@ -10060,7 +10064,6 @@ function fecharCameraQr() {
     if (modal) modal.remove();
 }
 
-// Alias para compatibilidade
 function fecharCameraZXing() {
     fecharCameraQr();
 }
