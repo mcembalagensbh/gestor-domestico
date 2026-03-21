@@ -9940,13 +9940,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ============================================
-// FUNÇÃO PARA ABRIR CÂMERA E LER CÓDIGO DE BARRAS (Instascan - usado em apps de banco)
+// FUNÇÃO PARA ABRIR CÂMERA E LER CÓDIGO DE BARRAS (Instascan com carga garantida)
 // ============================================
 let instascanScanner = null;
 let isDecoding = false;
 
-function abrirCameraCodigo(inputId) {
-    console.log('🔵 Abrindo câmera com Instascan para leitura de código de barras');
+async function abrirCameraCodigo(inputId) {
+    console.log('🔵 Abrindo câmera...');
+    
+    // Aguardar carregamento do Instascan
+    if (typeof Instascan === 'undefined') {
+        console.log('⏳ Aguardando carregamento do Instascan...');
+        showToast('Carregando leitor de código...', 'info');
+        
+        // Tentar carregar
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/instascan@1.0.1/instascan.min.js';
+        
+        await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+        
+        // Aguardar um pouco mais
+        await new Promise(r => setTimeout(r, 500));
+        
+        if (typeof Instascan === 'undefined') {
+            showToast('Não foi possível carregar o leitor. Tente novamente.', 'error');
+            return;
+        }
+        
+        console.log('✅ Instascan carregado!');
+    }
     
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         showToast('Seu navegador não suporta acesso à câmera', 'warning');
@@ -9979,10 +10005,9 @@ function abrirCameraCodigo(inputId) {
     
     document.body.appendChild(modal);
     
-    // Inicializar Instascan
-    if (window.Instascan) {
-        console.log('🔵 Inicializando Instascan...');
-        
+    console.log('🔵 Inicializando Instascan...');
+    
+    try {
         instascanScanner = new Instascan.Scanner({ 
             video: document.getElementById('instascan-video'),
             mirror: false,
@@ -9994,58 +10019,40 @@ function abrirCameraCodigo(inputId) {
             if (isDecoding) return;
             
             console.log('✅ Código detectado pelo Instascan:', content);
+            console.log('📏 Tamanho:', content.length);
             
-            // Verificar se é código de boleto (44-48 dígitos)
-            const isBoleto = /^\d{44,48}$/.test(content);
-            
-            if (isBoleto) {
-                console.log('🎯 Código de boleto detectado!');
-                isDecoding = true;
-                
-                const targetInput = document.getElementById(inputId);
-                if (targetInput) {
-                    targetInput.value = content;
-                    showToast('✅ Código de boleto capturado!', 'success');
-                }
-                
-                setTimeout(() => {
-                    fecharCameraInstascan();
-                    isDecoding = false;
-                }, 500);
-            } else if (content.length > 30) {
-                // Códigos longos podem ser boletos
-                console.log('📦 Código longo detectado:', content);
-                isDecoding = true;
-                
-                const targetInput = document.getElementById(inputId);
-                if (targetInput) {
-                    targetInput.value = content;
-                    showToast('✅ Código capturado!', 'success');
-                }
-                
-                setTimeout(() => {
-                    fecharCameraInstascan();
-                    isDecoding = false;
-                }, 500);
-            } else {
-                console.log('⚠️ Código ignorado (muito curto):', content);
-                showToast('Código muito curto. Aponte para o código de barras da fatura.', 'warning');
+            const targetInput = document.getElementById(inputId);
+            if (targetInput) {
+                targetInput.value = content;
+                showToast('✅ Código capturado!', 'success');
             }
+            
+            isDecoding = true;
+            setTimeout(() => {
+                fecharCameraInstascan();
+                isDecoding = false;
+            }, 500);
         });
         
         // Iniciar câmera
         Instascan.Camera.getCameras().then(function(cameras) {
+            console.log('📷 Câmeras encontradas:', cameras.length);
+            
             if (cameras.length > 0) {
-                // Usar câmera traseira
-                const backCamera = cameras.find(camera => 
-                    camera.name.toLowerCase().includes('back') || 
-                    camera.name.toLowerCase().includes('traseira')
-                ) || cameras[0];
+                // Tentar encontrar câmera traseira
+                let backCamera = cameras.find(c => 
+                    c.name.toLowerCase().includes('back') || 
+                    c.name.toLowerCase().includes('traseira') ||
+                    c.name.toLowerCase().includes('environment')
+                );
                 
-                console.log('📷 Câmera selecionada:', backCamera.name);
+                if (!backCamera) {
+                    backCamera = cameras[0];
+                }
+                
+                console.log('📷 Usando câmera:', backCamera.name);
                 instascanScanner.start(backCamera);
             } else {
-                console.error('Nenhuma câmera encontrada');
                 showToast('Nenhuma câmera encontrada', 'error');
                 fecharCameraInstascan();
             }
@@ -10055,9 +10062,9 @@ function abrirCameraCodigo(inputId) {
             fecharCameraInstascan();
         });
         
-    } else {
-        console.error('❌ Instascan não carregado');
-        showToast('Erro ao carregar leitor de código', 'error');
+    } catch (err) {
+        console.error('Erro ao criar scanner:', err);
+        showToast('Erro ao iniciar leitor', 'error');
         fecharCameraInstascan();
     }
 }
@@ -10077,7 +10084,6 @@ function fecharCameraInstascan() {
     if (modal) modal.remove();
 }
 
-// Alias para compatibilidade
 function fecharCameraZXing() {
     fecharCameraInstascan();
 }
@@ -10176,6 +10182,35 @@ function fecharCameraZXing() {
         </div>
     </div>
 </div>
+
+
+<!-- Instascan - leitor de código de barras (carga manual) -->
+<script>
+    function carregarInstascan() {
+        return new Promise((resolve, reject) => {
+            if (typeof Instascan !== 'undefined') {
+                resolve();
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/instascan@1.0.1/instascan.min.js';
+            script.onload = () => {
+                console.log('✅ Instascan carregado');
+                resolve();
+            };
+            script.onerror = () => {
+                console.error('❌ Falha ao carregar Instascan');
+                reject();
+            };
+            document.head.appendChild(script);
+        });
+    }
+    
+    // Carregar automaticamente ao iniciar
+    carregarInstascan();
+</script>
+
 
 </body>
 </html>
