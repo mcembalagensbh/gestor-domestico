@@ -1959,9 +1959,6 @@
     <!-- ZXing - Biblioteca para leitura de códigos de barras e QR Code -->
 <script src="https://unpkg.com/@zxing/library@0.21.1/umd/index.min.js"></script>
 
-<!-- QuaggaJS - Especializado em códigos de barras lineares (boletos) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-
 
 </head>
 <body>
@@ -9943,14 +9940,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ============================================
-// FUNÇÃO PARA ABRIR CÂMERA E LER CÓDIGO DE BARRAS (VERSÃO CORRIGIDA)
+// FUNÇÃO PARA ABRIR CÂMERA E LER CÓDIGO DE BARRAS DE BOLETO (44 DÍGITOS)
 // ============================================
 let isDecoding = false;
 let scanTimeout = null;
-let currentQuagga = null;
+let zxingReader = null;
 
 function abrirCameraCodigo(inputId) {
-    console.log('🔵 Abrindo câmera para leitura de código de barras');
+    console.log('🔵 Abrindo câmera para leitura de código de barras de boleto');
     
     // Verificar suporte
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -9958,26 +9955,26 @@ function abrirCameraCodigo(inputId) {
         return;
     }
     
-    // Criar o modal com container corrigido
+    // Criar o modal
     const modal = document.createElement('div');
     modal.id = 'zxingModal';
     modal.className = 'zxing-modal';
     modal.innerHTML = `
         <div class="zxing-modal-content">
-            <div class="zxing-modal-header">
-                <h3><i class="fas fa-barcode"></i> Leia o código de barras da fatura</h3>
-                <button onclick="fecharCameraQuagga()">&times;</button>
+            <div class="zxing-modal-header" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                <h3 style="margin: 0; color: #fff;"><i class="fas fa-barcode"></i> Leia o código de barras da fatura</h3>
+                <button onclick="fecharCameraZXing()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
             </div>
             <div style="background: #000; position: relative; min-height: 300px;">
-                <div id="quagga-container" style="width: 100%; height: auto; min-height: 300px;"></div>
-                <div class="zxing-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 30%; border: 2px solid #ffc107; border-radius: 8px; pointer-events: none;"></div>
-                <button class="zxing-close-btn" onclick="fecharCameraQuagga()" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; z-index: 10;">✕</button>
+                <video id="zxing-video" autoplay playsinline style="width: 100%; height: auto; max-height: 400px; object-fit: cover;"></video>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 35%; border: 3px solid #ffc107; border-radius: 12px; box-shadow: 0 0 0 100vmax rgba(0,0,0,0.4); pointer-events: none;"></div>
+                <button onclick="fecharCameraZXing()" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; z-index: 10;">✕</button>
             </div>
-            <div class="zxing-footer">
-                <p><i class="fas fa-info-circle"></i> Aponte a câmera para o <strong>CÓDIGO DE BARRAS</strong> da fatura</p>
-                <p style="font-size: 11px; margin-top: 5px; color: #ffc107;">📱 Centralize o código dentro da área amarela</p>
-                <p style="font-size: 10px; margin-top: 5px;">💡 Mantenha o código bem iluminado e estável</p>
-                <button onclick="fecharCameraQuagga()" class="btn btn-sm">Cancelar</button>
+            <div class="zxing-footer" style="padding: 15px; text-align: center; background: #f8f9fa;">
+                <p style="margin: 0 0 5px 0;"><i class="fas fa-info-circle"></i> Aponte a câmera para o <strong>CÓDIGO DE BARRAS</strong> da fatura</p>
+                <p style="margin: 0; font-size: 12px; color: #ffc107;">🎯 Centralize o código dentro da área amarela</p>
+                <p style="margin: 5px 0 0 0; font-size: 11px; color: #666;">✅ O código de 44 dígitos será capturado automaticamente</p>
+                <button onclick="fecharCameraZXing()" style="margin-top: 12px; padding: 8px 20px; background: #6c757d; color: #fff; border: none; border-radius: 20px; cursor: pointer;">Cancelar</button>
             </div>
         </div>
     `;
@@ -9986,124 +9983,118 @@ function abrirCameraCodigo(inputId) {
     
     if (scanTimeout) clearTimeout(scanTimeout);
     
-    // Aguardar o DOM carregar o container
-    setTimeout(() => {
-        const container = document.querySelector('#quagga-container');
-        if (!container) {
-            console.error('❌ Container não encontrado');
-            showToast('Erro ao iniciar câmera', 'error');
-            fecharCameraQuagga();
+    // Iniciar câmera
+    navigator.mediaDevices.getUserMedia({ 
+        video: { 
+            facingMode: { exact: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+        }
+    }).then(function(stream) {
+        console.log('✅ Câmera ativada');
+        
+        const video = document.getElementById('zxing-video');
+        if (!video) {
+            fecharCameraZXing();
             return;
         }
         
-        console.log('✅ Container encontrado:', container);
+        video.srcObject = stream;
+        video.play();
         
-        // Inicializar QuaggaJS com configuração otimizada
-        if (window.Quagga) {
-            console.log('🔵 Inicializando QuaggaJS...');
+        if (window.ZXing) {
+            console.log('🔵 Inicializando leitor focado em boletos...');
             
-            Quagga.init({
-                inputStream: {
-                    name: "Live",
-                    type: "LiveStream",
-                    target: container,
-                    constraints: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        facingMode: "environment"
+            // Configurar para ler apenas formatos de código de barras
+            const hints = new Map();
+            const formats = [
+                window.ZXing.BarcodeFormat.ITF,           // 🔴 PRIORIDADE: boletos (Interleaved 2 of 5)
+                window.ZXing.BarcodeFormat.CODE_128,      // códigos comuns
+                window.ZXing.BarcodeFormat.CODE_39,
+                window.ZXing.BarcodeFormat.EAN_13,
+                window.ZXing.BarcodeFormat.UPC_A
+            ];
+            hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+            hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
+            
+            zxingReader = new window.ZXing.BrowserMultiFormatReader(hints);
+            
+            let lastDetectedCode = '';
+            let detectionCount = 0;
+            
+            // Ler continuamente
+            zxingReader.decodeFromVideoDevice(null, video, (result, err) => {
+                if (result && !isDecoding) {
+                    const detectedCode = result.text;
+                    console.log('📌 Código detectado:', detectedCode, '| Formato:', result.format);
+                    
+                    // Verificar se é código de boleto (44 dígitos)
+                    const isBoleto = /^\d{44,48}$/.test(detectedCode);
+                    
+                    if (isBoleto) {
+                        console.log('🎯 CÓDIGO DE BOLETO DETECTADO!', detectedCode);
+                        
+                        // Evitar duplicatas
+                        if (detectedCode === lastDetectedCode) {
+                            detectionCount++;
+                            if (detectionCount < 3) return;
+                        } else {
+                            detectionCount = 1;
+                            lastDetectedCode = detectedCode;
+                        }
+                        
+                        isDecoding = true;
+                        
+                        // Preencher o campo
+                        const targetInput = document.getElementById(inputId);
+                        if (targetInput) {
+                            targetInput.value = detectedCode;
+                            showToast('✅ Código de boleto capturado!', 'success');
+                        }
+                        
+                        // Fechar a câmera
+                        setTimeout(() => {
+                            fecharCameraZXing();
+                            isDecoding = false;
+                        }, 500);
+                        
+                    } else {
+                        console.log('⚠️ Código ignorado (não é boleto):', detectedCode, '| dígitos:', detectedCode.length);
+                        // Não faz nada com códigos que não são boletos
                     }
-                },
-                locator: {
-                    patchSize: "medium",
-                    halfSample: true
-                },
-                numOfWorkers: 4,
-                decoder: {
-                    readers: [
-                        "i2of5_reader",      // PRIORIDADE: boletos
-                        "code_128_reader",   // códigos comuns
-                        "ean_reader",        // código de produtos
-                        "code_39_reader"
-                    ],
-                    debug: {
-                        drawBoundingBox: false,
-                        showFrequency: false,
-                        drawScanline: false
-                    }
-                },
-                locate: true
-            }, function(err) {
-                if (err) {
-                    console.error('❌ Erro ao iniciar Quagga:', err);
-                    showToast('Erro ao iniciar a câmera', 'error');
-                    fecharCameraQuagga();
-                    return;
                 }
-                console.log('✅ QuaggaJS iniciado!');
-                Quagga.start();
+            }).catch(err => {
+                console.warn('Erro no leitor:', err);
             });
-            
-            // Quando um código é detectado
-            Quagga.onDetected(function(result) {
-                if (isDecoding) return;
-                
-                const code = result.codeResult.code;
-                console.log('✅ Código detectado:', code);
-                console.log('📌 Formato:', result.codeResult.format);
-                
-                // Verificar se é código de boleto (44 dígitos)
-                if (code && code.length >= 44) {
-                    console.log('🎯 Código de boleto detectado!');
-                    isDecoding = true;
-                    
-                    const targetInput = document.getElementById(inputId);
-                    if (targetInput) {
-                        targetInput.value = code;
-                        showToast('✅ Código de boleto capturado!', 'success');
-                    }
-                    
-                    setTimeout(() => {
-                        fecharCameraQuagga();
-                        isDecoding = false;
-                    }, 500);
-                } else if (code && code.length >= 10) {
-                    // Outros códigos
-                    console.log('📦 Código comum detectado');
-                    isDecoding = true;
-                    
-                    const targetInput = document.getElementById(inputId);
-                    if (targetInput) {
-                        targetInput.value = code;
-                        showToast('✅ Código capturado!', 'success');
-                    }
-                    
-                    setTimeout(() => {
-                        fecharCameraQuagga();
-                        isDecoding = false;
-                    }, 500);
-                }
-            });
-            
-            // Timeout de 30 segundos
-            scanTimeout = setTimeout(() => {
-                if (document.getElementById('zxingModal')) {
-                    showToast('Nenhum código detectado. Tente novamente.', 'warning');
-                    fecharCameraQuagga();
-                }
-            }, 30000);
-            
         } else {
-            console.error('❌ QuaggaJS não carregado');
-            showToast('Erro ao carregar leitor de código', 'error');
-            fecharCameraQuagga();
+            showToast('Erro ao carregar leitor', 'error');
+            fecharCameraZXing();
         }
-    }, 100);
+        
+        // Timeout de 30 segundos
+        scanTimeout = setTimeout(() => {
+            if (document.getElementById('zxingModal')) {
+                showToast('Nenhum código de boleto detectado. Tente novamente.', 'warning');
+                fecharCameraZXing();
+            }
+        }, 30000);
+        
+    }).catch(function(err) {
+        console.error('Erro na câmera:', err);
+        
+        if (err.name === 'NotAllowedError') {
+            showToast('Permissão negada. Autorize o acesso à câmera.', 'error');
+        } else {
+            showToast('Erro ao acessar a câmera.', 'error');
+        }
+        fecharCameraZXing();
+    });
 }
 
 // ============================================
 // FUNÇÃO PARA FECHAR O MODAL DA CÂMERA
 // ============================================
-function fecharCameraQuagga() {
+function fecharCameraZXing() {
     console.log('🔵 Fechando câmera...');
     isDecoding = false;
     
@@ -10112,25 +10103,23 @@ function fecharCameraQuagga() {
         scanTimeout = null;
     }
     
-    // Parar o Quagga
-    if (window.Quagga) {
-        try {
-            Quagga.stop();
-        } catch(e) {
-            console.warn('Erro ao parar Quagga:', e);
-        }
+    // Parar o stream da câmera
+    const video = document.getElementById('zxing-video');
+    if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+    }
+    
+    // Parar o leitor
+    if (zxingReader) {
+        try { zxingReader.reset(); } catch(e) {}
+        zxingReader = null;
     }
     
     // Remover o modal
     const modal = document.getElementById('zxingModal');
     if (modal) modal.remove();
 }
-
-// Alias para compatibilidade
-function fecharCameraZXing() {
-    fecharCameraQuagga();
-}
-
 
 
 </script>
