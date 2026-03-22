@@ -9937,184 +9937,100 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ============================================
-// FUNÇÃO PARA LER CÓDIGO DE BARRAS (Foto + API)
+// FUNÇÃO PARA LER CÓDIGO DE BARRAS (QuaggaJS Simplificado)
 // ============================================
+let quaggaRunning = false;
 
 function abrirCameraCodigo(inputId) {
-    console.log('🔵 Abrindo câmera para ler código de barras');
+    console.log('🔵 Abrindo leitor de código de barras');
     
-    // Criar um input de arquivo que abre a câmera nativa
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    fileInput.capture = 'environment'; // Usa a câmera traseira
+    // Criar modal simples
+    const modal = document.createElement('div');
+    modal.id = 'barcodeScanner';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 10001;
+    `;
     
-    fileInput.style.display = 'none';
-    document.body.appendChild(fileInput);
-    
-    // Mostrar instruções
-    showToast('📸 Tire uma foto do código de barras', 'info');
-    
-    fileInput.onchange = async function(event) {
-        const file = event.target.files[0];
-        if (!file) {
-            document.body.removeChild(fileInput);
-            return;
-        }
-        
-        console.log('📸 Foto capturada, processando...');
-        
-        // Criar modal de processamento
-        const loadingModal = document.createElement('div');
-        loadingModal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 10002;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        `;
-        loadingModal.innerHTML = `
-            <div style="background: #fff; padding: 30px; border-radius: 12px; text-align: center;">
-                <i class="fas fa-spinner fa-spin" style="font-size: 40px; color: #9b59b6;"></i>
-                <p style="margin-top: 15px;">Lendo código de barras...</p>
+    modal.innerHTML = `
+        <div style="position: relative; width: 100%; height: 100%;">
+            <div id="quagga-live" style="width: 100%; height: 100%;"></div>
+            <div style="position: absolute; bottom: 30px; left: 0; right: 0; text-align: center;">
+                <button onclick="fecharLeitorBarras()" style="padding: 12px 30px; background: #dc3545; color: #fff; border: none; border-radius: 30px; font-size: 16px; cursor: pointer;">
+                    Cancelar
+                </button>
             </div>
-        `;
-        document.body.appendChild(loadingModal);
-        
-        try {
-            // Converter imagem para base64
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            
-            reader.onload = async function() {
-                const imageData = reader.result;
-                
-                // Criar um elemento img para processar
-                const img = new Image();
-                img.src = imageData;
-                
-                img.onload = async function() {
-                    // Criar canvas para processar a imagem
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    // Aumentar contraste para melhorar leitura
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    
-                    // Aplicar filtro de aumento de contraste
-                    const imageData2 = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const data = imageData2.data;
-                    for (let i = 0; i < data.length; i += 4) {
-                        // Aumentar contraste
-                        const r = data[i];
-                        const g = data[i+1];
-                        const b = data[i+2];
-                        const gray = (r + g + b) / 3;
-                        const newVal = gray > 128 ? 255 : 0;
-                        data[i] = newVal;
-                        data[i+1] = newVal;
-                        data[i+2] = newVal;
-                    }
-                    ctx.putImageData(imageData2, 0, 0);
-                    
-                    // Converter para base64
-                    const processedImage = canvas.toDataURL('image/jpeg');
-                    
-                    // Usar API gratuita do Scanbot (ou mostrar para digitar)
-                    // Como a API pode falhar, vamos oferecer duas opções
-                    
-                    loadingModal.remove();
-                    
-                    // Criar modal com a foto e campo para digitar
-                    const resultModal = document.createElement('div');
-                    resultModal.style.cssText = `
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        background: rgba(0,0,0,0.9);
-                        z-index: 10003;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    `;
-                    
-                    resultModal.innerHTML = `
-                        <div style="background: #fff; width: 90%; max-width: 400px; border-radius: 12px; overflow: hidden;">
-                            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
-                                <h3 style="margin: 0; color: #fff;"><i class="fas fa-barcode"></i> Código de Barras</h3>
-                            </div>
-                            <div style="padding: 20px; text-align: center;">
-                                <img src="${processedImage}" style="max-width: 100%; max-height: 150px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd;">
-                                <p style="margin-bottom: 10px; color: #333;">Digite o código de barras (44 dígitos):</p>
-                                <input type="text" id="codigoDigitado" class="form-input" placeholder="Ex: 75691448710123539305..." style="width: 100%; margin-bottom: 15px; text-align: center; font-family: monospace;">
-                                <div style="display: flex; gap: 10px;">
-                                    <button onclick="confirmarCodigo('${inputId}')" class="btn btn-primary" style="flex: 2;">Confirmar</button>
-                                    <button onclick="fecharModalCodigo()" class="btn" style="flex: 1; background: #6c757d; color: #fff;">Cancelar</button>
-                                </div>
-                                <p style="margin-top: 12px; font-size: 11px; color: #999;">
-                                    💡 O código está na parte inferior da fatura, com 44 dígitos
-                                </p>
-                            </div>
-                        </div>
-                    `;
-                    
-                    document.body.appendChild(resultModal);
-                    
-                    window.confirmarCodigo = function(inputId) {
-                        const codigo = document.getElementById('codigoDigitado').value.trim();
-                        const targetInput = document.getElementById(inputId);
-                        
-                        if (!codigo) {
-                            showToast('Digite o código de barras', 'warning');
-                            return;
-                        }
-                        
-                        if (codigo.length < 40) {
-                            showToast('Código muito curto. Verifique se digitou os 44 dígitos.', 'warning');
-                            return;
-                        }
-                        
-                        if (targetInput) {
-                            targetInput.value = codigo;
-                            showToast('✅ Código salvo!', 'success');
-                        }
-                        
-                        fecharModalCodigo();
-                        document.body.removeChild(fileInput);
-                    };
-                    
-                    window.fecharModalCodigo = function() {
-                        const modal = document.querySelector('div[style*="z-index: 10003"]');
-                        if (modal) modal.remove();
-                        document.body.removeChild(fileInput);
-                    };
-                };
-            };
-            
-        } catch (error) {
-            console.error('Erro:', error);
-            loadingModal.remove();
-            showToast('Erro ao processar imagem', 'error');
-            document.body.removeChild(fileInput);
-        }
-    };
+        </div>
+    `;
     
-    // Abrir a câmera
-    fileInput.click();
+    document.body.appendChild(modal);
+    
+    // Iniciar Quagga
+    if (window.Quagga && !quaggaRunning) {
+        quaggaRunning = true;
+        
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector("#quagga-live"),
+                constraints: {
+                    facingMode: "environment",
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            },
+            decoder: {
+                readers: ["i2of5_reader"]  // Apenas código de barras de boleto
+            },
+            locate: true
+        }, function(err) {
+            if (err) {
+                console.error('Erro:', err);
+                showToast('Erro ao iniciar câmera', 'error');
+                fecharLeitorBarras();
+                return;
+            }
+            Quagga.start();
+        });
+        
+        Quagga.onDetected(function(result) {
+            const code = result.codeResult.code;
+            console.log('✅ Código detectado:', code);
+            console.log('📏 Dígitos:', code.length);
+            
+            // Verificar se é código de boleto (44-48 dígitos)
+            if (/^\d{44,48}$/.test(code)) {
+                const targetInput = document.getElementById(inputId);
+                if (targetInput) {
+                    targetInput.value = code;
+                    showToast('✅ Código capturado!', 'success');
+                }
+                fecharLeitorBarras();
+            }
+        });
+    }
+}
+
+function fecharLeitorBarras() {
+    if (window.Quagga && quaggaRunning) {
+        try {
+            Quagga.stop();
+        } catch(e) {}
+        quaggaRunning = false;
+    }
+    
+    const modal = document.getElementById('barcodeScanner');
+    if (modal) modal.remove();
 }
 
 function fecharCameraZXing() {
-    // Função vazia para compatibilidade
+    fecharLeitorBarras();
 }
 
 </script>
