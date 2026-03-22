@@ -9938,7 +9938,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ============================================
-// FUNÇÃO PARA LER CÓDIGO DE BARRAS (QuaggaJS - OTIMIZADO)
+// FUNÇÃO PARA LER CÓDIGO DE BARRAS (QuaggaJS - Design Melhorado)
 // ============================================
 let isDecoding = false;
 
@@ -9975,12 +9975,18 @@ function abrirCameraCodigo(inputId) {
             </div>
             <div style="position: relative; background: #000; min-height: 300px;">
                 <div id="quagga-container" style="width: 100%; min-height: 300px;"></div>
-                <div id="scan-line" style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: #ffc107; box-shadow: 0 0 10px #ffc107; animation: scanMove 2s linear infinite; z-index: 10;"></div>
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 30%; border: 2px solid #ffc107; border-radius: 8px; pointer-events: none; z-index: 5;"></div>
+                <!-- Área de escaneamento (retângulo roxo) -->
+                <div id="scan-area" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 35%; border: 3px solid #9b59b6; border-radius: 12px; background: rgba(155, 89, 182, 0.1); box-shadow: 0 0 0 100vmax rgba(0,0,0,0.5); pointer-events: none; z-index: 5;">
+                    <div style="position: absolute; top: -20px; left: 10px; background: #9b59b6; padding: 2px 8px; border-radius: 12px; font-size: 10px; color: #fff;">ÁREA DE LEITURA</div>
+                </div>
+                <!-- Linha de escaneamento (dentro do retângulo) -->
+                <div id="scan-line" style="position: absolute; left: 50%; transform: translateX(-50%); width: 80%; height: 3px; background: #9b59b6; box-shadow: 0 0 8px #9b59b6; border-radius: 3px; animation: scanMove 2s ease-in-out infinite; z-index: 10;"></div>
             </div>
             <div style="padding: 15px; text-align: center; background: #f8f9fa;">
-                <p id="scan-status" style="margin: 0 0 5px 0; font-size: 12px; color: #ffc107; font-weight: bold;">🔍 Aguardando código...</p>
-                <p style="margin: 0; font-size: 11px; color: #666;">Centralize o código na área amarela e mantenha estável</p>
+                <p id="scan-status" style="margin: 0 0 5px 0; font-size: 12px; color: #9b59b6; font-weight: bold;">
+                    <i class="fas fa-qrcode"></i> Centralize o código no retângulo roxo
+                </p>
+                <p style="margin: 0; font-size: 11px; color: #666;">Mantenha a câmera estável e bem iluminada</p>
                 <button onclick="fecharCameraQuagga()" class="btn btn-sm" style="margin-top: 10px; background: #6c757d; color: #fff;">Cancelar</button>
             </div>
         </div>
@@ -9988,13 +9994,13 @@ function abrirCameraCodigo(inputId) {
     
     document.body.appendChild(modal);
     
-    // Adicionar animação
+    // Adicionar animação da linha (movimento dentro do retângulo)
     const style = document.createElement('style');
     style.textContent = `
         @keyframes scanMove {
-            0% { top: 15%; }
-            50% { top: 65%; }
-            100% { top: 15%; }
+            0% { top: 52%; }
+            50% { top: 80%; }
+            100% { top: 52%; }
         }
     `;
     document.head.appendChild(style);
@@ -10016,8 +10022,8 @@ function abrirCameraCodigo(inputId) {
                     }
                 },
                 locator: {
-                    patchSize: "large",        // Aumentar para melhor detecção
-                    halfSample: false,         // Não reduzir amostra
+                    patchSize: "x-large",
+                    halfSample: false,
                     debug: {
                         drawBoundingBox: false,
                         showFrequency: false,
@@ -10041,12 +10047,12 @@ function abrirCameraCodigo(inputId) {
                     }
                 },
                 locate: true,
-                frequency: 15,                 // Aumentar frequência de análise
+                frequency: 10,
                 area: {
                     top: "20%",
                     right: "10%",
                     left: "10%",
-                    bottom: "20%"
+                    bottom: "30%"
                 }
             }, function(err) {
                 if (err) {
@@ -10060,22 +10066,22 @@ function abrirCameraCodigo(inputId) {
                 
                 const statusEl = document.getElementById('scan-status');
                 if (statusEl) {
-                    statusEl.innerHTML = '📷 Câmera ativa. Aproxime o código da câmera.';
-                    statusEl.style.color = '#28a745';
+                    statusEl.innerHTML = '<i class="fas fa-camera"></i> Câmera ativa. Aponte para o código.';
+                    statusEl.style.color = '#9b59b6';
                 }
             });
             
             let lastCode = '';
             let detectionCount = 0;
+            let goodReadCount = 0;
             
             Quagga.onDetected(function(result) {
                 if (isDecoding) return;
                 
                 const code = result.codeResult.code;
-                const format = result.codeResult.format;
                 const statusEl = document.getElementById('scan-status');
                 
-                console.log('📌 Detectado:', code, '| Formato:', format, '| Dígitos:', code.length);
+                console.log('📌 Detectado:', code, '| Dígitos:', code.length);
                 
                 // Verificar se é código de boleto (44-48 dígitos)
                 const isBoleto = /^\d{44,48}$/.test(code);
@@ -10085,9 +10091,9 @@ function abrirCameraCodigo(inputId) {
                     if (code === lastCode) {
                         detectionCount++;
                         if (detectionCount >= 2) {
-                            console.log('🎯 CONFIRMADO:', code);
+                            console.log('🎯 CÓDIGO CONFIRMADO:', code);
                             if (statusEl) {
-                                statusEl.innerHTML = '✅ CÓDIGO DETECTADO!';
+                                statusEl.innerHTML = '<i class="fas fa-check-circle"></i> CÓDIGO DETECTADO!';
                                 statusEl.style.color = '#28a745';
                             }
                             
@@ -10101,7 +10107,7 @@ function abrirCameraCodigo(inputId) {
                             setTimeout(() => fecharCameraQuagga(), 500);
                         } else {
                             if (statusEl) {
-                                statusEl.innerHTML = '🎯 Aguardando confirmação...';
+                                statusEl.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Confirmando leitura...';
                                 statusEl.style.color = '#ffc107';
                             }
                         }
@@ -10109,18 +10115,36 @@ function abrirCameraCodigo(inputId) {
                         lastCode = code;
                         detectionCount = 1;
                         if (statusEl) {
-                            statusEl.innerHTML = '📱 Código detectado! Mantenha estável...';
+                            statusEl.innerHTML = '<i class="fas fa-check"></i> Código detectado! Mantenha estável...';
                             statusEl.style.color = '#ffc107';
                         }
                     }
+                } else if (code.length > 30) {
+                    // Códigos longos podem ser boletos mal lidos
+                    goodReadCount++;
+                    if (goodReadCount >= 3) {
+                        console.log('🎯 CÓDIGO LONGO:', code);
+                        if (statusEl) {
+                            statusEl.innerHTML = '<i class="fas fa-check-circle"></i> CÓDIGO DETECTADO!';
+                            statusEl.style.color = '#28a745';
+                        }
+                        
+                        isDecoding = true;
+                        const targetInput = document.getElementById(inputId);
+                        if (targetInput) {
+                            targetInput.value = code;
+                            showToast('✅ Código capturado!', 'success');
+                        }
+                        
+                        setTimeout(() => fecharCameraQuagga(), 500);
+                    }
                 } else {
-                    console.log('⚠️ Ignorado (não é boleto):', code.length, 'dígitos');
                     if (statusEl && detectionCount === 0) {
-                        statusEl.innerHTML = '⚠️ Código inválido. Aponte para o código de barras da fatura.';
+                        statusEl.innerHTML = '<i class="fas fa-info-circle"></i> Aproxime a câmera do código de barras';
                         statusEl.style.color = '#dc3545';
                         setTimeout(() => {
                             if (statusEl && document.getElementById('qrModal')) {
-                                statusEl.innerHTML = '🔍 Aguardando código...';
+                                statusEl.innerHTML = '<i class="fas fa-qrcode"></i> Centralize o código no retângulo roxo';
                             }
                         }, 2000);
                     }
