@@ -1955,8 +1955,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Html5Qrcode - leitor de código de barras -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<!-- ZXing - leitor de código de barras biblioteca--> 
+<script src="https://unpkg.com/@zxing/library@0.21.1/umd/index.min.js"></script>
 
 
 </head>
@@ -9939,10 +9939,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ============================================
-// FUNÇÃO PARA LER CÓDIGO DE BARRAS (Html5Qrcode - em tempo real)
+// FUNÇÃO PARA LER CÓDIGO DE BARRAS (ZXing com feedback visual)
 // ============================================
-let html5QrCode = null;
-let isScanning = false;
+let zxingReader = null;
+let zxingVideo = null;
+let isDecoding = false;
 
 function abrirCameraCodigo(inputId) {
     console.log('🔵 Abrindo câmera para leitura de código de barras');
@@ -9973,91 +9974,137 @@ function abrirCameraCodigo(inputId) {
         <div style="background: #fff; width: 95%; max-width: 500px; border-radius: 12px; overflow: hidden;">
             <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; color: #fff; display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="margin: 0;"><i class="fas fa-barcode"></i> Leia o código de barras</h3>
-                <button onclick="fecharCameraQr()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
+                <button onclick="fecharCameraZxing()" style="background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">&times;</button>
             </div>
-            <div style="padding: 15px;">
-                <div id="qr-reader" style="width: 100%; min-height: 300px;"></div>
-                <div style="margin-top: 15px; text-align: center;">
-                    <p style="font-size: 12px; color: #666;">
-                        <i class="fas fa-info-circle"></i> Centralize o código de barras na área de leitura
-                    </p>
-                    <button onclick="fecharCameraQr()" class="btn btn-sm" style="background: #6c757d; color: #fff;">Cancelar</button>
-                </div>
+            <div style="position: relative; background: #000;">
+                <video id="zxing-video" autoplay playsinline style="width: 100%; height: auto; min-height: 300px; object-fit: cover;"></video>
+                <div id="scan-line" style="position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #ffc107; box-shadow: 0 0 8px #ffc107; animation: scanMove 2s linear infinite;"></div>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 30%; border: 2px solid #ffc107; border-radius: 8px; pointer-events: none;"></div>
+            </div>
+            <div style="padding: 15px; text-align: center; background: #f8f9fa;">
+                <p style="margin: 0; font-size: 12px; color: #666;">
+                    <i class="fas fa-info-circle"></i> Centralize o código na área amarela
+                </p>
+                <p id="scan-status" style="margin: 5px 0 0 0; font-size: 11px; color: #ffc107;">🔍 Aguardando código...</p>
+                <button onclick="fecharCameraZxing()" class="btn btn-sm" style="margin-top: 10px; background: #6c757d; color: #fff;">Cancelar</button>
             </div>
         </div>
     `;
     
     document.body.appendChild(modal);
     
-    // Aguardar um pouco para o DOM carregar
-    setTimeout(() => {
-        // Inicializar o leitor
-        if (window.Html5Qrcode) {
-            const qrReader = new Html5Qrcode("qr-reader");
-            html5QrCode = qrReader;
-            
-            // Definir os formatos suportados
-            const formats = [
-                "CODE_128",
-                "CODE_39", 
-                "CODE_93",
-                "EAN_13",
-                "EAN_8",
-                "UPC_A",
-                "UPC_E",
-                "ITF",
-                "CODABAR"
-            ];
-            
-            const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 100 },
-                aspectRatio: 1.0,
-                formatsToSupport: formats
-            };
-            
-            qrReader.start(
-                { facingMode: "environment" },
-                config,
-                (decodedText) => {
-                    console.log('✅ Código detectado:', decodedText);
-                    console.log('📏 Tamanho:', decodedText.length);
-                    
-                    // Preencher o campo
-                    const targetInput = document.getElementById(inputId);
-                    if (targetInput) {
-                        targetInput.value = decodedText;
-                        showToast('✅ Código capturado!', 'success');
-                    }
-                    
-                    // Fechar a câmera
-                    fecharCameraQr();
-                },
-                (errorMessage) => {
-                    // Ignorar erros de leitura (não mostrar no console)
-                }
-            ).catch(err => {
-                console.error('Erro ao iniciar câmera:', err);
-                showToast('Erro ao iniciar a câmera', 'error');
-                fecharCameraQr();
-            });
-            
-        } else {
-            console.error('Html5Qrcode não carregado');
-            showToast('Erro ao carregar leitor', 'error');
-            fecharCameraQr();
+    // Adicionar animação da linha de scan
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes scanMove {
+            0% { top: 10%; }
+            50% { top: 70%; }
+            100% { top: 10%; }
         }
-    }, 100);
+    `;
+    document.head.appendChild(style);
+    
+    // Iniciar câmera
+    navigator.mediaDevices.getUserMedia({ 
+        video: { 
+            facingMode: { exact: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+        }
+    }).then(function(stream) {
+        console.log('✅ Câmera ativada');
+        
+        const video = document.getElementById('zxing-video');
+        if (!video) {
+            fecharCameraZxing();
+            return;
+        }
+        
+        video.srcObject = stream;
+        video.play();
+        
+        if (window.ZXing) {
+            console.log('🔵 Inicializando ZXing...');
+            
+            const hints = new Map();
+            const formats = [
+                ZXing.BarcodeFormat.ITF,
+                ZXing.BarcodeFormat.CODE_128,
+                ZXing.BarcodeFormat.CODE_39,
+                ZXing.BarcodeFormat.EAN_13,
+                ZXing.BarcodeFormat.EAN_8,
+                ZXing.BarcodeFormat.UPC_A
+            ];
+            hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+            hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+            
+            zxingReader = new ZXing.BrowserMultiFormatReader(hints);
+            
+            let lastCode = '';
+            let count = 0;
+            
+            zxingReader.decodeFromVideoDevice(null, video, (result, err) => {
+                const statusEl = document.getElementById('scan-status');
+                
+                if (result && !isDecoding) {
+                    const code = result.text;
+                    console.log('📌 Detectado:', code, '| Formato:', result.format);
+                    
+                    if (code === lastCode) {
+                        count++;
+                        if (count >= 2) {
+                            console.log('✅ CONFIRMADO:', code);
+                            statusEl.innerHTML = '✅ Código detectado!';
+                            statusEl.style.color = '#28a745';
+                            
+                            isDecoding = true;
+                            const targetInput = document.getElementById(inputId);
+                            if (targetInput) {
+                                targetInput.value = code;
+                                showToast('✅ Código capturado!', 'success');
+                            }
+                            
+                            setTimeout(() => fecharCameraZxing(), 500);
+                        } else {
+                            statusEl.innerHTML = '🎯 Aguardando confirmação...';
+                        }
+                    } else {
+                        lastCode = code;
+                        count = 1;
+                        statusEl.innerHTML = '📱 Código detectado! Mantenha estável...';
+                        statusEl.style.color = '#ffc107';
+                    }
+                } else {
+                    // statusEl.innerHTML = '🔍 Centralize o código...';
+                }
+            }).catch(err => {
+                console.warn('Erro:', err);
+            });
+        } else {
+            showToast('Erro ao carregar leitor', 'error');
+            fecharCameraZxing();
+        }
+        
+    }).catch(function(err) {
+        console.error('Erro na câmera:', err);
+        showToast('Erro ao acessar a câmera', 'error');
+        fecharCameraZxing();
+    });
 }
 
-function fecharCameraQr() {
+function fecharCameraZxing() {
     console.log('🔵 Fechando câmera...');
+    isDecoding = false;
     
-    if (html5QrCode) {
-        try {
-            html5QrCode.stop().catch(e => console.log('Erro ao parar:', e));
-        } catch(e) {}
-        html5QrCode = null;
+    if (zxingReader) {
+        try { zxingReader.reset(); } catch(e) {}
+        zxingReader = null;
+    }
+    
+    const video = document.getElementById('zxing-video');
+    if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
     }
     
     const modal = document.getElementById('qrModal');
@@ -10065,7 +10112,7 @@ function fecharCameraQr() {
 }
 
 function fecharCameraZXing() {
-    fecharCameraQr();
+    fecharCameraZxing();
 }
 
 </script>
