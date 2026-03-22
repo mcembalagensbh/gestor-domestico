@@ -9938,21 +9938,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // ============================================
-// FUNÇÃO PARA LER CÓDIGO DE BARRAS (QuaggaJS - Tela Cheia)
+// FUNÇÃO PARA LER CÓDIGO DE BARRAS (Versão Limpa)
 // ============================================
-let isDecoding = false;
+let currentScanner = null;
 
 function abrirCameraCodigo(inputId) {
-    console.log('🔵 Abrindo câmera para leitura de código de barras');
+    console.log('🔵 Abrindo câmera');
     
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showToast('Seu navegador não suporta acesso à câmera', 'warning');
-        return;
+    // Fechar scanner anterior se existir
+    if (currentScanner) {
+        try {
+            currentScanner.stop();
+        } catch(e) {}
+        currentScanner = null;
     }
     
-    // Criar o modal em tela cheia
+    // Criar modal
     const modal = document.createElement('div');
-    modal.id = 'qrModal';
+    modal.id = 'scanModal';
     modal.style.cssText = `
         position: fixed;
         top: 0;
@@ -9961,158 +9964,107 @@ function abrirCameraCodigo(inputId) {
         height: 100%;
         background: #000;
         z-index: 10001;
-        display: flex;
-        flex-direction: column;
     `;
     
     modal.innerHTML = `
-        <div style="flex: 1; position: relative; background: #000;">
-            <div id="quagga-container" style="width: 100%; height: 100%;"></div>
-            <!-- Área de escaneamento (retângulo no centro) -->
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; height: 25%; border: 3px solid #9b59b6; border-radius: 12px; background: rgba(155, 89, 182, 0.1); pointer-events: none; z-index: 10;">
-                <div style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: #9b59b6; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #fff; white-space: nowrap;">
-                    <i class="fas fa-barcode"></i> Centralize o código aqui
+        <div style="width: 100%; height: 100%; position: relative;">
+            <video id="scanner-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 25%; border: 3px solid #9b59b6; border-radius: 12px; background: transparent; pointer-events: none;">
+                <div style="position: absolute; top: -28px; left: 50%; transform: translateX(-50%); background: #9b59b6; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #fff; white-space: nowrap;">
+                    📷 Centralize o código aqui
                 </div>
             </div>
-            <!-- Linha de escaneamento -->
-            <div id="scan-line" style="position: absolute; left: 5%; width: 90%; height: 3px; background: #9b59b6; box-shadow: 0 0 8px #9b59b6; border-radius: 3px; animation: scanMove 1.5s ease-in-out infinite; z-index: 11;"></div>
-        </div>
-        <div style="background: rgba(0,0,0,0.8); padding: 15px; text-align: center;">
-            <p id="scan-status" style="margin: 0 0 10px 0; font-size: 14px; color: #fff;">
-                <i class="fas fa-qrcode"></i> Aponte para o código de barras
-            </p>
-            <button onclick="fecharCameraQuagga()" style="padding: 10px 30px; background: #dc3545; color: #fff; border: none; border-radius: 30px; font-size: 16px; cursor: pointer;">
-                <i class="fas fa-times"></i> Cancelar
-            </button>
+            <div id="scan-line" style="position: absolute; left: 7.5%; width: 85%; height: 3px; background: #9b59b6; border-radius: 3px; animation: scanMove 1.5s ease-in-out infinite; pointer-events: none;"></div>
+            <div style="position: absolute; bottom: 30px; left: 0; right: 0; text-align: center;">
+                <p id="scan-status" style="color: #fff; margin-bottom: 15px; font-size: 14px; text-shadow: 1px 1px 2px #000;">🔍 Aguardando código...</p>
+                <button onclick="fecharScanner()" style="padding: 12px 30px; background: #dc3545; color: #fff; border: none; border-radius: 30px; font-size: 16px; cursor: pointer;">Cancelar</button>
+            </div>
         </div>
     `;
     
     document.body.appendChild(modal);
     
-    // Adicionar animação da linha
+    // Animação
     const style = document.createElement('style');
-    style.textContent = `
-        @keyframes scanMove {
-            0% { top: 20%; }
-            50% { top: 75%; }
-            100% { top: 20%; }
-        }
-    `;
+    style.textContent = `@keyframes scanMove { 0% { top: 20%; } 50% { top: 70%; } 100% { top: 20%; } }`;
     document.head.appendChild(style);
     
-    // Aguardar o container
-    setTimeout(() => {
-        if (window.Quagga) {
-            console.log('🔵 Inicializando QuaggaJS...');
+    // Iniciar câmera
+    navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: { exact: "environment" } }
+    }).then(function(stream) {
+        const video = document.getElementById('scanner-video');
+        video.srcObject = stream;
+        video.play();
+        
+        // Usar BarcodeDetector nativo (se disponível)
+        if ('BarcodeDetector' in window) {
+            console.log('🔵 Usando BarcodeDetector nativo');
+            const barcodeDetector = new BarcodeDetector({ formats: ['code_128', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf'] });
             
-            Quagga.init({
-                inputStream: {
-                    name: "Live",
-                    type: "LiveStream",
-                    target: document.querySelector("#quagga-container"),
-                    constraints: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        facingMode: "environment"
+            const scanInterval = setInterval(async () => {
+                if (!video.videoWidth || !video.videoHeight) return;
+                
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    const barcodes = await barcodeDetector.detect(canvas);
+                    if (barcodes.length > 0) {
+                        const code = barcodes[0].rawValue;
+                        console.log('✅ Código detectado:', code);
+                        
+                        const statusEl = document.getElementById('scan-status');
+                        if (statusEl) statusEl.innerHTML = '✅ Código detectado!';
+                        
+                        const targetInput = document.getElementById(inputId);
+                        if (targetInput) targetInput.value = code;
+                        
+                        showToast('✅ Código capturado!', 'success');
+                        clearInterval(scanInterval);
+                        fecharScanner();
                     }
-                },
-                locator: {
-                    patchSize: "x-large",
-                    halfSample: false
-                },
-                numOfWorkers: 4,
-                decoder: {
-                    readers: ["i2of5_reader"]
-                },
-                locate: true,
-                frequency: 15
-            }, function(err) {
-                if (err) {
-                    console.error('❌ Erro ao iniciar Quagga:', err);
-                    showToast('Erro ao iniciar a câmera', 'error');
-                    fecharCameraQuagga();
-                    return;
+                } catch(e) {
+                    console.log('Erro:', e);
                 }
-                console.log('✅ QuaggaJS iniciado!');
-                Quagga.start();
-                
-                const statusEl = document.getElementById('scan-status');
-                if (statusEl) {
-                    statusEl.innerHTML = '<i class="fas fa-camera"></i> Câmera ativa. Aproxime o código da câmera.';
-                }
-            });
+            }, 500);
             
-            let lastCode = '';
-            let detectionCount = 0;
-            
-            Quagga.onDetected(function(result) {
-                if (isDecoding) return;
-                
-                const code = result.codeResult.code;
-                const statusEl = document.getElementById('scan-status');
-                
-                console.log('📌 Detectado:', code, '| Dígitos:', code.length);
-                
-                // Verificar se é código de boleto (44-48 dígitos)
-                const isBoleto = /^\d{44,48}$/.test(code);
-                
-                if (isBoleto || code.length > 40) {
-                    if (code === lastCode) {
-                        detectionCount++;
-                        if (detectionCount >= 2) {
-                            console.log('🎯 CONFIRMADO:', code);
-                            if (statusEl) {
-                                statusEl.innerHTML = '<i class="fas fa-check-circle"></i> CÓDIGO DETECTADO!';
-                                statusEl.style.color = '#28a745';
-                            }
-                            
-                            isDecoding = true;
-                            const targetInput = document.getElementById(inputId);
-                            if (targetInput) {
-                                targetInput.value = code;
-                                showToast('✅ Código de barras capturado!', 'success');
-                            }
-                            
-                            setTimeout(() => fecharCameraQuagga(), 500);
-                        } else {
-                            if (statusEl) {
-                                statusEl.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Confirmando leitura...';
-                            }
-                        }
-                    } else {
-                        lastCode = code;
-                        detectionCount = 1;
-                        if (statusEl) {
-                            statusEl.innerHTML = '<i class="fas fa-check"></i> Código detectado! Mantenha estável...';
-                        }
-                    }
-                }
-            });
-            
+            window.currentScanInterval = scanInterval;
         } else {
-            console.error('❌ QuaggaJS não carregado');
-            showToast('Erro ao carregar leitor', 'error');
-            fecharCameraQuagga();
+            console.log('🔵 BarcodeDetector não suportado');
+            document.getElementById('scan-status').innerHTML = '⚠️ Seu navegador não suporta leitura automática. Digite o código manualmente.';
         }
-    }, 100);
+        
+    }).catch(function(err) {
+        console.error('Erro na câmera:', err);
+        showToast('Erro ao acessar a câmera', 'error');
+        fecharScanner();
+    });
 }
 
-function fecharCameraQuagga() {
-    console.log('🔵 Fechando câmera...');
-    isDecoding = false;
+function fecharScanner() {
+    console.log('🔵 Fechando scanner');
     
-    if (window.Quagga) {
-        try {
-            Quagga.stop();
-        } catch(e) {}
+    if (window.currentScanInterval) {
+        clearInterval(window.currentScanInterval);
+        window.currentScanInterval = null;
     }
     
-    const modal = document.getElementById('qrModal');
+    const video = document.getElementById('scanner-video');
+    if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+    }
+    
+    const modal = document.getElementById('scanModal');
     if (modal) modal.remove();
 }
 
 function fecharCameraZXing() {
-    fecharCameraQuagga();
+    fecharScanner();
 }
 
 </script>
