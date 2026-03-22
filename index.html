@@ -9933,17 +9933,16 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(iniciarCarrosselBanners, 1000);
 });
 
-
 // ============================================
-// FUNÇÃO PARA LER CÓDIGO DE BARRAS (ZXing - com reset a cada abertura)
+// FUNÇÃO PARA LER CÓDIGO DE BARRAS (ZXing com stream manual)
 // ============================================
-let zxingReader = null;
 let zxingActive = false;
+let zxingScanInterval = null;
 let zxingVideo = null;
 let zxingStream = null;
 
 function abrirCameraCodigo(inputId) {
-    console.log('🔵 Abrindo câmera com ZXing');
+    console.log('🔵 Abrindo câmera com ZXing (stream manual)');
     
     // Fechar scanner anterior se existir
     if (zxingActive) {
@@ -10002,113 +10001,134 @@ function abrirCameraCodigo(inputId) {
     navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: { exact: "environment" } }
     }).then(function(stream) {
-        console.log('✅ Câmera ativada');
+        console.log('✅ Câmera ativada!');
         zxingStream = stream;
         zxingVideo = document.getElementById('zxing-video');
         zxingVideo.srcObject = stream;
-        zxingVideo.play();
+        
+        // Forçar o vídeo a reproduzir
+        zxingVideo.play().catch(e => console.log('Erro ao reproduzir:', e));
+        
+        // Verificar se o vídeo está realmente funcionando
+        setTimeout(() => {
+            if (zxingVideo.videoWidth === 0) {
+                console.log('⚠️ Vídeo ainda não carregado, tentando novamente...');
+                zxingVideo.play();
+            }
+        }, 500);
         
         if (window.ZXing) {
             console.log('🔵 Inicializando ZXing...');
             
-            // Configurar para ler formatos de boletos
+            // Criar leitor
             const hints = new Map();
             const formats = [
-                ZXing.BarcodeFormat.ITF,           // Interleaved 2 of 5 (boletos)
+                ZXing.BarcodeFormat.ITF,
                 ZXing.BarcodeFormat.CODE_128,
                 ZXing.BarcodeFormat.CODE_39,
                 ZXing.BarcodeFormat.EAN_13,
-                ZXing.BarcodeFormat.EAN_8,
-                ZXing.BarcodeFormat.UPC_A
+                ZXing.BarcodeFormat.EAN_8
             ];
             hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
             hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
             
-            zxingReader = new ZXing.BrowserMultiFormatReader(hints);
+            const reader = new ZXing.BrowserMultiFormatReader(hints);
             zxingActive = true;
             
             let lastCode = '';
             let confirmCount = 0;
             const statusEl = document.getElementById('zxing-status');
             
-            zxingReader.decodeFromVideoDevice(null, zxingVideo, (result, err) => {
-                if (!zxingActive) return;
+            // Processar frames manualmente
+            const processFrame = async () => {
+                if (!zxingActive || !zxingVideo || zxingVideo.videoWidth === 0) {
+                    if (zxingActive) setTimeout(processFrame, 200);
+                    return;
+                }
                 
-                if (result) {
-                    const code = result.text;
-                    console.log('📌 Detectado:', code, '| Formato:', result.format, '| Dígitos:', code.length);
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = zxingVideo.videoWidth;
+                    canvas.height = zxingVideo.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(zxingVideo, 0, 0, canvas.width, canvas.height);
                     
-                    // Verificar se é código de boleto (44-48 dígitos)
-                    const isBoleto = /^\d{44,48}$/.test(code);
+                    const result = await reader.decodeFromImage(canvas);
                     
-                    if (isBoleto) {
-                        if (code === lastCode) {
-                            confirmCount++;
-                            if (statusEl) statusEl.innerHTML = `✅ Confirmando... (${confirmCount}/2)`;
-                            
-                            if (confirmCount >= 2) {
-                                console.log('🎯 CÓDIGO CONFIRMADO:', code);
-                                if (statusEl) {
-                                    statusEl.innerHTML = '✅ CÓDIGO DETECTADO!';
-                                    statusEl.style.color = '#28a745';
-                                }
+                    if (result) {
+                        const code = result.text;
+                        console.log('📌 Detectado:', code, '| Dígitos:', code.length);
+                        
+                        const isBoleto = /^\d{44,48}$/.test(code);
+                        
+                        if (isBoleto) {
+                            if (code === lastCode) {
+                                confirmCount++;
+                                if (statusEl) statusEl.innerHTML = `✅ Confirmando... (${confirmCount}/2)`;
                                 
-                                const targetInput = document.getElementById(inputId);
-                                if (targetInput) {
-                                    targetInput.value = code;
+                                if (confirmCount >= 2) {
+                                    console.log('🎯 CÓDIGO CONFIRMADO:', code);
+                                    if (statusEl) {
+                                        statusEl.innerHTML = '✅ CÓDIGO DETECTADO!';
+                                        statusEl.style.color = '#28a745';
+                                    }
+                                    
+                                    const targetInput = document.getElementById(inputId);
+                                    if (targetInput) targetInput.value = code;
                                     showToast('✅ Código de barras capturado!', 'success');
+                                    
+                                    setTimeout(() => fecharCameraZxing(), 500);
+                                    return;
                                 }
-                                
-                                setTimeout(() => fecharCameraZxing(), 500);
-                            }
-                        } else {
-                            lastCode = code;
-                            confirmCount = 1;
-                            if (statusEl) {
-                                statusEl.innerHTML = '📌 Código detectado! Mantenha estável...';
-                                statusEl.style.color = '#ffc107';
-                            }
-                        }
-                    } else if (code.length >= 40) {
-                        // Código longo - pode ser boleto mal lido
-                        if (code === lastCode) {
-                            confirmCount++;
-                            if (confirmCount >= 3) {
-                                console.log('🎯 CÓDIGO LONGO:', code);
+                            } else {
+                                lastCode = code;
+                                confirmCount = 1;
                                 if (statusEl) {
-                                    statusEl.innerHTML = '✅ CÓDIGO DETECTADO!';
-                                    statusEl.style.color = '#28a745';
-                                }
-                                
-                                const targetInput = document.getElementById(inputId);
-                                if (targetInput) {
-                                    targetInput.value = code;
-                                    showToast('✅ Código capturado!', 'success');
-                                }
-                                
-                                setTimeout(() => fecharCameraZxing(), 500);
-                            }
-                        } else {
-                            lastCode = code;
-                            confirmCount = 1;
-                            if (statusEl) statusEl.innerHTML = '📌 Código detectado! Mantenha estável...';
-                        }
-                    } else if (code.length >= 10) {
-                        if (statusEl) {
-                            statusEl.innerHTML = `⚠️ Código curto (${code.length} dígitos). Aproxime mais a câmera.`;
-                            statusEl.style.color = '#dc3545';
-                            setTimeout(() => {
-                                if (statusEl && zxingActive) {
-                                    statusEl.innerHTML = '🔍 Aguardando código...';
+                                    statusEl.innerHTML = '📌 Código detectado! Mantenha estável...';
                                     statusEl.style.color = '#ffc107';
                                 }
-                            }, 2000);
+                            }
+                        } else if (code.length >= 40) {
+                            if (code === lastCode) {
+                                confirmCount++;
+                                if (confirmCount >= 3) {
+                                    if (statusEl) statusEl.innerHTML = '✅ CÓDIGO DETECTADO!';
+                                    const targetInput = document.getElementById(inputId);
+                                    if (targetInput) targetInput.value = code;
+                                    showToast('✅ Código capturado!', 'success');
+                                    setTimeout(() => fecharCameraZxing(), 500);
+                                    return;
+                                }
+                            } else {
+                                lastCode = code;
+                                confirmCount = 1;
+                                if (statusEl) statusEl.innerHTML = '📌 Código detectado! Mantenha estável...';
+                            }
+                        } else if (code.length >= 10) {
+                            if (statusEl) {
+                                statusEl.innerHTML = `⚠️ Código curto (${code.length} dígitos). Aproxime mais.`;
+                                statusEl.style.color = '#dc3545';
+                                setTimeout(() => {
+                                    if (statusEl && zxingActive) {
+                                        statusEl.innerHTML = '🔍 Aguardando código...';
+                                        statusEl.style.color = '#ffc107';
+                                    }
+                                }, 2000);
+                            }
                         }
                     }
+                } catch(e) {
+                    // Sem código detectado - normal
                 }
-            }).catch(err => {
-                console.warn('Erro no leitor:', err);
-            });
+                
+                if (zxingActive) {
+                    setTimeout(processFrame, 300);
+                }
+            };
+            
+            // Iniciar processamento
+            setTimeout(processFrame, 500);
+            
         } else {
             console.error('❌ ZXing não carregado');
             showToast('Erro ao carregar leitor', 'error');
@@ -10126,15 +10146,9 @@ function fecharCameraZxing() {
     console.log('🔵 Fechando câmera...');
     zxingActive = false;
     
-    if (zxingReader) {
-        try {
-            zxingReader.reset();
-        } catch(e) {}
-        zxingReader = null;
-    }
-    
     if (zxingVideo && zxingVideo.srcObject) {
-        zxingVideo.srcObject.getTracks().forEach(track => track.stop());
+        const tracks = zxingVideo.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
         zxingVideo.srcObject = null;
     }
     
