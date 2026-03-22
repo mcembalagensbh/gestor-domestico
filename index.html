@@ -2086,6 +2086,15 @@
         <div id="menuUserEmail" style="font-size: 11px; opacity: 0.7; margin-top: 4px; padding-left: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
             carregando...
         </div>
+        <!-- Texto condicional para não assinantes -->
+        <div id="menuHeaderPremiumLink" style="font-size: 12px; margin-top: 8px; padding-left: 32px; cursor: pointer; display: none;" onclick="abrirModalAssinatura(); fecharSideMenu()">
+            <i class="fas fa-crown" style="font-size: 11px; margin-right: 4px; color: #ffc107;"></i>
+            <span style="color: #ffc107;">✨ Versão Grátis</span> - <strong style="color: #fff;">Clique e use Premium</strong>
+        </div>
+        <div id="menuHeaderPremiumAssinante" style="font-size: 12px; margin-top: 8px; padding-left: 32px; display: none;">
+            <i class="fas fa-check-circle" style="color: #28a745; margin-right: 4px;"></i>
+            <span style="color: #fff;">Plano Premium Ativo</span>
+        </div>
     </div>
 </div>
             <div class="side-menu-content">
@@ -2097,7 +2106,7 @@
     <div class="side-menu-item" onclick="abrirPoliticasTermos();fecharSideMenu()"><i class="fas fa-file-contract"></i> Políticas e Termos</div>
     <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()"><i class="fas fa-book"></i> Manual Rápido</div>
     <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()"><i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span></div>
-    
+    <div class="side-menu-item" onclick="exportarCalendario();fecharSideMenu()"><i class="fas fa-calendar-alt"></i> Outros Calendários</div> 
     <!-- 🔴 NOVO ITEM: QUER USAR NO IPHONE? -->
     <div class="side-menu-item" onclick="abrirModalIphone();fecharSideMenu()">
         <i class="fab fa-apple"></i> Quer usar no Iphone?
@@ -2126,7 +2135,7 @@
 
 
 
-          <div class="side-menu-footer">
+                    <div class="side-menu-footer">
     <!-- BOTÕES DE PARCEIROS (FUNDO BRANCO) -->
     <div class="banner-carrossel" id="bannerCarrossel" style="height: auto; background: transparent; box-shadow: none; padding: 0;">
         <!-- Botão 1 - Mundo Carol -->
@@ -2139,19 +2148,19 @@
             <img src="https://cdn.awsli.com.br/1819/1819304/logo/mc-logo-sem-fundo-r6kzmi7q1q.png" alt="MC Embalagens">
         </div>
         
-        <!-- Botão 3 - Grupo Mundo Carol -->
-        <div class="banner-item-fixo" onclick="window.open('https://www.mundocarol.com.br', '_blank')" style="width: 100%;">
-            <div style="width: 100%; text-align: center; color: var(--dark);">
-                <i class="fas fa-gift" style="font-size: 28px; margin-bottom: 5px; color: var(--purple);"></i>
-                <div style="font-weight: bold; font-size: 14px;">Grupo Mundo Carol</div>
-                <small style="font-size: 10px; color: var(--gray);">www.mundocarol.com.br</small>
-            </div>
+       
         </div>
     </div>
     
-    <!-- Texto pequeno (opcional) -->
-    <div style="font-size: 9px; color: #999; margin-top: 5px; text-align: center;">
-        Grupo Mundo Carol
+    <!-- Texto condicional (aparece apenas para não assinantes) -->
+    <div id="footerPremiumLink" style="font-size: 11px; color: #999; margin-top: 8px; text-align: center; cursor: pointer; display: none;" onclick="abrirModalAssinatura(); fecharSideMenu()">
+        <i class="fas fa-crown" style="font-size: 10px; margin-right: 4px;"></i>
+        Você está usando a versão <strong>Grátis</strong>, clique aqui e use as funções <strong style="color: var(--purple);">PREMIUM</strong>
+    </div>
+    
+    <!-- Texto para assinantes (opcional) -->
+    <div id="footerPremiumAssinante" style="font-size: 10px; color: #999; margin-top: 8px; text-align: center; display: none;">
+        <i class="fas fa-check-circle" style="color: var(--success);"></i> Plano Premium Ativo
     </div>
 </div>
         
@@ -2187,10 +2196,7 @@
         </div>
     </div>
     
-    <!-- Texto pequeno (opcional) -->
-    <div style="font-size: 9px; color: #999; margin-top: 5px; text-align: center;">
-        Grupo Mundo Carol
-    </div>
+   
 </div>
         </div>
 
@@ -2373,10 +2379,10 @@
                 }
             },
             currentFilter: 'all',
-           dataCache: {
+         dataCache: {
     contas: [], regrasContas: [], eventos: [], eventosIndividuais: [], regrasEventos: [],
     gastos: [], lista: [], saldos: [], historico: [], excecoesRecorrencia: [],
-    giros: [], movimentacoesGiro: [], notas: []
+    giros: [], movimentacoesGiro: [], notas: [], usuariosFamilia: []
 },
             notificacoesAgendadas: [],
             serviceWorkerRegistration: null,
@@ -2793,6 +2799,54 @@ document.addEventListener('DOMContentLoaded', function() {
         App.plano = 'gratis';
     }
 }
+
+
+
+async function carregarAssinatura() {
+    if (!App.currentUser) return;
+    
+    try {
+        const { data, error } = await App.supabase
+            .from('assinaturas')
+            .select('data_expiracao, status, plano')
+            .eq('user_id', App.currentUser.id)
+            .maybeSingle();
+
+        if (data && data.status === 'ativo') {
+            App.dataExpiracao = new Date(data.data_expiracao);
+            App.plano = data.plano || 'gratis';
+            
+            let hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            let dataExp = new Date(data.data_expiracao);
+            dataExp.setHours(0, 0, 0, 0);
+            
+            if (dataExp >= hoje) {
+                App.assinaturaAtiva = true;
+            } else {
+                App.assinaturaAtiva = false;
+                App.plano = 'gratis';
+            }
+        } else {
+            App.assinaturaAtiva = false;
+            App.dataExpiracao = null;
+            App.plano = 'gratis';
+        }
+        
+        atualizarStatusAssinaturaMenu();
+        atualizarFooterAssinatura();  // 🔴 ADICIONAR ESTA LINHA
+        
+    } catch (error) {
+        console.error('Erro ao carregar assinatura:', error);
+        App.assinaturaAtiva = false;
+        App.plano = 'gratis';
+        atualizarFooterAssinatura();  // 🔴 ADICIONAR TAMBÉM AQUI
+    }
+}
+
+
+
     function atualizarStatusAssinaturaMenu() {
     let menuItem = document.getElementById('menuAssinaturaStatus');
     if (!menuItem) return;
@@ -2827,6 +2881,51 @@ document.addEventListener('DOMContentLoaded', function() {
         menuItem.innerHTML = `Premium <span class="assinatura-badge" style="background:#f39c12; font-weight:600">Anual</span>`;
     }
 }
+
+
+
+function atualizarStatusAssinaturaMenu() {
+    let menuItem = document.getElementById('menuAssinaturaStatus');
+    if (!menuItem) return;
+    
+    let plano = App.plano || 'gratis';
+    
+    if (plano === 'gratis') {
+        if (App.assinaturaAtiva && App.dataExpiracao) {
+            // ... código existente ...
+        } else {
+            menuItem.innerHTML = `Premium <span class="assinatura-badge assinatura-expirada">Expirada</span>`;
+        }
+    } else if (plano === 'mensal') {
+        menuItem.innerHTML = `Premium <span class="assinatura-badge" style="background:#3498db; font-weight:600">Mensal</span>`;
+    } else if (plano === 'anual') {
+        menuItem.innerHTML = `Premium <span class="assinatura-badge" style="background:#f39c12; font-weight:600">Anual</span>`;
+    }
+    
+    atualizarFooterAssinatura();  // 🔴 ADICIONAR ESTA LINHA
+}
+
+// ============================================
+// FUNÇÃO PARA ATUALIZAR CABEÇALHO DO MENU CONFORME ASSINATURA
+// ============================================
+
+function atualizarFooterAssinatura() {
+    const headerGratis = document.getElementById('menuHeaderPremiumLink');
+    const headerAssinante = document.getElementById('menuHeaderPremiumAssinante');
+    
+    const isAssinante = App.plano === 'mensal' || App.plano === 'anual';
+    
+    if (headerGratis && headerAssinante) {
+        if (isAssinante) {
+            headerGratis.style.display = 'none';
+            headerAssinante.style.display = 'block';
+        } else {
+            headerGratis.style.display = 'block';
+            headerAssinante.style.display = 'none';
+        }
+    }
+}
+
 
 function podeExecutarAcao() {
     // Se não tem assinatura ativa, não pode executar ações
@@ -3822,7 +3921,8 @@ function atualizarEmailMenu() {
                 App.supabase.from('historico_acoes').select('*').eq('user_id', App.currentUser.id).order('data', { ascending: false }).limit(500),
                 App.supabase.from('giros').select('*').eq('user_id', App.currentUser.id),
                 App.supabase.from('movimentacoes_giro').select('*').eq('user_id', App.currentUser.id).order('data', { ascending: false }),
-                App.supabase.from('notas').select('*').eq('user_id', App.currentUser.id)  // 🔴 NOTAS
+                App.supabase.from('notas').select('*').eq('user_id', App.currentUser.id),
+                App.supabase.from('usuarios_familia').select('*').eq('user_id', App.currentUser.id)  // 🔴 NOVO
             ];
 
             const results = await Promise.allSettled(promises);
@@ -3839,7 +3939,8 @@ function atualizarEmailMenu() {
             const historicoAcoes = results[9].status === 'fulfilled' ? results[9].value.data : [];
             const giros = results[10].status === 'fulfilled' ? results[10].value.data : [];
             const movimentacoes = results[11].status === 'fulfilled' ? results[11].value.data : [];
-            const notas = results[12].status === 'fulfilled' ? results[12].value.data : [];  // 🔴 NOTAS
+            const notas = results[12].status === 'fulfilled' ? results[12].value.data : [];
+            const usuariosFamilia = results[13].status === 'fulfilled' ? results[13].value.data : [];  // 🔴 NOVO
 
             let excecoesRecorrencia = [];
             try {
@@ -3874,7 +3975,7 @@ function atualizarEmailMenu() {
                 eventosIndividuais: eventosIndividuais || [], regrasEventos: regrasEventos || [],
                 gastos: gastos || [], lista: lista || [], saldos: saldos || [], historico: historico || [],
                 excecoesRecorrencia: excecoesRecorrencia, giros: giros || [], movimentacoesGiro: movimentacoes || [],
-                notas: notas || []  // 🔴 NOTAS
+                notas: notas || [], usuariosFamilia: usuariosFamilia || []  // 🔴 NOVO
             };
 
             // Salvar no localStorage para uso offline
@@ -5248,14 +5349,32 @@ async function confirmarAdicionarGiro(id, desc) {
 
 
         function carregarUsuarioLocal() {
-            if (!App.currentUser) return;
-            const key = `mylife_usuario_${App.currentUser.id}`;
-            const nome = localStorage.getItem(key);
-            if (nome) {
-                App.usuarioAtual = nome;
-                document.getElementById('usuarioHeaderNome').textContent = nome;
-            }
-        }
+    if (!App.currentUser) return;
+    
+    // Tentar carregar do localStorage
+    const saved = localStorage.getItem(`mylife_usuario_${App.currentUser.id}`);
+    if (saved) {
+        try {
+            App.usuarioAtual = JSON.parse(saved);
+            document.getElementById('usuarioHeaderNome').textContent = App.usuarioAtual.apelido || App.usuarioAtual.nome;
+            return;
+        } catch(e) {}
+    }
+    
+    // Se não tiver, tentar buscar no cache
+    if (App.dataCache.usuariosFamilia && App.dataCache.usuariosFamilia.length > 0) {
+        const primeiro = App.dataCache.usuariosFamilia[0];
+        App.usuarioAtual = {
+            id: primeiro.id,
+            nome: primeiro.nome,
+            telefone: primeiro.telefone,
+            apelido: primeiro.apelido,
+            codigo_acesso: primeiro.codigo_acesso
+        };
+        document.getElementById('usuarioHeaderNome').textContent = primeiro.apelido || primeiro.nome;
+        localStorage.setItem(`mylife_usuario_${App.currentUser.id}`, JSON.stringify(App.usuarioAtual));
+    }
+}
 
         function salvarUsuarioLocal(nome) {
             if (!App.currentUser) return;
@@ -5270,36 +5389,138 @@ async function confirmarAdicionarGiro(id, desc) {
         }
 
         function abrirSelecaoUsuario(aposAcao = false, acao = null) {
-            let nomeAtual = App.usuarioAtual || '';
-
-            let conteudo = `
-                <div class="form-group">
-                    <label class="form-label">Seu Nome</label>
-                    <input type="text" id="novoUsuarioNome" class="form-input" value="${nomeAtual}" placeholder="Digite seu nome" autocomplete="off">
+    let usuarios = App.dataCache.usuariosFamilia || [];
+    let usuarioAtual = App.usuarioAtual;
+    
+    let listaUsuariosHtml = '';
+    if (usuarios.length > 0) {
+        listaUsuariosHtml = `
+            <div style="margin-bottom: 16px;">
+                <label class="form-label"><i class="fas fa-users"></i> Usuários da família</label>
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+                    ${usuarios.map(u => `
+                        <div onclick="selecionarUsuarioExistente(${u.id}, '${u.apelido}')" style="padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${u.apelido}</strong>
+                                <small style="display: block; color: var(--gray);">${u.nome} - ${formatarTelefone(u.telefone)}</small>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: var(--gray);"></i>
+                        </div>
+                    `).join('')}
                 </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="salvarUsuarioSelecao(${aposAcao}, '${acao}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
-                </div>
-            `;
-            abrirModal('Seu Nome', 'fa-user', conteudo);
-        }
-
-        function salvarUsuarioSelecao(aposAcao = false, acao = null) {
-            let nome = document.getElementById('novoUsuarioNome')?.value.trim();
-            if (!nome) {
-                showToast('Digite um nome', 'warning');
-                return;
-            }
-            
-            salvarUsuarioLocal(nome);
+                <hr style="margin: 16px 0;">
+            </div>
+        `;
+    }
+    
+    let conteudo = `
+        ${listaUsuariosHtml}
+        <div style="margin-bottom: 16px;">
+            <label class="form-label"><i class="fas fa-user-plus"></i> Novo usuário ou alterar dados</label>
+            <input type="text" id="novoUsuarioNome" class="form-input" placeholder="Nome completo" value="${usuarioAtual?.nome || ''}" style="margin-bottom: 8px;">
+            <input type="tel" id="novoUsuarioTelefone" class="form-input" placeholder="Telefone (ex: 11999999999)" value="${usuarioAtual?.telefone || ''}" style="margin-bottom: 8px;" maxlength="11" inputmode="numeric">
+            <input type="text" id="novoUsuarioApelido" class="form-input" placeholder="Apelido (como vai aparecer)" value="${usuarioAtual?.apelido || ''}">
+            <small style="color: var(--gray); font-size: 11px;">* Telefone deve ter 10 ou 11 dígitos (DDD + número)</small>
+        </div>
+        <div class="btn-group" style="margin-top:20px">
+            <button class="btn btn-primary" onclick="salvarUsuarioSelecao(${aposAcao}, '${acao}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
+            <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+        </div>
+    `;
+    abrirModal('Seu Identificador', 'fa-user', conteudo);
+    
+    // Adicionar função global
+    window.selecionarUsuarioExistente = async function(id, apelido) {
+        const usuario = App.dataCache.usuariosFamilia.find(u => u.id == id);
+        if (usuario) {
+            salvarUsuarioAtualNoApp(usuario);
             fecharModal();
-            showToast(`Usuário ${nome} selecionado`, 'success');
-            
+            showToast(`Olá, ${usuario.apelido}!`, 'success');
             if (aposAcao && acao) {
                 setTimeout(() => verificarEAcao(acao), 300);
             }
         }
+    };
+}
+
+        async function salvarUsuarioSelecao(aposAcao = false, acao = null) {
+    let nome = document.getElementById('novoUsuarioNome')?.value.trim();
+    let telefone = document.getElementById('novoUsuarioTelefone')?.value.trim();
+    let apelido = document.getElementById('novoUsuarioApelido')?.value.trim();
+    
+    if (!nome || !telefone || !apelido) {
+        showToast('Preencha nome, telefone e apelido', 'warning');
+        return;
+    }
+    
+    // Validar telefone
+    const telefoneRegex = /^\d{10,11}$/;
+    if (!telefoneRegex.test(telefone)) {
+        showToast('Telefone inválido. Use apenas números com DDD (10 ou 11 dígitos)', 'warning');
+        return;
+    }
+    
+    try {
+        // Verificar se já existe este telefone
+        let usuarioExistente = App.dataCache.usuariosFamilia?.find(u => u.telefone === telefone);
+        
+        if (usuarioExistente) {
+            // Atualizar dados existentes
+            const { error } = await App.supabase
+                .from('usuarios_familia')
+                .update({
+                    nome: nome,
+                    apelido: apelido,
+                    ultimo_acesso: new Date().toISOString()
+                })
+                .eq('id', usuarioExistente.id);
+            
+            if (error) throw error;
+            
+            usuarioExistente.nome = nome;
+            usuarioExistente.apelido = apelido;
+            salvarUsuarioAtualNoApp(usuarioExistente);
+            showToast(`Bem-vindo de volta, ${apelido}!`, 'success');
+            
+        } else {
+            // Criar novo usuário
+            const codigoAcesso = telefone.slice(-6);
+            
+            const { data, error } = await App.supabase
+                .from('usuarios_familia')
+                .insert({
+                    user_id: App.currentUser.id,
+                    nome: nome,
+                    telefone: telefone,
+                    apelido: apelido,
+                    codigo_acesso: codigoAcesso,
+                    ultimo_acesso: new Date().toISOString(),
+                    added_by: App.usuarioAtual?.apelido || 'sistema'
+                })
+                .select();
+            
+            if (error) throw error;
+            
+            if (data && data[0]) {
+                salvarUsuarioAtualNoApp(data[0]);
+                showToast(`✅ Usuário ${apelido} criado! Código: ${codigoAcesso}`, 'success');
+            }
+        }
+        
+        // Recarregar dados para atualizar cache
+        await carregarDados(true);
+        
+        fecharModal();
+        
+        if (aposAcao && acao) {
+            setTimeout(() => verificarEAcao(acao), 300);
+        }
+        
+    } catch (error) {
+        console.error('Erro ao salvar usuário:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
    function abrirNovaConta() {
     let { mes, ano } = getMesAnoAtual();
@@ -7038,6 +7259,188 @@ function compartilharIphone() {
 }
 
 
+// ============================================
+// FUNÇÃO PARA EXPORTAR CALENDÁRIO (ICS)
+// ============================================
+
+async function exportarCalendario() {
+    if (!App.currentUser) {
+        showToast('Você precisa estar logado', 'warning');
+        return;
+    }
+    
+    try {
+        showToast('Gerando calendário...', 'info');
+        
+        // Obter a sessão atual
+        const { data: { session } } = await App.supabase.auth.getSession();
+        
+        if (!session) {
+            showToast('Sessão expirada. Faça login novamente.', 'error');
+            return;
+        }
+        
+        // Criar URL da Edge Function
+        const functionUrl = 'https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/export-ical';
+        
+        // Fazer requisição autenticada
+        const response = await fetch(functionUrl, {
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erro ao gerar calendário');
+        }
+        
+        // Obter o arquivo ICS
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        
+        // Criar link para download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `mylife_calendario.ics`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('✅ Calendário exportado com sucesso!', 'success');
+        
+        // Mostrar instruções
+        setTimeout(() => {
+            abrirModalInstrucoesCalendario();
+        }, 500);
+        
+    } catch (error) {
+        console.error('Erro ao exportar:', error);
+        showToast('Erro ao exportar calendário: ' + error.message, 'error');
+    }
+}
+
+// ============================================
+// FUNÇÃO PARA ABRIR MODAL COM INSTRUÇÕES DOS CALENDÁRIOS
+// ============================================
+
+function abrirModalInstrucoesCalendario() {
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; text-align: center; color: #fff;">
+                <i class="fas fa-calendar-alt" style="font-size: 48px; margin-bottom: 10px;"></i>
+                <h2 style="margin: 0; font-size: 1.5rem;">Sincronizar com Calendários</h2>
+                <p style="margin: 5px 0 0 0; opacity: 0.9;">Escolha seu calendário e siga as instruções</p>
+            </div>
+            
+            <div style="padding: 16px; max-height: 60vh; overflow-y: auto;">
+                <!-- Google Calendar -->
+                <div style="margin-bottom: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+                    <div style="background: #f8f9fa; padding: 12px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fab fa-google" style="font-size: 24px; color: #4285f4;"></i>
+                        <strong style="font-size: 16px;">Google Calendar</strong>
+                    </div>
+                    <div style="padding: 12px;">
+                        <p><strong>Como sincronizar:</strong></p>
+                        <ol style="margin: 8px 0 12px 20px;">
+                            <li>Acesse <strong>calendar.google.com</strong></li>
+                            <li>No menu lateral esquerdo, clique nos <strong>3 pontos</strong> ao lado de "Outros calendários"</li>
+                            <li>Selecione <strong>"Importar"</strong></li>
+                            <li>Clique em <strong>"Selecionar arquivo"</strong> e escolha o arquivo baixado</li>
+                            <li>Escolha o calendário de destino e clique em <strong>"Importar"</strong></li>
+                        </ol>
+                        <p><strong>Arquivo baixado:</strong> <code style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">mylife_calendario.ics</code></p>
+                        <button class="btn btn-sm" onclick="exportarCalendario()" style="background: #4285f4; color: #fff; margin-top: 8px;">
+                            <i class="fas fa-download"></i> Baixar novamente
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Apple Calendar (iCloud) -->
+                <div style="margin-bottom: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+                    <div style="background: #f8f9fa; padding: 12px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fab fa-apple" style="font-size: 24px; color: #000;"></i>
+                        <strong style="font-size: 16px;">Apple Calendar (iCloud)</strong>
+                    </div>
+                    <div style="padding: 12px;">
+                        <p><strong>Como sincronizar:</strong></p>
+                        <ol style="margin: 8px 0 12px 20px;">
+                            <li>No Mac, abra o <strong>Apple Calendar</strong></li>
+                            <li>Vá em <strong>Arquivo → Importar</strong></li>
+                            <li>Selecione o arquivo <strong>mylife_calendario.ics</strong></li>
+                            <li>Escolha o calendário de destino</li>
+                            <li>No iPhone, o calendário sincronizará automaticamente via iCloud</li>
+                        </ol>
+                        <p><strong>No iPhone/iPad:</strong> O calendário importado no Mac aparecerá automaticamente no seu iPhone se você usa o mesmo iCloud.</p>
+                    </div>
+                </div>
+                
+                <!-- Outlook / Microsoft 365 -->
+                <div style="margin-bottom: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+                    <div style="background: #f8f9fa; padding: 12px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fab fa-microsoft" style="font-size: 24px; color: #00a4ef;"></i>
+                        <strong style="font-size: 16px;">Outlook / Microsoft 365</strong>
+                    </div>
+                    <div style="padding: 12px;">
+                        <p><strong>Como sincronizar:</strong></p>
+                        <ol style="margin: 8px 0 12px 20px;">
+                            <li>Acesse <strong>outlook.live.com/calendar</strong></li>
+                            <li>Clique em <strong>"Adicionar calendário"</strong> → <strong>"Upload de arquivo"</strong></li>
+                            <li>Selecione o arquivo <strong>mylife_calendario.ics</strong></li>
+                            <li>Dê um nome e clique em <strong>"Salvar"</strong></li>
+                        </ol>
+                        <p><strong>Para Outlook desktop:</strong> Arquivo → Abrir e Exportar → Importar → Importar arquivo iCalendar (.ics)</p>
+                    </div>
+                </div>
+                
+                <!-- Yahoo Calendar -->
+                <div style="margin-bottom: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+                    <div style="background: #f8f9fa; padding: 12px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fab fa-yahoo" style="font-size: 24px; color: #6001d2;"></i>
+                        <strong style="font-size: 16px;">Yahoo Calendar</strong>
+                    </div>
+                    <div style="padding: 12px;">
+                        <p><strong>Como sincronizar:</strong></p>
+                        <ol style="margin: 8px 0 12px 20px;">
+                            <li>Acesse <strong>calendar.yahoo.com</strong></li>
+                            <li>Clique no ícone de <strong>engrenagem</strong> (Configurações)</li>
+                            <li>Selecione <strong>"Importar"</strong></li>
+                            <li>Escolha o arquivo <strong>mylife_calendario.ics</strong></li>
+                            <li>Clique em <strong>"Importar"</strong></li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <!-- Outros (Thunderbird, etc) -->
+                <div style="margin-bottom: 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+                    <div style="background: #f8f9fa; padding: 12px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-calendar-plus" style="font-size: 24px; color: var(--purple);"></i>
+                        <strong style="font-size: 16px;">Outros Calendários</strong>
+                    </div>
+                    <div style="padding: 12px;">
+                        <p>O arquivo <strong>.ics</strong> é um formato universal compatível com:</p>
+                        <ul style="margin: 8px 0 12px 20px;">
+                            <li><strong>Thunderbird</strong> (Mozilla)</li>
+                            <li><strong>eM Client</strong></li>
+                            <li><strong>Zimbra</strong></li>
+                            <li><strong>Qualquer app que suporte iCalendar</strong></li>
+                        </ul>
+                        <p><strong>Como importar:</strong> Geralmente em Arquivo → Importar → Selecionar arquivo .ics</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="padding: 16px; border-top: 1px solid #eee; text-align: center;">
+                <button class="btn btn-primary" onclick="fecharModal()">Fechar</button>
+            </div>
+        </div>
+    `;
+    
+    abrirModal('Sincronizar Calendários', 'fa-calendar-alt', conteudo);
+}
+
+
 
 
         function editarEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
@@ -8121,7 +8524,46 @@ function abrirModalAssinaturaBloqueio() {
 }
 
         function abrirMenuSeguranca() {
-            let conteudo = `
+    let usuarios = App.dataCache.usuariosFamilia || [];
+    
+    let listaUsuariosHtml = '';
+    if (usuarios.length > 0) {
+        listaUsuariosHtml = `
+            <div style="max-height: 300px; overflow-y: auto;">
+                ${usuarios.map(u => `
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${u.apelido}</strong>
+                            <div style="font-size: 12px; color: var(--gray);">${u.nome}</div>
+                            <div style="font-size: 11px; color: var(--gray);">📱 ${formatarTelefone(u.telefone)}</div>
+                            <div style="font-size: 10px; color: var(--gray);">🔑 Código: ${u.codigo_acesso}</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm" onclick="editarUsuarioFamilia(${u.id})" style="background: var(--purple); color: #fff; padding: 4px 8px;">Editar</button>
+                            <button class="btn btn-sm" onclick="deletarUsuarioFamilia(${u.id})" style="background: var(--danger); color: #fff; padding: 4px 8px; margin-left: 4px;">Excluir</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else {
+        listaUsuariosHtml = '<p style="text-align: center; color: var(--gray);">Nenhum usuário cadastrado</p>';
+    }
+    
+    let conteudo = `
+        <div style="padding: 0;">
+            <!-- ABAS -->
+            <div style="display: flex; border-bottom: 1px solid #eee; background: #fff;">
+                <div id="abaSenha" class="aba-ativa-seg" style="flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--purple); border-bottom: 2px solid var(--purple);">
+                    <i class="fas fa-lock"></i> Senha de Acesso
+                </div>
+                <div id="abaUsuarios" style="flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--gray);">
+                    <i class="fas fa-users"></i> Usuários (${usuarios.length})
+                </div>
+            </div>
+            
+            <!-- CONTEÚDO ABA SENHA -->
+            <div id="conteudoSenha" style="padding: 16px;">
                 <div class="form-group">
                     <label class="form-label">Senha Atual (acesso)</label>
                     <input type="password" id="senhaAtualAcesso" class="form-input" placeholder="Digite a senha atual" maxlength="6" inputmode="numeric">
@@ -8136,11 +8578,57 @@ function abrirModalAssinaturaBloqueio() {
                 </div>
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="alterarSenhas()"><i class="fas fa-save"></i> Salvar Alterações</button>
-                    <button class="btn" onclick="fecharModal()" style="background:var(--gray);color:#fff">Cancelar</button>
                 </div>
-            `;
-            abrirModal('Segurança', 'fa-lock', conteudo);
+            </div>
+            
+            <!-- CONTEÚDO ABA USUÁRIOS -->
+            <div id="conteudoUsuarios" style="padding: 16px; display: none;">
+                <h4 style="margin: 0 0 12px 0;"><i class="fas fa-users"></i> Membros da Família</h4>
+                ${listaUsuariosHtml}
+                <div style="margin-top: 16px;">
+                    <button class="btn btn-primary" onclick="abrirCadastroUsuarioRapido()" style="width: 100%;">
+                        <i class="fas fa-plus"></i> Adicionar Novo Usuário
+                    </button>
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: #e8f4fd; border-radius: 8px;">
+                    <small><i class="fas fa-info-circle"></i> Cada usuário terá um código de acesso único. Use o código para identificar quem está usando o app em cada dispositivo.</small>
+                </div>
+            </div>
+            
+            <div class="btn-group" style="padding: 16px; border-top: 1px solid #eee;">
+                <button class="btn" onclick="fecharModal()" style="background: var(--gray); color: #fff;">Fechar</button>
+            </div>
+        </div>
+        
+        <style>
+            .aba-ativa-seg { color: var(--purple) !important; border-bottom: 2px solid var(--purple) !important; }
+        </style>
+    `;
+    
+    abrirModal('Segurança', 'fa-lock', conteudo);
+    
+    setTimeout(() => {
+        const abaSenha = document.getElementById('abaSenha');
+        const abaUsuarios = document.getElementById('abaUsuarios');
+        const conteudoSenha = document.getElementById('conteudoSenha');
+        const conteudoUsuarios = document.getElementById('conteudoUsuarios');
+        
+        if (abaSenha && abaUsuarios) {
+            abaSenha.onclick = () => {
+                abaSenha.classList.add('aba-ativa-seg');
+                abaUsuarios.classList.remove('aba-ativa-seg');
+                conteudoSenha.style.display = 'block';
+                conteudoUsuarios.style.display = 'none';
+            };
+            abaUsuarios.onclick = () => {
+                abaUsuarios.classList.add('aba-ativa-seg');
+                abaSenha.classList.remove('aba-ativa-seg');
+                conteudoSenha.style.display = 'none';
+                conteudoUsuarios.style.display = 'block';
+            };
         }
+    }, 100);
+}
 
         function alterarSenhas() {
             let senhaAtualAcesso = document.getElementById('senhaAtualAcesso')?.value;
@@ -8653,7 +9141,7 @@ function abrirModalAssinaturaBloqueio() {
         }
 
 
-        
+
 // ============================================
 // MANUAL DE INSTRUÇÕES - My Life
 // ============================================
@@ -9978,6 +10466,230 @@ window.deletarItemLista = deletarItemLista;
             document.getElementById('modalOverlay').style.display = 'none';
             App.modalHasChanges = false;
         }
+
+
+
+// ============================================
+// FUNÇÕES PARA GERENCIAR USUÁRIOS DA FAMÍLIA
+// ============================================
+
+function formatarTelefone(telefone) {
+    if (!telefone) return '';
+    if (telefone.length === 11) {
+        return `(${telefone.substring(0,2)}) ${telefone.substring(2,7)}-${telefone.substring(7)}`;
+    }
+    if (telefone.length === 10) {
+        return `(${telefone.substring(0,2)}) ${telefone.substring(2,6)}-${telefone.substring(6)}`;
+    }
+    return telefone;
+}
+
+function carregarUsuarioPorTelefone(telefone) {
+    if (!App.dataCache.usuariosFamilia) return null;
+    return App.dataCache.usuariosFamilia.find(u => u.telefone === telefone);
+}
+
+function salvarUsuarioAtualNoApp(usuario) {
+    if (!usuario) return;
+    
+    App.usuarioAtual = {
+        id: usuario.id,
+        nome: usuario.nome,
+        telefone: usuario.telefone,
+        apelido: usuario.apelido,
+        codigo_acesso: usuario.codigo_acesso
+    };
+    
+    // Salvar no localStorage para persistir
+    localStorage.setItem(`mylife_usuario_${App.currentUser.id}`, JSON.stringify(App.usuarioAtual));
+    
+    // Atualizar o header
+    document.getElementById('usuarioHeaderNome').textContent = usuario.apelido || usuario.nome;
+}
+
+function carregarUsuarioSalvo() {
+    if (!App.currentUser) return null;
+    
+    const saved = localStorage.getItem(`mylife_usuario_${App.currentUser.id}`);
+    if (saved) {
+        try {
+            App.usuarioAtual = JSON.parse(saved);
+            document.getElementById('usuarioHeaderNome').textContent = App.usuarioAtual.apelido || App.usuarioAtual.nome;
+            return App.usuarioAtual;
+        } catch(e) {}
+    }
+    return null;
+}
+
+async function editarUsuarioFamilia(id) {
+    const usuario = App.dataCache.usuariosFamilia.find(u => u.id == id);
+    if (!usuario) return;
+    
+    let conteudo = `
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-user"></i> Nome Completo</label>
+            <input type="text" id="editUserNome" class="form-input" value="${usuario.nome}">
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-phone"></i> Telefone</label>
+            <input type="tel" id="editUserTelefone" class="form-input" value="${usuario.telefone}" maxlength="11" inputmode="numeric" readonly style="background: #f0f0f0;">
+            <small style="color: var(--gray);">Telefone não pode ser alterado (é o identificador único)</small>
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-smile"></i> Apelido</label>
+            <input type="text" id="editUserApelido" class="form-input" value="${usuario.apelido}">
+        </div>
+        <div class="btn-group" style="margin-top:20px">
+            <button class="btn btn-primary" onclick="salvarEdicaoUsuarioFamilia(${id})"><i class="fas fa-save"></i> Salvar</button>
+            <button class="btn" onclick="fecharModal()" style="background:var(--gray);color:#fff">Cancelar</button>
+        </div>
+    `;
+    abrirModal('Editar Usuário', 'fa-user-edit', conteudo);
+}
+
+async function salvarEdicaoUsuarioFamilia(id) {
+    const nome = document.getElementById('editUserNome')?.value.trim();
+    const apelido = document.getElementById('editUserApelido')?.value.trim();
+    
+    if (!nome || !apelido) {
+        showToast('Preencha nome e apelido', 'warning');
+        return;
+    }
+    
+    try {
+        const { error } = await App.supabase
+            .from('usuarios_familia')
+            .update({
+                nome: nome,
+                apelido: apelido
+            })
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        showToast('Usuário atualizado!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        
+        // Se o usuário atual foi editado, atualizar no app
+        if (App.usuarioAtual && App.usuarioAtual.id == id) {
+            const usuarioAtualizado = App.dataCache.usuariosFamilia.find(u => u.id == id);
+            if (usuarioAtualizado) {
+                salvarUsuarioAtualNoApp(usuarioAtualizado);
+            }
+        }
+        
+    } catch (error) {
+        console.error('Erro ao editar:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+async function deletarUsuarioFamilia(id) {
+    const usuario = App.dataCache.usuariosFamilia.find(u => u.id == id);
+    if (!usuario) return;
+    
+    if (!confirm(`Tem certeza que deseja excluir ${usuario.apelido}? Esta ação não pode ser desfeita.`)) return;
+    
+    try {
+        const { error } = await App.supabase
+            .from('usuarios_familia')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        showToast('Usuário excluído!', 'success');
+        await carregarDados(true);
+        
+        // Se o usuário atual foi excluído, limpar
+        if (App.usuarioAtual && App.usuarioAtual.id == id) {
+            App.usuarioAtual = null;
+            localStorage.removeItem(`mylife_usuario_${App.currentUser.id}`);
+            document.getElementById('usuarioHeaderNome').textContent = 'Selecionar';
+        }
+        
+    } catch (error) {
+        console.error('Erro ao excluir:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+function abrirCadastroUsuarioRapido() {
+    let conteudo = `
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-user"></i> Nome Completo</label>
+            <input type="text" id="novoUserNome" class="form-input" placeholder="Ex: João da Silva">
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-phone"></i> Telefone (com DDD)</label>
+            <input type="tel" id="novoUserTelefone" class="form-input" placeholder="Ex: 11999999999" maxlength="11" inputmode="numeric">
+            <small style="color: var(--gray);">Apenas números, 10 ou 11 dígitos</small>
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-smile"></i> Apelido</label>
+            <input type="text" id="novoUserApelido" class="form-input" placeholder="Ex: João, Jão, Ju...">
+        </div>
+        <div class="btn-group" style="margin-top:20px">
+            <button class="btn btn-primary" onclick="salvarNovoUsuarioFamilia()"><i class="fas fa-save"></i> Salvar</button>
+            <button class="btn" onclick="fecharModal()" style="background:var(--gray);color:#fff">Cancelar</button>
+        </div>
+    `;
+    abrirModal('Novo Usuário', 'fa-user-plus', conteudo);
+}
+
+async function salvarNovoUsuarioFamilia() {
+    const nome = document.getElementById('novoUserNome')?.value.trim();
+    const telefone = document.getElementById('novoUserTelefone')?.value.trim();
+    const apelido = document.getElementById('novoUserApelido')?.value.trim();
+    
+    if (!nome || !telefone || !apelido) {
+        showToast('Preencha todos os campos', 'warning');
+        return;
+    }
+    
+    const telefoneRegex = /^\d{10,11}$/;
+    if (!telefoneRegex.test(telefone)) {
+        showToast('Telefone inválido. Use apenas números (10 ou 11 dígitos)', 'warning');
+        return;
+    }
+    
+    try {
+        // Verificar se já existe este telefone
+        const existe = App.dataCache.usuariosFamilia?.find(u => u.telefone === telefone);
+        if (existe) {
+            showToast('Este telefone já está cadastrado para outro usuário', 'warning');
+            return;
+        }
+        
+        const codigoAcesso = telefone.slice(-6);
+        
+        const { data, error } = await App.supabase
+            .from('usuarios_familia')
+            .insert({
+                user_id: App.currentUser.id,
+                nome: nome,
+                telefone: telefone,
+                apelido: apelido,
+                codigo_acesso: codigoAcesso,
+                ultimo_acesso: new Date().toISOString(),
+                added_by: App.usuarioAtual?.apelido || 'sistema'
+            })
+            .select();
+        
+        if (error) throw error;
+        
+        showToast(`✅ Usuário ${apelido} criado! Código: ${codigoAcesso}`, 'success');
+        fecharModal();
+        await carregarDados(true);
+        
+    } catch (error) {
+        console.error('Erro ao criar usuário:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+
 
        async function init() {
     try {
