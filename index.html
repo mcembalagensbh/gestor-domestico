@@ -5211,15 +5211,11 @@ async function confirmarAdicionarGiro(id, desc) {
                 <input type="number" id="contaAno" class="form-input" value="${ano}" placeholder="Ano" style="flex: 1;">
             </div>
             
-            <!-- CÓDIGO DE BARRAS/PIX (SÓ APARECE EM CONTA ÚNICA) -->
+            <!-- CÓDIGO DE BARRAS/PIX (SEM CÂMERA) -->
             <div id="campoCodigoUnica" class="form-group">
                 <label class="form-label"><i class="fas fa-barcode"></i> Código de Barras / Chave PIX (opcional)</label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="contaCodigo" class="form-input" placeholder="Digite ou cole o código" style="flex: 4;" autocomplete="off">
-                    <button type="button" class="btn btn-sm btn-primary" onclick="abrirCameraCodigo('contaCodigo')" style="flex: 1; min-height: 44px;">
-                        <i class="fas fa-camera"></i>
-                    </button>
-                </div>
+                <input type="text" id="contaCodigo" class="form-input" placeholder="Digite ou cole o código" autocomplete="off" inputmode="numeric" style="font-family: monospace; font-size: 14px;" oninput="atualizarValorPeloCodigo()">
+                <small style="color: var(--gray); font-size: 11px;">Digite os 44 dígitos do código de barras (teclado numérico)</small>
             </div>
         </div>
 
@@ -5572,12 +5568,11 @@ async function salvarNovaConta() {
         );
     }
     
-        // Se ainda não encontrou, criar uma conta temporária para exibição
+    // Se ainda não encontrou, criar uma conta temporária para exibição
     if (!conta && regraId) {
         let regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
         if (regra) {
             console.log('⚠️ Conta não encontrada, mas regra existe. Criando conta temporária');
-            // Garantir que temos a data correta
             const dataConta = dia && mes && ano ? { dia, mes, ano } : (() => {
                 const dataInicio = new Date(regra.data_inicio + 'T12:00:00');
                 return {
@@ -5647,18 +5642,13 @@ async function salvarNovaConta() {
             
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-barcode"></i> Código de Barras / Chave PIX</label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="contaCodigoEdit" class="form-input" value="${codigoAtual.replace(/"/g, '&quot;')}" placeholder="Digite ou cole o código" style="flex: 4;" autocomplete="off">
-                    <button type="button" class="btn btn-sm btn-primary" onclick="abrirCameraCodigo('contaCodigoEdit')" style="flex: 1; min-height: 44px;">
-                        <i class="fas fa-camera"></i>
-                    </button>
-                </div>
-                <small style="color: var(--gray); font-size: 11px;">* Este código aparecerá ao clicar em pagar</small>
+               <input type="text" id="contaCodigoEdit" class="form-input" value="${codigoAtual.replace(/"/g, '&quot;')}" placeholder="Digite ou cole o código" autocomplete="off" inputmode="numeric" style="font-family: monospace; font-size: 14px;" oninput="atualizarValorPeloCodigo()">
+                <small style="color: var(--gray); font-size: 11px;">Digite os 44 dígitos do código de barras</small>
             </div>
         `;
         
     } else {
-        // CONTA ÚNICA - edita tudo
+        // CONTA ÚNICA - edita tudo (SEM CÂMERA)
         avisoHtml = ``;
         
         camposHtml = `
@@ -5685,12 +5675,8 @@ async function salvarNovaConta() {
             
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-barcode"></i> Código de Barras / Chave PIX</label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="contaCodigoEdit" class="form-input" value="${codigoAtual.replace(/"/g, '&quot;')}" placeholder="Digite ou cole o código" style="flex: 4;" autocomplete="off">
-                    <button type="button" class="btn btn-sm btn-primary" onclick="abrirCameraCodigo('contaCodigoEdit')" style="flex: 1; min-height: 44px;">
-                        <i class="fas fa-camera"></i>
-                    </button>
-                </div>
+               <input type="text" id="contaCodigoEdit" class="form-input" value="${codigoAtual.replace(/"/g, '&quot;')}" placeholder="Digite ou cole o código" autocomplete="off" inputmode="numeric" style="font-family: monospace; font-size: 14px;" oninput="atualizarValorPeloCodigo()">
+                <small style="color: var(--gray); font-size: 11px;">Digite os 44 dígitos do código de barras</small>
             </div>
         `;
     }
@@ -7230,9 +7216,10 @@ function fecharModalInfoEConfirmar() {
                     <p>Pagamento de <strong>${desc}</strong></p>
                     ${codigoHtml}
                     <div class="form-group" style="margin:16px 0">
-                        <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor a pagar</label>
-                        <input type="text" id="pagamentoValorConta" class="form-input" value="${valor.toFixed(2).replace('.', ',')}" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
-                    </div>
+    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor a pagar</label>
+    <input type="text" id="pagamentoValorConta" class="form-input" value="${valor.toFixed(2).replace('.', ',')}" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+    <small style="color: var(--gray); font-size: 11px;">💡 Digite 0,00 para marcar como paga sem alterar o saldo</small>
+</div>
                     <div class="btn-group">
                         <button class="btn btn-success" onclick="confirmarPagamento('${id}', '${desc}', '${regraId}', ${dia}, ${mes}, ${ano}, ${isRecorrente})" style="flex:2"><i class="fas fa-check"></i> Confirmar Pagamento</button>
                         <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
@@ -7250,59 +7237,105 @@ function fecharModalInfoEConfirmar() {
             });
         }
 
-        async function confirmarPagamento(id, desc, regraId, dia, mes, ano, isRecorrente) {
-            if (App.processandoPagamento) {
-                showToast('Processando pagamento, aguarde...', 'warning');
-                return;
+        async function confirmarPagamento(id, desc, valor, regraId, dia, mes, ano, isRecorrente, codigoPagamento) {
+    if (App.processandoPagamento) {
+        showToast('Processando pagamento, aguarde...', 'warning');
+        return;
+    }
+    
+    let valorPago = parseCurrency(document.getElementById('pagamentoValorConta')?.value);
+    
+    // 🔴 VERIFICAR SE O VALOR É ZERO
+    if (valorPago === 0) {
+        const confirmar = confirm(
+            '⚠️ ATENÇÃO: Você está pagando R$ 0,00.\n\n' +
+            'Isso apenas dará baixa na conta SEM alterar seu saldo.\n\n' +
+            'Deseja continuar?'
+        );
+        
+        if (!confirmar) {
+            return;
+        }
+        
+        // Se confirmou, prosseguir sem alterar saldo
+        try {
+            if (isRecorrente && regraId) {
+                await App.supabase.from('excecoes_recorrencia').insert({
+                    user_id: App.currentUser.id,
+                    regra_id: regraId,
+                    data_excecao: dataParaString(ano, mes, dia),
+                    acao: 'pagar',
+                    added_by: App.usuarioAtual || 'desconhecido'
+                });
+            } else {
+                await App.supabase.from('contas').update({
+                    valor_pago: 0,
+                    status: 'paga',
+                    data_pagamento: new Date().toISOString()
+                }).eq('id', id);
             }
             
-            App.processandoPagamento = true;
-            
-            let valor = parseCurrency(document.getElementById('pagamentoValorConta')?.value);
+            await registrarHistorico('pagamento_conta_zero', `Conta marcada como paga (R$ 0,00): ${desc}`, { id, usuario: App.usuarioAtual });
+            showToast('✅ Conta marcada como paga! (Saldo não alterado)', 'success');
+            fecharModal();
+            await carregarDados(true);
+            await atualizarCalendario();
+            await mostrarConteudo();
+            return;
+        } catch (error) {
+            console.error('Erro ao marcar como paga:', error);
+            showToast('Erro: ' + error.message, 'error');
+            App.processandoPagamento = false;
+            return;
+        }
+    }
+    
+    // CONTINUAÇÃO DO CÓDIGO ORIGINAL PARA VALOR NÃO ZERO
+    App.processandoPagamento = true;
+    
+    try {
+        if (isRecorrente && regraId) {
+            await App.supabase.from('excecoes_recorrencia').insert({
+                user_id: App.currentUser.id,
+                regra_id: regraId,
+                data_excecao: dataParaString(ano, mes, dia),
+                acao: 'pagar',
+                added_by: App.usuarioAtual || 'desconhecido'
+            });
+        } else {
+            await App.supabase.from('contas').update({
+                valor_pago: valorPago,
+                status: 'paga',
+                data_pagamento: new Date().toISOString()
+            }).eq('id', id);
+        }
 
-            try {
-                if (isRecorrente && regraId) {
-                    await App.supabase.from('excecoes_recorrencia').insert({
-                        user_id: App.currentUser.id,
-                        regra_id: regraId,
-                        data_excecao: dataParaString(ano, mes, dia),
-                        acao: 'pagar',
-                        added_by: App.usuarioAtual || 'desconhecido'
-                    });
-                } else {
-                    await App.supabase.from('contas').update({
-                        valor_pago: valor,
-                        status: 'paga',
-                        data_pagamento: new Date().toISOString()
-                    }).eq('id', id);
-                }
-
-                if (App.saldoCentral.id) {
-                    let { data: saldoAtual, error: saldoError } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
-                    if (saldoAtual && !saldoError) {
-                        let novoValor = saldoAtual.valor - valor;
-                        await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
-                        App.saldoCentral.valor = novoValor;
-                        atualizarSaldoHeader();
-                    }
-                }
-
-                await registrarHistorico('pagamento_conta', `Conta paga: ${desc}`, { id, valor, usuario: App.usuarioAtual });
-                
-                verificarNotificacoes({ descricao: 'Pagamento confirmado', valor }, 'contas');
-                
-                showToast('Pagamento confirmado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await atualizarCalendario();
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao pagar conta:', error);
-                showToast('Erro: ' + error.message, 'error');
-            } finally {
-                App.processandoPagamento = false;
+        if (App.saldoCentral.id && valorPago > 0) {
+            let { data: saldoAtual, error: saldoError } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
+            if (saldoAtual && !saldoError) {
+                let novoValor = saldoAtual.valor - valorPago;
+                await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
+                App.saldoCentral.valor = novoValor;
+                atualizarSaldoHeader();
             }
         }
+
+        await registrarHistorico('pagamento_conta', `Conta paga: ${desc}`, { id, valor: valorPago, usuario: App.usuarioAtual });
+        
+        verificarNotificacoes({ descricao: 'Pagamento confirmado', valor: valorPago }, 'contas');
+        
+        showToast('Pagamento confirmado!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await atualizarCalendario();
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao pagar conta:', error);
+        showToast('Erro: ' + error.message, 'error');
+    } finally {
+        App.processandoPagamento = false;
+    }
+}
 
         function abrirModalDesfazerPagamento(id, desc, valor, regraId, dia, mes, ano, isRecorrente) {
             let conteudo = `
@@ -9933,213 +9966,58 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(iniciarCarrosselBanners, 1000);
 });
 
+
 // ============================================
-// FUNÇÃO PARA LER CÓDIGO DE BARRAS (BarcodeDetector nativo com reset)
+// FUNÇÃO PARA EXTRAIR VALOR DO CÓDIGO DE BARRAS
 // ============================================
-let scanActive = false;
-let scanInterval = null;
-let scanVideo = null;
-let scanStream = null;
-
-function abrirCameraCodigo(inputId) {
-    console.log('🔵 Abrindo câmera com BarcodeDetector');
+function extrairValorDoCodigoBarras(codigo) {
+    // Código de barras padrão brasileiro (44 dígitos)
+    // O valor está nos últimos 10 dígitos (posição 34-43)
+    if (!codigo || codigo.length < 44) return null;
     
-    // Fechar scanner anterior se existir
-    if (scanActive) {
-        fecharCameraBarcode();
-    }
+    // Formato padrão: 44 dígitos
+    // Posição 34 a 43 (10 dígitos) representa o valor em centavos
+    // Exemplo: 7569144871012353930505902600013312910000044000
+    // O valor 44000 representa R$ 440,00
     
-    // Verificar suporte
-    if (!('BarcodeDetector' in window)) {
-        showToast('Seu navegador não suporta leitura automática', 'warning');
-        return;
-    }
+    const valorStr = codigo.substring(34, 44);
+    const valorCentavos = parseInt(valorStr, 10);
     
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showToast('Seu navegador não suporta acesso à câmera', 'warning');
-        return;
-    }
+    if (isNaN(valorCentavos)) return null;
     
-    // Criar modal
-    const modal = document.createElement('div');
-    modal.id = 'barcodeModal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #000;
-        z-index: 10001;
-        display: flex;
-        flex-direction: column;
-    `;
-    
-    modal.innerHTML = `
-        <div style="flex: 1; position: relative; background: #000;">
-            <video id="barcode-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 25%; border: 3px solid #9b59b6; border-radius: 12px; background: transparent; pointer-events: none;">
-                <div style="position: absolute; top: -28px; left: 50%; transform: translateX(-50%); background: #9b59b6; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #fff; white-space: nowrap;">
-                    📷 Centralize o código aqui
-                </div>
-            </div>
-            <div id="scan-line" style="position: absolute; left: 7.5%; width: 85%; height: 3px; background: #9b59b6; border-radius: 3px; animation: scanMove 1.5s ease-in-out infinite; pointer-events: none;"></div>
-        </div>
-        <div style="padding: 15px; background: rgba(0,0,0,0.8); text-align: center;">
-            <p id="scan-status" style="color: #fff; margin-bottom: 10px; font-size: 14px;">
-                🔍 Aguardando código...
-            </p>
-            <button onclick="fecharCameraBarcode()" style="padding: 10px 30px; background: #dc3545; color: #fff; border: none; border-radius: 30px; font-size: 16px; cursor: pointer;">
-                Cancelar
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Adicionar animação
-    const style = document.createElement('style');
-    style.textContent = `@keyframes scanMove { 0% { top: 20%; } 50% { top: 70%; } 100% { top: 20%; } }`;
-    document.head.appendChild(style);
-    
-    // Iniciar câmera
-    navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: { exact: "environment" } }
-    }).then(function(stream) {
-        console.log('✅ Câmera ativada!');
-        scanStream = stream;
-        scanVideo = document.getElementById('barcode-video');
-        scanVideo.srcObject = stream;
-        scanVideo.play();
-        
-        // Verificar se o vídeo está funcionando
-        scanVideo.onloadedmetadata = () => {
-            console.log('📹 Vídeo carregado, dimensões:', scanVideo.videoWidth, 'x', scanVideo.videoHeight);
-            if (scanVideo.videoWidth > 0) {
-                const statusEl = document.getElementById('scan-status');
-                if (statusEl) statusEl.innerHTML = '📷 Câmera ativa. Aponte para o código.';
-            }
-        };
-        
-        scanActive = true;
-        
-        const detector = new BarcodeDetector({ 
-            formats: ['code_128', 'ean_13', 'ean_8', 'itf', 'codabar'] 
-        });
-        
-        let lastCode = '';
-        let confirmCount = 0;
-        const statusEl = document.getElementById('scan-status');
-        
-        scanInterval = setInterval(async () => {
-            if (!scanActive || !scanVideo || !scanVideo.videoWidth || scanVideo.videoWidth === 0) return;
-            
-            try {
-                const canvas = document.createElement('canvas');
-                canvas.width = scanVideo.videoWidth;
-                canvas.height = scanVideo.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(scanVideo, 0, 0, canvas.width, canvas.height);
-                
-                const barcodes = await detector.detect(canvas);
-                
-                if (barcodes.length > 0) {
-                    const code = barcodes[0].rawValue;
-                    console.log('📌 Detectado:', code, '| Dígitos:', code.length);
-                    
-                    // Verificar se é código de boleto (44-48 dígitos)
-                    const isBoleto = /^\d{44,48}$/.test(code);
-                    
-                    if (isBoleto) {
-                        if (code === lastCode) {
-                            confirmCount++;
-                            if (statusEl) statusEl.innerHTML = `✅ Confirmando... (${confirmCount}/2)`;
-                            
-                            if (confirmCount >= 2) {
-                                console.log('🎯 CÓDIGO CONFIRMADO:', code);
-                                if (statusEl) {
-                                    statusEl.innerHTML = '✅ CÓDIGO DETECTADO!';
-                                    statusEl.style.color = '#28a745';
-                                }
-                                
-                                const targetInput = document.getElementById(inputId);
-                                if (targetInput) targetInput.value = code;
-                                showToast('✅ Código de barras capturado!', 'success');
-                                
-                                setTimeout(() => fecharCameraBarcode(), 500);
-                                return;
-                            }
-                        } else {
-                            lastCode = code;
-                            confirmCount = 1;
-                            if (statusEl) {
-                                statusEl.innerHTML = '📌 Código detectado! Mantenha estável...';
-                                statusEl.style.color = '#ffc107';
-                            }
-                        }
-                    } else if (code.length >= 40) {
-                        if (code === lastCode) {
-                            confirmCount++;
-                            if (confirmCount >= 3) {
-                                if (statusEl) statusEl.innerHTML = '✅ CÓDIGO DETECTADO!';
-                                const targetInput = document.getElementById(inputId);
-                                if (targetInput) targetInput.value = code;
-                                showToast('✅ Código capturado!', 'success');
-                                setTimeout(() => fecharCameraBarcode(), 500);
-                                return;
-                            }
-                        } else {
-                            lastCode = code;
-                            confirmCount = 1;
-                            if (statusEl) statusEl.innerHTML = '📌 Código detectado! Mantenha estável...';
-                        }
-                    } else if (code.length >= 10) {
-                        if (statusEl) {
-                            statusEl.innerHTML = `⚠️ Código curto (${code.length} dígitos). Aproxime mais.`;
-                            statusEl.style.color = '#dc3545';
-                            setTimeout(() => {
-                                if (statusEl && scanActive) {
-                                    statusEl.innerHTML = '🔍 Aguardando código...';
-                                    statusEl.style.color = '#ffc107';
-                                }
-                            }, 2000);
-                        }
-                    }
-                }
-            } catch(e) {
-                // Ignorar erros
-            }
-        }, 500);
-        
-    }).catch(function(err) {
-        console.error('Erro na câmera:', err);
-        showToast('Erro ao acessar a câmera', 'error');
-        fecharCameraBarcode();
-    });
+    return valorCentavos / 100;
 }
 
-function fecharCameraBarcode() {
-    console.log('🔵 Fechando câmera...');
-    scanActive = false;
+// ============================================
+// FUNÇÃO PARA ATUALIZAR CAMPO DE VALOR BASEADO NO CÓDIGO
+// ============================================
+function atualizarValorPeloCodigo() {
+    // Tentar encontrar o campo de código e valor nos modais
+    const codigoInput = document.getElementById('contaCodigo') || document.getElementById('contaCodigoEdit');
+    const valorInput = document.getElementById('contaValor') || document.getElementById('contaValorEdit');
     
-    if (scanInterval) {
-        clearInterval(scanInterval);
-        scanInterval = null;
+    if (!codigoInput || !valorInput) return;
+    
+    const codigo = codigoInput.value.trim();
+    const valorExtraido = extrairValorDoCodigoBarras(codigo);
+    
+    if (valorExtraido !== null && valorExtraido > 0) {
+        // Verificar se o valor extraído termina com 0000 (cartão de crédito)
+        const ultimosDigitos = codigo.substring(38, 44);
+        const isCartaoCredito = ultimosDigitos === '000000';
+        
+        if (isCartaoCredito) {
+            console.log('💳 Código de cartão de crédito detectado. Valor não será preenchido automaticamente.');
+            // Não preenche automaticamente, deixa o usuário digitar
+            valorInput.placeholder = "Digite o valor da fatura";
+        } else {
+            valorInput.value = valorExtraido.toFixed(2).replace('.', ',');
+            showToast(`💰 Valor R$ ${valorExtraido.toFixed(2)} extraído do código!`, 'success');
+        }
     }
-    
-    if (scanVideo && scanVideo.srcObject) {
-        const tracks = scanVideo.srcObject.getTracks();
-        tracks.forEach(track => track.stop());
-        scanVideo.srcObject = null;
-    }
-    
-    const modal = document.getElementById('barcodeModal');
-    if (modal) modal.remove();
 }
 
-function fecharCameraZXing() {
-    fecharCameraBarcode();
-}
+
 
 </script>
 
