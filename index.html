@@ -2106,7 +2106,7 @@
     <div class="side-menu-item" onclick="abrirPoliticasTermos();fecharSideMenu()"><i class="fas fa-file-contract"></i> Políticas e Termos</div>
     <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()"><i class="fas fa-book"></i> Manual Rápido</div>
     <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()"><i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span></div>
-    <div class="side-menu-item" onclick="exportarCalendario();fecharSideMenu()"><i class="fas fa-calendar-alt"></i> Sync Calendários</div> 
+    <div class="side-menu-item" onclick="gerarLinkCalendario();fecharSideMenu()"><i class="fas fa-link"></i> Sync Calendários</div>
     <!-- 🔴 NOVO ITEM: QUER USAR NO IPHONE? -->
     <div class="side-menu-item" onclick="abrirModalIphone();fecharSideMenu()">
         <i class="fab fa-apple"></i> Quer usar no Iphone?
@@ -5282,6 +5282,9 @@ async function confirmarAdicionarGiro(id, desc) {
     let valor = parseCurrency(document.getElementById('adicionarValor')?.value);
     let descricao = document.getElementById('adicionarDescricao')?.value.trim();
 
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+
     if (!valor) {
         showToast('Digite o valor', 'warning');
         return;
@@ -5291,14 +5294,14 @@ async function confirmarAdicionarGiro(id, desc) {
         await App.supabase.from('movimentacoes_giro').insert({
             user_id: App.currentUser.id,
             giro_id: id,
-            tipo: 'recebimento', // MESMO TIPO DO RECEBIMENTO (aumenta saldo)
+            tipo: 'recebimento',
             valor: valor,
             descricao: descricao || `Adicionado a ${desc}`,
             data: new Date().toISOString(),
-            added_by: App.usuarioAtual || 'desconhecido'
+            added_by: nomeUsuario  // 🔴 CORRIGIDO
         });
 
-        await registrarHistorico('adicao_giro', `Adicionado ${formatCurrency(valor)} a ${desc}`, { id, valor, usuario: App.usuarioAtual });
+        await registrarHistorico('adicao_giro', `Adicionado ${formatCurrency(valor)} a ${desc}`, { id, valor, usuario: nomeUsuario });
         showToast('Valor adicionado com sucesso!', 'success');
         fecharModal();
         await carregarDados(true);
@@ -5709,6 +5712,9 @@ async function salvarNovaConta() {
         codigoBarras = document.getElementById('contaCodigo')?.value.trim() || null;
     }
 
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+
     try {
         if (frequencia === 'unico') {
             // ========== CONTA ÚNICA ==========
@@ -5738,7 +5744,7 @@ async function salvarNovaConta() {
                 ano: ano,
                 data: dataInicio,
                 status: 'pendente',
-                added_by: App.usuarioAtual || 'desconhecido',
+                added_by: nomeUsuario,  // 🔴 CORRIGIDO
                 codigo_pagamento: codigoBarras
             }).select();
 
@@ -5822,7 +5828,7 @@ async function salvarNovaConta() {
                 frequencia: frequencia,
                 data_inicio: dataInicioStr,
                 ativo: true,
-                added_by: App.usuarioAtual || 'desconhecido'
+                added_by: nomeUsuario  // 🔴 CORRIGIDO
             };
             
             if (dataFimStr) {
@@ -5841,7 +5847,7 @@ async function salvarNovaConta() {
         }
 
         verificarNotificacoes({ descricao, valor }, 'contas');
-        await registrarHistorico('criacao_conta', `Conta criada: ${descricao}`, { descricao, valor, frequencia, usuario: App.usuarioAtual });
+        await registrarHistorico('criacao_conta', `Conta criada: ${descricao}`, { descricao, valor, frequencia, usuario: nomeUsuario });
         
         fecharModal();
         await carregarDados(true);
@@ -6020,6 +6026,9 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
     let valor = parseCurrency(document.getElementById('contaValorEdit')?.value);
     let codigo = document.getElementById('contaCodigoEdit')?.value.trim() || null;
     
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
     if (!valor) {
         showToast('Digite um valor válido', 'warning');
         return;
@@ -6094,7 +6103,7 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
                     p_mes: mesConta,
                     p_ano: anoConta,
                     p_data: dataPrimeiraConta,
-                    p_added_by: App.usuarioAtual || 'desconhecido',
+                    p_added_by: nomeUsuario,  // 🔴 CORRIGIDO
                     p_valor_pago: 0,
                     p_status: 'pendente',
                     p_codigo_pagamento: null,
@@ -6122,7 +6131,7 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
                     regra_id: regra.id,
                     data_excecao: dataPrimeiraConta,
                     acao: 'excluir',
-                    added_by: App.usuarioAtual || 'desconhecido'
+                    added_by: nomeUsuario  // 🔴 CORRIGIDO
                 });
             }
         }
@@ -6175,7 +6184,7 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
         await registrarHistorico(
             'edicao_conta_individual', 
             `Conta ID ${contaId} editada`, 
-            { id: contaId, isRecorrente, valor, codigo: codigo || 'removido', usuario: App.usuarioAtual }
+            { id: contaId, isRecorrente, valor, codigo: codigo || 'removido', usuario: nomeUsuario }
         );
         
         showToast(isRecorrente ? '✅ Valor e código salvos nesta conta!' : '✅ Conta atualizada!', 'success');
@@ -7066,6 +7075,9 @@ function atualizarTipoFimEvento() {
         return;
     }
 
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+
     try {
         if (frequencia === 'unico') {
             // ===== EVENTO ÚNICO =====
@@ -7106,7 +7118,7 @@ function atualizarTipoFimEvento() {
                     data_inicio: dataInicioStr,
                     data_fim: dataFimStr,
                     is_recorrente: false,
-                    added_by: App.usuarioAtual || 'desconhecido'
+                    added_by: nomeUsuario  // 🔴 CORRIGIDO
                 });
                 
                 dataAtual.setDate(dataAtual.getDate() + 1);
@@ -7161,7 +7173,7 @@ function atualizarTipoFimEvento() {
                 frequencia: frequencia,
                 data_inicio: dataInicioStr,
                 ativo: true,
-                added_by: App.usuarioAtual || 'desconhecido'
+                added_by: nomeUsuario  // 🔴 CORRIGIDO
             };
             
             if (dataFimStr) {
@@ -7172,7 +7184,7 @@ function atualizarTipoFimEvento() {
         }
 
         verificarNotificacoes({ titulo, descricao: desc }, 'eventos');
-        await registrarHistorico('criacao_evento', `Evento criado: ${titulo}`, { titulo, icone, usuario: App.usuarioAtual });
+        await registrarHistorico('criacao_evento', `Evento criado: ${titulo}`, { titulo, icone, usuario: nomeUsuario });
         
         showToast('Evento salvo com sucesso!', 'success');
         fecharModal();
@@ -7412,6 +7424,96 @@ function abrirModalInstrucoesCalendario() {
 
 
 
+// ============================================
+// FUNÇÃO PARA GERAR LINK DE CALENDÁRIO AUTOMÁTICO
+// ============================================
+
+async function gerarLinkCalendario() {
+    if (!App.currentUser) {
+        showToast('Você precisa estar logado', 'warning');
+        return;
+    }
+    
+    try {
+        showToast('Gerando link...', 'info');
+        
+        // Criar URL com o ID do usuário
+        const userId = App.currentUser.id;
+        const baseUrl = 'https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/ical-export';
+        const link = `${baseUrl}?user_id=${userId}`;
+        
+        // Criar modal com o link e instruções
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10002;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: #fff; width: 90%; max-width: 500px; border-radius: 12px; overflow: hidden;">
+                <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
+                    <h3 style="margin: 0; color: #fff;"><i class="fas fa-link"></i> Link do Calendário</h3>
+                </div>
+                <div style="padding: 20px;">
+                    <p><strong>Copie o link abaixo e adicione no Google Calendar:</strong></p>
+                    <div style="background: #f0f0f0; padding: 12px; border-radius: 8px; margin: 12px 0; word-break: break-all; font-family: monospace; font-size: 12px;">
+                        ${link}
+                    </div>
+                    <button class="btn btn-primary" onclick="copiarLinkCalendario('${link}')" style="width: 100%; margin-bottom: 12px;">
+                        <i class="fas fa-copy"></i> Copiar Link
+                    </button>
+                    
+                    <hr style="margin: 16px 0;">
+                    
+                    <h4><i class="fab fa-google"></i> Como adicionar no Google Calendar:</h4>
+                    <ol style="margin: 12px 0 12px 20px;">
+                        <li>Acesse <strong>calendar.google.com</strong></li>
+                        <li>No menu lateral, clique nos <strong>3 pontos</strong> ao lado de "Outros calendários"</li>
+                        <li>Selecione <strong>"Adicionar por URL"</strong></li>
+                        <li>Cole o link copiado e clique em <strong>"Adicionar calendário"</strong></li>
+                        <li>Pronto! Seus eventos serão sincronizados automaticamente</li>
+                    </ol>
+                    <p style="font-size: 12px; color: var(--gray); margin-top: 12px;">
+                        <i class="fas fa-info-circle"></i> O Google Calendar atualiza automaticamente a cada poucas horas. 
+                        Mudanças no My Life serão refletidas automaticamente.
+                    </p>
+                </div>
+                <div style="padding: 16px; border-top: 1px solid #eee; text-align: center;">
+                    <button class="btn" onclick="fecharModalLink()" style="background: #6c757d; color: #fff;">Fechar</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        window.copiarLinkCalendario = function(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                showToast('✅ Link copiado!', 'success');
+            }).catch(() => {
+                showToast('Erro ao copiar', 'error');
+            });
+        };
+        
+        window.fecharModalLink = function() {
+            modal.remove();
+        };
+        
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao gerar link', 'error');
+    }
+}
+
+
+
         function editarEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
             if (!App.dataCache || (!App.dataCache.eventos && !App.dataCache.regrasEventos && !App.dataCache.eventosIndividuais)) {
                 showToast('Dados não carregados. Tente novamente.', 'warning');
@@ -7532,155 +7634,150 @@ function abrirModalInstrucoesCalendario() {
         }
 
         async function salvarEdicaoEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
-            let titulo = document.getElementById('eventoTituloEdit')?.value.trim();
-            let desc = document.getElementById('eventoDescricaoEdit')?.value.trim();
-            let dataInicioStr = document.getElementById('eventoDataInicioEdit')?.value;
-            let dataFimStr = document.getElementById('eventoDataFimEdit')?.value || null;
-            let hora = document.getElementById('eventoHoraEdit')?.value;
-            let local = document.getElementById('eventoLocalEdit')?.value.trim();
-            let icone = document.getElementById('eventoIconeEdit')?.value || 'fa-star';
-            let corIcone = document.getElementById('eventoCorIconeEdit')?.value || '#ffd700';
+    let titulo = document.getElementById('eventoTituloEdit')?.value.trim();
+    let desc = document.getElementById('eventoDescricaoEdit')?.value.trim();
+    let dataInicioStr = document.getElementById('eventoDataInicioEdit')?.value;
+    let dataFimStr = document.getElementById('eventoDataFimEdit')?.value || null;
+    let hora = document.getElementById('eventoHoraEdit')?.value;
+    let local = document.getElementById('eventoLocalEdit')?.value.trim();
+    let icone = document.getElementById('eventoIconeEdit')?.value || 'fa-star';
+    let corIcone = document.getElementById('eventoCorIconeEdit')?.value || '#ffd700';
 
-            if (!titulo || !dataInicioStr) {
-                showToast('Preencha título e data de início', 'warning');
-                return;
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+
+    if (!titulo || !dataInicioStr) {
+        showToast('Preencha título e data de início', 'warning');
+        return;
+    }
+
+    try {
+        if (isRecorrente && regraId) {
+            await App.supabase.from('regras_eventos').update({
+                titulo_base: titulo,
+                descricao: desc || '',
+                hora: hora || null,
+                local: local || null,
+                icone: icone,
+                cor_icone: corIcone,
+                data_inicio: dataInicioStr,
+                data_fim: dataFimStr
+            }).eq('id', regraId);
+        } else if (isIndividual && individualId) {
+            await App.supabase.from('eventos_individuais').delete().eq('id', individualId);
+            
+            let dataInicio = new Date(dataInicioStr + 'T12:00:00');
+            await App.supabase.from('eventos_individuais').insert({
+                user_id: App.currentUser.id,
+                regra_id: regraId,
+                titulo: titulo,
+                descricao: desc || '',
+                dia: dataInicio.getDate(),
+                mes: dataInicio.getMonth() + 1,
+                ano: dataInicio.getFullYear(),
+                hora: hora || null,
+                local: local || null,
+                icone: icone,
+                cor_icone: corIcone,
+                data_original: dataInicioStr,
+                data_inicio: dataInicioStr,
+                data_fim: dataFimStr,
+                added_by: nomeUsuario  // 🔴 CORRIGIDO
+            });
+        } else {
+            // PASSO 1: Encontrar o evento original ANTIGO para saber o período antigo
+            let eventoAntigo = null;
+            
+            if (App.dataCache && App.dataCache.eventos) {
+                eventoAntigo = App.dataCache.eventos.find(e => e.id == id);
             }
-
-            try {
-                if (isRecorrente && regraId) {
-                    await App.supabase.from('regras_eventos').update({
-                        titulo_base: titulo,
-                        descricao: desc || '',
-                        hora: hora || null,
-                        local: local || null,
-                        icone: icone,
-                        cor_icone: corIcone,
-                        data_inicio: dataInicioStr,
-                        data_fim: dataFimStr
-                    }).eq('id', regraId);
-                                } else if (isIndividual && individualId) {
-                    await App.supabase.from('eventos_individuais').delete().eq('id', individualId);
+            
+            console.log('Evento antigo encontrado:', eventoAntigo);
+            
+            if (eventoAntigo && eventoAntigo.data_inicio) {
+                if (eventoAntigo.data_fim) {
+                    await App.supabase
+                        .from('eventos')
+                        .delete()
+                        .eq('user_id', App.currentUser.id)
+                        .eq('data_inicio', eventoAntigo.data_inicio)
+                        .eq('data_fim', eventoAntigo.data_fim);
+                } else {
+                    await App.supabase
+                        .from('eventos')
+                        .delete()
+                        .eq('user_id', App.currentUser.id)
+                        .eq('data_inicio', eventoAntigo.data_inicio)
+                        .eq('data_fim', null);
+                }
+            } else {
+                await App.supabase
+                    .from('eventos')
+                    .delete()
+                    .eq('data_inicio', dataInicioStr)
+                    .eq('data_fim', dataFimStr);
+            }
+            
+            let dataInicio = new Date(dataInicioStr + 'T12:00:00');
+            let dataFim = dataFimStr ? new Date(dataFimStr + 'T12:00:00') : null;
+            
+            if (dataFim) {
+                let dataAtual = new Date(dataInicio);
+                while (dataAtual <= dataFim) {
+                    let anoAtual = dataAtual.getFullYear();
+                    let mesAtual = dataAtual.getMonth() + 1;
+                    let diaAtual = dataAtual.getDate();
                     
-                    let dataInicio = new Date(dataInicioStr + 'T12:00:00');
-                    await App.supabase.from('eventos_individuais').insert({
+                    await App.supabase.from('eventos').insert({
                         user_id: App.currentUser.id,
-                        regra_id: regraId,
                         titulo: titulo,
                         descricao: desc || '',
-                        dia: dataInicio.getDate(),
-                        mes: dataInicio.getMonth() + 1,
-                        ano: dataInicio.getFullYear(),
+                        dia: diaAtual,
+                        mes: mesAtual,
+                        ano: anoAtual,
                         hora: hora || null,
                         local: local || null,
                         icone: icone,
                         cor_icone: corIcone,
-                        data_original: dataInicioStr,
                         data_inicio: dataInicioStr,
                         data_fim: dataFimStr,
-                        added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
+                        is_recorrente: false,
+                        added_by: nomeUsuario  // 🔴 CORRIGIDO
                     });
-                } else {
-                    // PASSO 1: Encontrar o evento original ANTIGO para saber o período antigo
-                    let eventoAntigo = null;
                     
-                    // Tenta encontrar nos dados em cache
-                    if (App.dataCache && App.dataCache.eventos) {
-                        eventoAntigo = App.dataCache.eventos.find(e => e.id == id);
-                    }
-                    
-                    console.log('Evento antigo encontrado:', eventoAntigo);
-                    
-                    // PASSO 2: Se encontrou o evento antigo, deletar TODOS os eventos com o período antigo
-                    if (eventoAntigo && eventoAntigo.data_inicio) {
-                        if (eventoAntigo.data_fim) {
-                            // Evento com período (vários dias)
-                            await App.supabase
-                                .from('eventos')
-                                .delete()
-                                .eq('user_id', App.currentUser.id)
-                                .eq('data_inicio', eventoAntigo.data_inicio)
-                                .eq('data_fim', eventoAntigo.data_fim);
-                        } else {
-                            // Evento de um único dia
-                            await App.supabase
-                                .from('eventos')
-                                .delete()
-                                .eq('user_id', App.currentUser.id)
-                                .eq('data_inicio', eventoAntigo.data_inicio)
-                                .eq('data_fim', null);
-                        }
-                    } else {
-                        // Fallback: se não encontrou, tenta deletar pelo novo período (menos seguro)
-                        await App.supabase
-                            .from('eventos')
-                            .delete()
-                            .eq('data_inicio', dataInicioStr)
-                            .eq('data_fim', dataFimStr);
-                    }
-                    
-                    // PASSO 3: AGORA criar os novos eventos com o novo período
-                    let dataInicio = new Date(dataInicioStr + 'T12:00:00');
-                    let dataFim = dataFimStr ? new Date(dataFimStr + 'T12:00:00') : null;
-                    
-                    if (dataFim) {
-                        // Evento com período (vários dias)
-                        let dataAtual = new Date(dataInicio);
-                        while (dataAtual <= dataFim) {
-                            let anoAtual = dataAtual.getFullYear();
-                            let mesAtual = dataAtual.getMonth() + 1;
-                            let diaAtual = dataAtual.getDate();
-                            
-                            await App.supabase.from('eventos').insert({
-                                user_id: App.currentUser.id,
-                                titulo: titulo,
-                                descricao: desc || '',
-                                dia: diaAtual,
-                                mes: mesAtual,
-                                ano: anoAtual,
-                                hora: hora || null,
-                                local: local || null,
-                                icone: icone,
-                                cor_icone: corIcone,
-                                data_inicio: dataInicioStr,
-                                data_fim: dataFimStr,
-                                is_recorrente: false,
-                                added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
-                            });
-                            
-                            dataAtual.setDate(dataAtual.getDate() + 1);
-                        }
-                    } else {
-                        // Evento de um único dia
-                        await App.supabase.from('eventos').insert({
-                            user_id: App.currentUser.id,
-                            titulo: titulo,
-                            descricao: desc || '',
-                            dia: dataInicio.getDate(),
-                            mes: dataInicio.getMonth() + 1,
-                            ano: dataInicio.getFullYear(),
-                            hora: hora || null,
-                            local: local || null,
-                            icone: icone,
-                            cor_icone: corIcone,
-                            data_inicio: dataInicioStr,
-                            data_fim: null,
-                            is_recorrente: false,
-                            added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
-                        });
-                    }
+                    dataAtual.setDate(dataAtual.getDate() + 1);
                 }
-
-                await registrarHistorico('edicao_evento', `Evento editado: ${titulo}`, { id, usuario: App.usuarioAtual });
-                showToast('Evento atualizado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await atualizarCalendario();
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao editar evento:', error);
-                showToast('Erro: ' + error.message, 'error');
+            } else {
+                await App.supabase.from('eventos').insert({
+                    user_id: App.currentUser.id,
+                    titulo: titulo,
+                    descricao: desc || '',
+                    dia: dataInicio.getDate(),
+                    mes: dataInicio.getMonth() + 1,
+                    ano: dataInicio.getFullYear(),
+                    hora: hora || null,
+                    local: local || null,
+                    icone: icone,
+                    cor_icone: corIcone,
+                    data_inicio: dataInicioStr,
+                    data_fim: null,
+                    is_recorrente: false,
+                    added_by: nomeUsuario  // 🔴 CORRIGIDO
+                });
             }
         }
+
+        await registrarHistorico('edicao_evento', `Evento editado: ${titulo}`, { id, usuario: nomeUsuario });
+        showToast('Evento atualizado!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await atualizarCalendario();
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao editar evento:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
 
         // Funções para o modal informativo
@@ -7737,7 +7834,7 @@ function fecharModalInfoEConfirmar() {
             });
         }
 
-        async function confirmarPagamento(id, desc, valor, regraId, dia, mes, ano, isRecorrente, codigoPagamento) {
+       async function confirmarPagamento(id, desc, valor, regraId, dia, mes, ano, isRecorrente, codigoPagamento) {
     if (App.processandoPagamento) {
         showToast('Processando pagamento, aguarde...', 'warning');
         return;
@@ -7745,7 +7842,10 @@ function fecharModalInfoEConfirmar() {
     
     let valorPago = parseCurrency(document.getElementById('pagamentoValorConta')?.value);
     
-    // 🔴 VERIFICAR SE O VALOR É ZERO
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
+    // VERIFICAR SE O VALOR É ZERO
     if (valorPago === 0) {
         const confirmar = confirm(
             '⚠️ ATENÇÃO: Você está pagando R$ 0,00.\n\n' +
@@ -7765,7 +7865,7 @@ function fecharModalInfoEConfirmar() {
                     regra_id: regraId,
                     data_excecao: dataParaString(ano, mes, dia),
                     acao: 'pagar',
-                   added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
+                    added_by: nomeUsuario  // 🔴 CORRIGIDO
                 });
             } else {
                 await App.supabase.from('contas').update({
@@ -7775,7 +7875,7 @@ function fecharModalInfoEConfirmar() {
                 }).eq('id', id);
             }
             
-            await registrarHistorico('pagamento_conta_zero', `Conta marcada como paga (R$ 0,00): ${desc}`, { id, usuario: App.usuarioAtual });
+            await registrarHistorico('pagamento_conta_zero', `Conta marcada como paga (R$ 0,00): ${desc}`, { id, usuario: nomeUsuario });
             showToast('✅ Conta marcada como paga! (Saldo não alterado)', 'success');
             fecharModal();
             await carregarDados(true);
@@ -7800,7 +7900,7 @@ function fecharModalInfoEConfirmar() {
                 regra_id: regraId,
                 data_excecao: dataParaString(ano, mes, dia),
                 acao: 'pagar',
-                added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
+                added_by: nomeUsuario  // 🔴 CORRIGIDO
             });
         } else {
             await App.supabase.from('contas').update({
@@ -7820,7 +7920,7 @@ function fecharModalInfoEConfirmar() {
             }
         }
 
-        await registrarHistorico('pagamento_conta', `Conta paga: ${desc}`, { id, valor: valorPago, usuario: App.usuarioAtual });
+        await registrarHistorico('pagamento_conta', `Conta paga: ${desc}`, { id, valor: valorPago, usuario: nomeUsuario });
         
         verificarNotificacoes({ descricao: 'Pagamento confirmado', valor: valorPago }, 'contas');
         
@@ -9456,73 +9556,76 @@ function abrirManualRapido() {
         }
 
         async function salvarNovoGasto() {
-            let desc = document.getElementById('gastoDescricao')?.value.trim();
-            let valor = parseCurrency(document.getElementById('gastoValor')?.value);
-            let dia = parseInt(document.getElementById('gastoDia')?.value);
-            let mes = parseInt(document.getElementById('gastoMes')?.value);
-            let ano = parseInt(document.getElementById('gastoAno')?.value);
-            let cat = document.getElementById('gastoCategoria')?.value;
-            let catCustom = null;
+    let desc = document.getElementById('gastoDescricao')?.value.trim();
+    let valor = parseCurrency(document.getElementById('gastoValor')?.value);
+    let dia = parseInt(document.getElementById('gastoDia')?.value);
+    let mes = parseInt(document.getElementById('gastoMes')?.value);
+    let ano = parseInt(document.getElementById('gastoAno')?.value);
+    let cat = document.getElementById('gastoCategoria')?.value;
+    let catCustom = null;
 
-            if (cat === 'outros') {
-                catCustom = document.getElementById('gastoOutrosTexto')?.value.trim();
-                if (!catCustom) {
-                    showToast('Especifique a categoria', 'warning');
-                    return;
-                }
-            }
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
-            if (!desc || !valor || !dia || !mes || !ano) {
-                showToast('Preencha todos os campos', 'warning');
-                return;
-            }
+    if (cat === 'outros') {
+        catCustom = document.getElementById('gastoOutrosTexto')?.value.trim();
+        if (!catCustom) {
+            showToast('Especifique a categoria', 'warning');
+            return;
+        }
+    }
 
-            if (!dataValida(ano, mes, dia)) {
-                showToast('Dia inválido para o mês selecionado', 'warning');
-                return;
-            }
+    if (!desc || !valor || !dia || !mes || !ano) {
+        showToast('Preencha todos os campos', 'warning');
+        return;
+    }
 
-            let diaAjustado = dia;
-            let data = dataParaString(ano, mes, diaAjustado);
+    if (!dataValida(ano, mes, dia)) {
+        showToast('Dia inválido para o mês selecionado', 'warning');
+        return;
+    }
 
-            try {
-                let gastoData = {
-                    user_id: App.currentUser.id,
-                    descricao: desc,
-                    valor: valor,
-                    categoria: cat || 'outros',
-                    dia: diaAjustado,
-                    mes: mes,
-                    ano: ano,
-                    data: data,
-                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
-                };
-                if (cat === 'outros' && catCustom) gastoData.categoria_customizada = catCustom;
+    let diaAjustado = dia;
+    let data = dataParaString(ano, mes, diaAjustado);
 
-                await App.supabase.from('gastos').insert(gastoData);
+    try {
+        let gastoData = {
+            user_id: App.currentUser.id,
+            descricao: desc,
+            valor: valor,
+            categoria: cat || 'outros',
+            dia: diaAjustado,
+            mes: mes,
+            ano: ano,
+            data: data,
+            added_by: nomeUsuario  // 🔴 CORRIGIDO
+        };
+        if (cat === 'outros' && catCustom) gastoData.categoria_customizada = catCustom;
 
-                if (App.saldoCentral.id) {
-                    let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
-                    if (saldoAtual) {
-                        let novoValor = saldoAtual.valor - valor;
-                        await App.supabase.from('saldos').update({ valor: novoValor, data: new Date().toISOString() }).eq('id', App.saldoCentral.id);
-                        App.saldoCentral.valor = novoValor;
-                        atualizarSaldoHeader();
-                    }
-                }
+        await App.supabase.from('gastos').insert(gastoData);
 
-                verificarNotificacoes({ descricao: desc, valor }, 'gastos');
-                await registrarHistorico('criacao_gasto', `Gasto: ${desc}`, { desc, valor, cat, usuario: App.usuarioAtual });
-                showToast('Gasto registrado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await atualizarCalendario();
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao salvar gasto:', error);
-                showToast('Erro: ' + error.message, 'error');
+        if (App.saldoCentral.id) {
+            let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
+            if (saldoAtual) {
+                let novoValor = saldoAtual.valor - valor;
+                await App.supabase.from('saldos').update({ valor: novoValor, data: new Date().toISOString() }).eq('id', App.saldoCentral.id);
+                App.saldoCentral.valor = novoValor;
+                atualizarSaldoHeader();
             }
         }
+
+        verificarNotificacoes({ descricao: desc, valor }, 'gastos');
+        await registrarHistorico('criacao_gasto', `Gasto: ${desc}`, { desc, valor, cat, usuario: nomeUsuario });
+        showToast('Gasto registrado!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await atualizarCalendario();
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao salvar gasto:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
         function editarGasto(id) {
             let gasto = App.dataCache.gastos.find(g => g.id === id);
@@ -9556,63 +9659,66 @@ function abrirManualRapido() {
         }
 
         async function salvarEdicaoGasto(id) {
-            let desc = document.getElementById('gastoDescricaoEdit')?.value.trim();
-            let valor = parseCurrency(document.getElementById('gastoValorEdit')?.value);
-            let cat = document.getElementById('gastoCategoriaEdit')?.value;
+    let desc = document.getElementById('gastoDescricaoEdit')?.value.trim();
+    let valor = parseCurrency(document.getElementById('gastoValorEdit')?.value);
+    let cat = document.getElementById('gastoCategoriaEdit')?.value;
 
-            if (!desc || !valor) {
-                showToast('Preencha todos os campos', 'warning');
-                return;
-            }
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
-            try {
-                await App.supabase.from('gastos').delete().eq('id', id);
-                
-                let gastoAntigo = App.dataCache.gastos.find(g => g.id === id);
-                if (gastoAntigo && App.saldoCentral.id) {
-                    let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
-                    if (saldoAtual) {
-                        let novoValor = saldoAtual.valor + gastoAntigo.valor;
-                        await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
-                        App.saldoCentral.valor = novoValor;
-                        atualizarSaldoHeader();
-                    }
-                }
+    if (!desc || !valor) {
+        showToast('Preencha todos os campos', 'warning');
+        return;
+    }
 
-                let { mes, ano } = getMesAnoAtual();
-                let data = dataParaString(ano, mes, new Date().getDate());
-                await App.supabase.from('gastos').insert({
-                    user_id: App.currentUser.id,
-                    descricao: desc,
-                    valor: valor,
-                    categoria: cat,
-                    dia: new Date().getDate(),
-                    mes: mes,
-                    ano: ano,
-                    data: data,
-                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
-                });
-
-                if (App.saldoCentral.id) {
-                    let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
-                    if (saldoAtual) {
-                        let novoValor = saldoAtual.valor - valor;
-                        await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
-                        App.saldoCentral.valor = novoValor;
-                        atualizarSaldoHeader();
-                    }
-                }
-
-                await registrarHistorico('edicao_gasto', `Gasto editado: ${desc}`, { id, usuario: App.usuarioAtual });
-                showToast('Gasto atualizado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao editar gasto:', error);
-                showToast('Erro: ' + error.message, 'error');
+    try {
+        await App.supabase.from('gastos').delete().eq('id', id);
+        
+        let gastoAntigo = App.dataCache.gastos.find(g => g.id === id);
+        if (gastoAntigo && App.saldoCentral.id) {
+            let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
+            if (saldoAtual) {
+                let novoValor = saldoAtual.valor + gastoAntigo.valor;
+                await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
+                App.saldoCentral.valor = novoValor;
+                atualizarSaldoHeader();
             }
         }
+
+        let { mes, ano } = getMesAnoAtual();
+        let data = dataParaString(ano, mes, new Date().getDate());
+        await App.supabase.from('gastos').insert({
+            user_id: App.currentUser.id,
+            descricao: desc,
+            valor: valor,
+            categoria: cat,
+            dia: new Date().getDate(),
+            mes: mes,
+            ano: ano,
+            data: data,
+            added_by: nomeUsuario  // 🔴 CORRIGIDO
+        });
+
+        if (App.saldoCentral.id) {
+            let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
+            if (saldoAtual) {
+                let novoValor = saldoAtual.valor - valor;
+                await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
+                App.saldoCentral.valor = novoValor;
+                atualizarSaldoHeader();
+            }
+        }
+
+        await registrarHistorico('edicao_gasto', `Gasto editado: ${desc}`, { id, usuario: nomeUsuario });
+        showToast('Gasto atualizado!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao editar gasto:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
        // ============================================
 // FUNÇÕES DA LISTA DE COMPRAS
@@ -9642,6 +9748,9 @@ async function salvarNovoItemLista() {
     let qtd = parseInt(document.getElementById('itemQuantidade')?.value);
     let desc = document.getElementById('itemDescricao')?.value.trim();
 
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+
     if (!qtd || !desc) {
         showToast('Preencha quantidade e descrição', 'warning');
         return;
@@ -9653,10 +9762,10 @@ async function salvarNovoItemLista() {
             quantidade: qtd,
             descricao: desc,
             comprado: false,
-            added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
+            added_by: nomeUsuario  // 🔴 CORRIGIDO
         });
 
-        await registrarHistorico('criacao_lista', `Item adicionado: ${desc}`, { qtd, desc });
+        await registrarHistorico('criacao_lista', `Item adicionado: ${desc}`, { qtd, desc, usuario: nomeUsuario });
         showToast('Item adicionado!', 'success');
         fecharModal();
         await carregarDados(true);
@@ -9666,6 +9775,7 @@ async function salvarNovoItemLista() {
         showToast('Erro: ' + error.message, 'error');
     }
 }
+
 
 // ============================================
 // FUNÇÃO ALTERNAR COMPRADO - VERSÃO SUPER ROBUSTA
@@ -9805,34 +9915,37 @@ window.deletarItemLista = deletarItemLista;
         }
 
         async function salvarNovoGiro() {
-            let desc = document.getElementById('giroDescricao')?.value.trim();
-            let valor = parseCurrency(document.getElementById('giroValor')?.value);
-            let pessoa = document.getElementById('giroPessoa')?.value.trim();
+    let desc = document.getElementById('giroDescricao')?.value.trim();
+    let valor = parseCurrency(document.getElementById('giroValor')?.value);
+    let pessoa = document.getElementById('giroPessoa')?.value.trim();
 
-            if (!desc || !valor || !pessoa) {
-                showToast('Preencha todos os campos', 'warning');
-                return;
-            }
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
-            try {
-                await App.supabase.from('giros').insert({
-                    user_id: App.currentUser.id,
-                    descricao: desc,
-                    valor_inicial: valor,
-                    pessoa: pessoa,
-                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
-                });
+    if (!desc || !valor || !pessoa) {
+        showToast('Preencha todos os campos', 'warning');
+        return;
+    }
 
-                await registrarHistorico('criacao_giro', `Giro criado: ${desc}`, { desc, valor, pessoa, usuario: App.usuarioAtual });
-                showToast('Giro salvo!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao salvar giro:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
+    try {
+        await App.supabase.from('giros').insert({
+            user_id: App.currentUser.id,
+            descricao: desc,
+            valor_inicial: valor,
+            pessoa: pessoa,
+            added_by: nomeUsuario  // 🔴 CORRIGIDO
+        });
+
+        await registrarHistorico('criacao_giro', `Giro criado: ${desc}`, { desc, valor, pessoa, usuario: nomeUsuario });
+        showToast('Giro salvo!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao salvar giro:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
         function abrirPagamentoGiro(id, desc) {
             let conteudo = `
@@ -9853,35 +9966,38 @@ window.deletarItemLista = deletarItemLista;
         }
 
         async function salvarPagamentoGiro(id, desc) {
-            let valor = parseCurrency(document.getElementById('pagamentoValor')?.value);
-            let descricao = document.getElementById('pagamentoDescricao')?.value.trim();
+    let valor = parseCurrency(document.getElementById('pagamentoValor')?.value);
+    let descricao = document.getElementById('pagamentoDescricao')?.value.trim();
 
-            if (!valor) {
-                showToast('Digite o valor', 'warning');
-                return;
-            }
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
-            try {
-                await App.supabase.from('movimentacoes_giro').insert({
-                    user_id: App.currentUser.id,
-                    giro_id: id,
-                    tipo: 'pagamento',
-                    valor: valor,
-                    descricao: descricao || `Pagamento para ${desc}`,
-                    data: new Date().toISOString(),
-                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
-                });
+    if (!valor) {
+        showToast('Digite o valor', 'warning');
+        return;
+    }
 
-                await registrarHistorico('pagamento_giro', `Pagamento de ${formatCurrency(valor)} para ${desc}`, { id, valor, usuario: App.usuarioAtual });
-                showToast('Pagamento registrado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao registrar pagamento:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
+    try {
+        await App.supabase.from('movimentacoes_giro').insert({
+            user_id: App.currentUser.id,
+            giro_id: id,
+            tipo: 'pagamento',
+            valor: valor,
+            descricao: descricao || `Pagamento para ${desc}`,
+            data: new Date().toISOString(),
+            added_by: nomeUsuario  // 🔴 CORRIGIDO
+        });
+
+        await registrarHistorico('pagamento_giro', `Pagamento de ${formatCurrency(valor)} para ${desc}`, { id, valor, usuario: nomeUsuario });
+        showToast('Pagamento registrado!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao registrar pagamento:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
         function abrirRecebimentoGiro(id, desc) {
             let conteudo = `
@@ -9902,35 +10018,38 @@ window.deletarItemLista = deletarItemLista;
         }
 
         async function salvarRecebimentoGiro(id, desc) {
-            let valor = parseCurrency(document.getElementById('recebimentoValor')?.value);
-            let descricao = document.getElementById('recebimentoDescricao')?.value.trim();
+    let valor = parseCurrency(document.getElementById('recebimentoValor')?.value);
+    let descricao = document.getElementById('recebimentoDescricao')?.value.trim();
 
-            if (!valor) {
-                showToast('Digite o valor', 'warning');
-                return;
-            }
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
-            try {
-                await App.supabase.from('movimentacoes_giro').insert({
-                    user_id: App.currentUser.id,
-                    giro_id: id,
-                    tipo: 'recebimento',
-                    valor: valor,
-                    descricao: descricao || `Recebimento de ${desc}`,
-                    data: new Date().toISOString(),
-                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
-                });
+    if (!valor) {
+        showToast('Digite o valor', 'warning');
+        return;
+    }
 
-                await registrarHistorico('recebimento_giro', `Recebimento de ${formatCurrency(valor)} de ${desc}`, { id, valor, usuario: App.usuarioAtual });
-                showToast('Recebimento registrado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao registrar recebimento:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
+    try {
+        await App.supabase.from('movimentacoes_giro').insert({
+            user_id: App.currentUser.id,
+            giro_id: id,
+            tipo: 'recebimento',
+            valor: valor,
+            descricao: descricao || `Recebimento de ${desc}`,
+            data: new Date().toISOString(),
+            added_by: nomeUsuario  // 🔴 CORRIGIDO
+        });
+
+        await registrarHistorico('recebimento_giro', `Recebimento de ${formatCurrency(valor)} de ${desc}`, { id, valor, usuario: nomeUsuario });
+        showToast('Recebimento registrado!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao registrar recebimento:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
         function editarGiro(id) {
             let giro = App.dataCache.giros.find(g => g.id === id);
@@ -9954,30 +10073,33 @@ window.deletarItemLista = deletarItemLista;
         }
 
         async function salvarEdicaoGiro(id) {
-            let desc = document.getElementById('giroDescricaoEdit')?.value.trim();
-            let pessoa = document.getElementById('giroPessoaEdit')?.value.trim();
+    let desc = document.getElementById('giroDescricaoEdit')?.value.trim();
+    let pessoa = document.getElementById('giroPessoaEdit')?.value.trim();
 
-            if (!desc || !pessoa) {
-                showToast('Preencha todos os campos', 'warning');
-                return;
-            }
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
-            try {
-                await App.supabase.from('giros').update({
-                    descricao: desc,
-                    pessoa: pessoa
-                }).eq('id', id);
+    if (!desc || !pessoa) {
+        showToast('Preencha todos os campos', 'warning');
+        return;
+    }
 
-                await registrarHistorico('edicao_giro', `Giro editado: ${desc}`, { id, usuario: App.usuarioAtual });
-                showToast('Giro atualizado!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao editar giro:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
+    try {
+        await App.supabase.from('giros').update({
+            descricao: desc,
+            pessoa: pessoa
+        }).eq('id', id);
+
+        await registrarHistorico('edicao_giro', `Giro editado: ${desc}`, { id, usuario: nomeUsuario });
+        showToast('Giro atualizado!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao editar giro:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
         function deletarGiro(id) {
             if (confirm('Tem certeza que deseja excluir este giro?')) {
@@ -11278,22 +11400,25 @@ function abrirNovaNota() {
 
 async function salvarNovaNota() {
     let texto = document.getElementById('notaTexto')?.value.trim();
-    
+
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+
     if (!texto) {
         showToast('Digite uma anotação', 'warning');
         return;
     }
-    
+
     try {
         await App.supabase.from('notas').insert({
             user_id: App.currentUser.id,
             texto: texto,
             concluido: false,
             data_criacao: new Date().toISOString(),
-            added_by: App.usuarioAtual || 'desconhecido'
+            added_by: nomeUsuario  // 🔴 CORRIGIDO
         });
-        
-        await registrarHistorico('criacao_nota', `Nota criada`, { texto: texto.substring(0, 50), usuario: App.usuarioAtual });
+
+        await registrarHistorico('criacao_nota', `Nota criada`, { texto: texto.substring(0, 50), usuario: nomeUsuario });
         showToast('Anotação salva!', 'success');
         fecharModal();
         await carregarDados(true);
@@ -11323,19 +11448,22 @@ async function editarNota(id) {
 
 async function salvarEdicaoNota(id) {
     let texto = document.getElementById('notaTextoEdit')?.value.trim();
-    
+
+    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+
     if (!texto) {
         showToast('Digite uma anotação', 'warning');
         return;
     }
-    
+
     try {
         await App.supabase.from('notas').update({
             texto: texto,
             data_edicao: new Date().toISOString()
         }).eq('id', id);
-        
-        await registrarHistorico('edicao_nota', `Nota editada`, { id, usuario: App.usuarioAtual });
+
+        await registrarHistorico('edicao_nota', `Nota editada`, { id, usuario: nomeUsuario });
         showToast('Anotação atualizada!', 'success');
         fecharModal();
         await carregarDados(true);
