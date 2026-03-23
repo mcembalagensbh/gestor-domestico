@@ -11750,7 +11750,6 @@ async function deletarTarefa(id) {
             fecharAddMenu();
         });
 
-        
         // 🔴 BOTÃO NOTAS
         document.getElementById('navNotas').addEventListener('click', () => {
             App.currentFilter = 'notas';
@@ -11758,15 +11757,13 @@ async function deletarTarefa(id) {
             fecharAddMenu();
         });
 
-
         // 🔴 BOTÃO TAREFAS
         document.getElementById('navTarefas').addEventListener('click', () => {
+            console.log('🔵 Botão Tarefas clicado');  // 🔴 LOG PARA DEBUG
             App.currentFilter = 'tarefas';
             mostrarConteudo();
             fecharAddMenu();
         });
-
-
 
         // 🔴 BOTÃO GESTOR (abre menu flutuante)
         document.getElementById('navGestor').addEventListener('click', (e) => {
@@ -11800,7 +11797,6 @@ async function deletarTarefa(id) {
                 }
             });
         });
-
 
         document.getElementById('modalOverlay').addEventListener('click', e => {
             if (e.target === e.currentTarget) fecharModal();
