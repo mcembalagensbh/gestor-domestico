@@ -4139,14 +4139,19 @@ function atualizarTarefaBadge() {
 
     document.getElementById('filterInfo').innerHTML = `<i class="fas fa-calendar-alt"></i> ${getNomeMes(mes)}/${ano}${diaText} | <strong>${Object.entries(App.activeFilters).filter(([k, v]) => v).map(([k]) => k).join(', ') || 'Nenhum'}</strong>`;
 
-    try {
-        if (App.currentFilter === 'saldos') await renderizarSaldos(content);
-        else if (App.currentFilter === 'lista') await renderizarLista(content);
-        else if (App.currentFilter === 'gastos') await renderizarGastos(content, mes, ano);
-        else if (App.currentFilter === 'giros') await renderizarGiros(content);
-        else if (App.currentFilter === 'notas') await renderizarNotas(content);
-        else await renderizarTudo(content, mes, ano);
-    } catch (error) {
+                try {
+                console.log('🔵 Verificando filter:', App.currentFilter);
+                if (App.currentFilter === 'saldos') await renderizarSaldos(content);
+                else if (App.currentFilter === 'lista') await renderizarLista(content);
+                else if (App.currentFilter === 'gastos') await renderizarGastos(content, mes, ano);
+                else if (App.currentFilter === 'giros') await renderizarGiros(content);
+                else if (App.currentFilter === 'notas') await renderizarNotas(content);
+                else if (App.currentFilter === 'tarefas') {
+                    console.log('🔵 CHAMANDO renderizarTarefas');
+                    await renderizarTarefas(content);
+                }
+                else await renderizarTudo(content, mes, ano);
+            } catch (error) {
         console.error(error);
         content.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Erro ao carregar dados</p></div>';
     }
