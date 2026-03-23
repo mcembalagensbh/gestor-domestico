@@ -2106,7 +2106,7 @@
     <div class="side-menu-item" onclick="abrirPoliticasTermos();fecharSideMenu()"><i class="fas fa-file-contract"></i> Políticas e Termos</div>
     <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()"><i class="fas fa-book"></i> Manual Rápido</div>
     <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()"><i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span></div>
-    <div class="side-menu-item" onclick="gerarLinkCalendario();fecharSideMenu()"><i class="fas fa-link"></i> Sync Calendários</div>
+    <div class="side-menu-item" onclick="gerarTokenCalendario();fecharSideMenu()"><i class="fas fa-link"></i> Sync Calendários</div>
     <!-- 🔴 NOVO ITEM: QUER USAR NO IPHONE? -->
     <div class="side-menu-item" onclick="abrirModalIphone();fecharSideMenu()">
         <i class="fab fa-apple"></i> Quer usar no Iphone?
@@ -7423,6 +7423,112 @@ function abrirModalInstrucoesCalendario() {
 
 
 
+async function gerarTokenCalendario() {
+    if (!App.currentUser) {
+        showToast('Você precisa estar logado', 'warning');
+        return;
+    }
+    
+    try {
+        showToast('Gerando link do calendário...', 'info');
+        
+        // Verificar se já tem um token
+        const { data: existingToken, error: searchError } = await App.supabase
+            .from('calendario_tokens')
+            .select('token')
+            .eq('user_id', App.currentUser.id)
+            .maybeSingle();
+        
+        let token;
+        
+        if (existingToken) {
+            token = existingToken.token;
+        } else {
+            // Gerar token único
+            token = crypto.randomUUID().replace(/-/g, '');
+            
+            const { error: insertError } = await App.supabase
+                .from('calendario_tokens')
+                .insert({
+                    user_id: App.currentUser.id,
+                    token: token
+                });
+            
+            if (insertError) throw insertError;
+        }
+        
+        const calendarUrl = `https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/ical-user/${token}.ics`;
+        
+        // Mostrar modal com o link
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10002;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: #fff; width: 90%; max-width: 500px; border-radius: 12px; overflow: hidden;">
+                <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
+                    <h3 style="margin: 0; color: #fff;"><i class="fas fa-link"></i> Link do Calendário</h3>
+                </div>
+                <div style="padding: 20px;">
+                    <p><strong>Copie o link abaixo e adicione no Google Calendar:</strong></p>
+                    <div style="background: #f0f0f0; padding: 12px; border-radius: 8px; margin: 12px 0; word-break: break-all; font-family: monospace; font-size: 12px;">
+                        ${calendarUrl}
+                    </div>
+                    <button class="btn btn-primary" onclick="copiarLinkCalendario('${calendarUrl}')" style="width: 100%; margin-bottom: 12px;">
+                        <i class="fas fa-copy"></i> Copiar Link
+                    </button>
+                    
+                    <hr style="margin: 16px 0;">
+                    
+                    <h4><i class="fab fa-google"></i> Como adicionar no Google Calendar:</h4>
+                    <ol style="margin: 12px 0 12px 20px;">
+                        <li>Acesse <strong>calendar.google.com</strong></li>
+                        <li>No menu lateral, clique nos <strong>3 pontos</strong> ao lado de "Outros calendários"</li>
+                        <li>Selecione <strong>"Adicionar por URL"</strong></li>
+                        <li>Cole o link copiado e clique em <strong>"Adicionar calendário"</strong></li>
+                        <li>Pronto! Seus eventos serão sincronizados automaticamente</li>
+                    </ol>
+                    <p style="font-size: 12px; color: var(--gray); margin-top: 12px;">
+                        <i class="fas fa-info-circle"></i> Este link é único e secreto. Não compartilhe com pessoas que não devem ver seus eventos.
+                    </p>
+                </div>
+                <div style="padding: 16px; border-top: 1px solid #eee; text-align: center;">
+                    <button class="btn" onclick="fecharModalLink()" style="background: #6c757d; color: #fff;">Fechar</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        window.copiarLinkCalendario = function(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                showToast('✅ Link copiado!', 'success');
+            }).catch(() => {
+                showToast('Erro ao copiar', 'error');
+            });
+        };
+        
+        window.fecharModalLink = function() {
+            modal.remove();
+        };
+        
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao gerar link', 'error');
+    }
+}
+
+        
 
 // ============================================
 // FUNÇÃO PARA GERAR LINK DE CALENDÁRIO AUTOMÁTICO
