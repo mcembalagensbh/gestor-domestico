@@ -3297,8 +3297,8 @@ function esconderLoading() {
 
 // Modifique a função mostrarConteudo para usar o novo loading
 async function mostrarConteudo() {
-    console.log('🔵 mostrarConteudo chamado, filter:', App.currentFilter);  // 🔴 ADICIONAR
-    mostrarLoading('Atualizando edições...'); // ← NOVO
+     console.log('🔵 mostrarConteudo iniciado, filter:', App.currentFilter);
+    mostrarLoading('Atualizando edições...');
     
     document.getElementById('contentArea').style.display = 'none';
     await carregarDados(false);
