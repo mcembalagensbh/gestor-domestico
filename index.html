@@ -1987,6 +1987,16 @@
     box-shadow: none;
     overflow: visible;
 }
+
+/* Transição para o acordeão */
+.calendario-conteudo {
+    transition: all 0.3s ease;
+}
+
+.calendario-header .fa-chevron-down {
+    transition: transform 0.3s ease;
+}
+
         
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -7430,7 +7440,7 @@ async function gerarTokenCalendario() {
     }
     
     try {
-        showToast('Gerando link do calendário...', 'info');
+        showToast('Carregando...', 'info');
         
         // Verificar se já tem um token
         const { data: existingToken, error: searchError } = await App.supabase
@@ -7444,23 +7454,21 @@ async function gerarTokenCalendario() {
         if (existingToken) {
             token = existingToken.token;
         } else {
-            // Gerar token único
             token = crypto.randomUUID().replace(/-/g, '');
-            
             const { error: insertError } = await App.supabase
                 .from('calendario_tokens')
                 .insert({
                     user_id: App.currentUser.id,
                     token: token
                 });
-            
             if (insertError) throw insertError;
         }
         
         const calendarUrl = `https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/ical-user/${token}.ics`;
         
-        // Mostrar modal com o link
+        // Modal com todas as instruções
         const modal = document.createElement('div');
+        modal.id = 'syncModal';
         modal.style.cssText = `
             position: fixed;
             top: 0;
@@ -7475,59 +7483,217 @@ async function gerarTokenCalendario() {
         `;
         
         modal.innerHTML = `
-            <div style="background: #fff; width: 90%; max-width: 500px; border-radius: 12px; overflow: hidden;">
+            <div style="background: #fff; width: 95%; max-width: 550px; border-radius: 12px; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
+                <!-- CABEÇALHO -->
                 <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
-                    <h3 style="margin: 0; color: #fff;"><i class="fas fa-link"></i> Link do Calendário</h3>
+                    <h3 style="margin: 0; color: #fff;"><i class="fas fa-calendar-alt"></i> Sincronizar Calendário</h3>
+                    <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">Seus eventos do My Life em qualquer calendário</p>
                 </div>
-                <div style="padding: 20px;">
-                    <p><strong>Copie o link abaixo e adicione no Google Calendar:</strong></p>
-                    <div style="background: #f0f0f0; padding: 12px; border-radius: 8px; margin: 12px 0; word-break: break-all; font-family: monospace; font-size: 12px;">
-                        ${calendarUrl}
+                
+                <div style="padding: 16px; overflow-y: auto;">
+                    <!-- SEÇÃO DO LINK -->
+                    <div style="background: #f0f7ff; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong><i class="fas fa-link"></i> Seu link exclusivo:</strong>
+                            <button id="btnGerarLink" class="btn btn-sm btn-primary" style="padding: 5px 12px;">
+                                <i class="fas fa-sync-alt"></i> Gerar/Atualizar Link
+                            </button>
+                        </div>
+                        <div id="linkContainer" style="background: #fff; padding: 10px; border-radius: 8px; word-break: break-all; font-family: monospace; font-size: 11px; border: 1px solid #ddd; margin-bottom: 10px;">
+                            ${calendarUrl}
+                        </div>
+                        <button id="btnCopiarLink" class="btn btn-sm" style="width: 100%; background: var(--purple); color: #fff; padding: 8px;">
+                            <i class="fas fa-copy"></i> Copiar Link
+                        </button>
+                        <p style="font-size: 11px; color: var(--gray); margin-top: 10px;">
+                            <i class="fas fa-info-circle"></i> Este link é único e secreto. Guarde-o com segurança.
+                        </p>
                     </div>
-                    <button class="btn btn-primary" onclick="copiarLinkCalendario('${calendarUrl}')" style="width: 100%; margin-bottom: 12px;">
-                        <i class="fas fa-copy"></i> Copiar Link
-                    </button>
                     
-                    <hr style="margin: 16px 0;">
+                    <!-- TÍTULO DAS INSTRUÇÕES -->
+                    <div style="margin-bottom: 12px;">
+                        <strong><i class="fas fa-question-circle"></i> Instruções para sincronizar:</strong>
+                        <p style="font-size: 12px; color: var(--gray); margin-top: 4px;">Clique no calendário desejado para ver como configurar:</p>
+                    </div>
                     
-                    <h4><i class="fab fa-google"></i> Como adicionar no Google Calendar:</h4>
-                    <ol style="margin: 12px 0 12px 20px;">
-                        <li>Acesse <strong>calendar.google.com</strong></li>
-                        <li>No menu lateral, clique nos <strong>3 pontos</strong> ao lado de "Outros calendários"</li>
-                        <li>Selecione <strong>"Adicionar por URL"</strong></li>
-                        <li>Cole o link copiado e clique em <strong>"Adicionar calendário"</strong></li>
-                        <li>Pronto! Seus eventos serão sincronizados automaticamente</li>
-                    </ol>
-                    <p style="font-size: 12px; color: var(--gray); margin-top: 12px;">
-                        <i class="fas fa-info-circle"></i> Este link é único e secreto. Não compartilhe com pessoas que não devem ver seus eventos.
-                    </p>
+                    <!-- LISTA DE CALENDÁRIOS (ACORDEÃO) -->
+                    <div id="calendariosLista">
+                        <!-- Google Calendar -->
+                        <div class="calendario-item" style="margin-bottom: 8px;">
+                            <div class="calendario-header" style="background: #f8f9fa; padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                                <i class="fab fa-google" style="color: #4285f4; font-size: 20px;"></i>
+                                <span style="font-weight: 600;">Google Calendar</span>
+                                <i class="fas fa-chevron-down" style="margin-left: auto; color: var(--gray);"></i>
+                            </div>
+                            <div class="calendario-conteudo" style="display: none; padding: 12px; background: #fff; border: 1px solid #eee; border-radius: 8px; margin-top: 4px;">
+                                <p><strong>Como sincronizar:</strong></p>
+                                <ol style="margin: 8px 0 8px 20px; font-size: 13px;">
+                                    <li>Copie o link acima (clique em "Copiar Link")</li>
+                                    <li>Acesse <strong>calendar.google.com</strong></li>
+                                    <li>No menu lateral, clique nos <strong>3 pontos</strong> ao lado de "Outros calendários"</li>
+                                    <li>Selecione <strong>"Adicionar por URL"</strong></li>
+                                    <li>Cole o link e clique em <strong>"Adicionar calendário"</strong></li>
+                                    <li>Pronto! Seus eventos serão sincronizados automaticamente</li>
+                                </ol>
+                                <p style="font-size: 11px; color: var(--gray); margin-top: 8px;">ℹ️ O Google atualiza a cada 6-24 horas. Para ver imediatamente, importe o arquivo .ics manualmente.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Apple Calendar (iCloud) -->
+                        <div class="calendario-item" style="margin-bottom: 8px;">
+                            <div class="calendario-header" style="background: #f8f9fa; padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                                <i class="fab fa-apple" style="color: #000; font-size: 20px;"></i>
+                                <span style="font-weight: 600;">Apple Calendar (iPhone/Mac)</span>
+                                <i class="fas fa-chevron-down" style="margin-left: auto; color: var(--gray);"></i>
+                            </div>
+                            <div class="calendario-conteudo" style="display: none; padding: 12px; background: #fff; border: 1px solid #eee; border-radius: 8px; margin-top: 4px;">
+                                <p><strong>Como sincronizar no Mac:</strong></p>
+                                <ol style="margin: 8px 0 8px 20px; font-size: 13px;">
+                                    <li>Copie o link acima</li>
+                                    <li>Abra o <strong>Apple Calendar</strong></li>
+                                    <li>Vá em <strong>Arquivo → Nova assinatura de calendário</strong></li>
+                                    <li>Cole o link e clique em <strong>"Assinar"</strong></li>
+                                    <li>Pronto! O calendário aparecerá na lista</li>
+                                </ol>
+                                <p><strong>No iPhone/iPad:</strong> O calendário sincroniza automaticamente via iCloud após configurado no Mac.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Outlook / Microsoft 365 -->
+                        <div class="calendario-item" style="margin-bottom: 8px;">
+                            <div class="calendario-header" style="background: #f8f9fa; padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                                <i class="fab fa-microsoft" style="color: #00a4ef; font-size: 20px;"></i>
+                                <span style="font-weight: 600;">Outlook / Microsoft 365</span>
+                                <i class="fas fa-chevron-down" style="margin-left: auto; color: var(--gray);"></i>
+                            </div>
+                            <div class="calendario-conteudo" style="display: none; padding: 12px; background: #fff; border: 1px solid #eee; border-radius: 8px; margin-top: 4px;">
+                                <p><strong>Como sincronizar (Web):</strong></p>
+                                <ol style="margin: 8px 0 8px 20px; font-size: 13px;">
+                                    <li>Copie o link acima</li>
+                                    <li>Acesse <strong>outlook.live.com/calendar</strong></li>
+                                    <li>Clique em <strong>"Adicionar calendário"</strong> → <strong>"Assinar na Web"</strong></li>
+                                    <li>Cole o link e clique em <strong>"Importar"</strong></li>
+                                </ol>
+                                <p><strong>Como sincronizar (Desktop):</strong></p>
+                                <ol style="margin: 8px 0 8px 20px; font-size: 13px;">
+                                    <li><strong>Arquivo → Conta Configurações → Configurações da conta</strong></li>
+                                    <li><strong>Calendários da Internet → Novo</strong></li>
+                                    <li>Cole o link e clique em <strong>"OK"</strong></li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <!-- Yahoo Calendar -->
+                        <div class="calendario-item" style="margin-bottom: 8px;">
+                            <div class="calendario-header" style="background: #f8f9fa; padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                                <i class="fab fa-yahoo" style="color: #6001d2; font-size: 20px;"></i>
+                                <span style="font-weight: 600;">Yahoo Calendar</span>
+                                <i class="fas fa-chevron-down" style="margin-left: auto; color: var(--gray);"></i>
+                            </div>
+                            <div class="calendario-conteudo" style="display: none; padding: 12px; background: #fff; border: 1px solid #eee; border-radius: 8px; margin-top: 4px;">
+                                <p><strong>Como sincronizar:</strong></p>
+                                <ol style="margin: 8px 0 8px 20px; font-size: 13px;">
+                                    <li>Copie o link acima</li>
+                                    <li>Acesse <strong>calendar.yahoo.com</strong></li>
+                                    <li>Clique em <strong>"Calendários"</strong> → <strong>"Adicionar"</strong> → <strong>"Da Web"</strong></li>
+                                    <li>Cole o link e clique em <strong>"Adicionar calendário"</strong></li>
+                                </ol>
+                            </div>
+                        </div>
+                        
+                        <!-- Outros Calendários -->
+                        <div class="calendario-item" style="margin-bottom: 8px;">
+                            <div class="calendario-header" style="background: #f8f9fa; padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-calendar-plus" style="color: var(--purple); font-size: 20px;"></i>
+                                <span style="font-weight: 600;">Outros (Thunderbird, etc)</span>
+                                <i class="fas fa-chevron-down" style="margin-left: auto; color: var(--gray);"></i>
+                            </div>
+                            <div class="calendario-conteudo" style="display: none; padding: 12px; background: #fff; border: 1px solid #eee; border-radius: 8px; margin-top: 4px;">
+                                <p>O formato <strong>.ics</strong> (iCalendar) é universal. Qualquer calendário que suporte este formato pode usar o link.</p>
+                                <p><strong>Instruções gerais:</strong></p>
+                                <ol style="margin: 8px 0 8px 20px; font-size: 13px;">
+                                    <li>Copie o link do seu calendário</li>
+                                    <li>No seu aplicativo de calendário, procure por <strong>"Adicionar calendário por URL"</strong> ou <strong>"Assinar calendário"</strong></li>
+                                    <li>Cole o link e confirme</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                
+                <!-- RODAPÉ -->
                 <div style="padding: 16px; border-top: 1px solid #eee; text-align: center;">
-                    <button class="btn" onclick="fecharModalLink()" style="background: #6c757d; color: #fff;">Fechar</button>
+                    <button id="btnFecharModal" class="btn" style="background: #6c757d; color: #fff;">Fechar</button>
                 </div>
             </div>
         `;
         
         document.body.appendChild(modal);
         
-        window.copiarLinkCalendario = function(link) {
-            navigator.clipboard.writeText(link).then(() => {
+        // Eventos do modal
+        document.getElementById('btnCopiarLink').onclick = () => {
+            navigator.clipboard.writeText(calendarUrl).then(() => {
                 showToast('✅ Link copiado!', 'success');
             }).catch(() => {
                 showToast('Erro ao copiar', 'error');
             });
         };
         
-        window.fecharModalLink = function() {
-            modal.remove();
+        document.getElementById('btnFecharModal').onclick = () => modal.remove();
+        
+        // Botão gerar novo link
+        document.getElementById('btnGerarLink').onclick = async () => {
+            // Gerar novo token
+            const novoTokene = crypto.randomUUID().replace(/-/g, '');
+            const { error: insertError } = await App.supabase
+                .from('calendario_tokens')
+                .insert({
+                    user_id: App.currentUser.id,
+                    token: novoTokene
+                });
+            
+            if (insertError) {
+                showToast('Erro ao gerar novo link', 'error');
+                return;
+            }
+            
+            const novoUrl = `https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/ical-user/${novoTokene}.ics`;
+            document.getElementById('linkContainer').innerHTML = novoUrl;
+            
+            // Atualizar função de cópia
+            document.getElementById('btnCopiarLink').onclick = () => {
+                navigator.clipboard.writeText(novoUrl).then(() => {
+                    showToast('✅ Link copiado!', 'success');
+                });
+            };
+            
+            showToast('✅ Novo link gerado! O link antigo não funciona mais.', 'success');
         };
+        
+        // Função para abrir/fechar acordeão
+        document.querySelectorAll('.calendario-header').forEach(header => {
+            header.onclick = () => {
+                const conteudo = header.nextElementSibling;
+                const icon = header.querySelector('.fa-chevron-down');
+                if (conteudo.style.display === 'none' || !conteudo.style.display) {
+                    // Fechar todos primeiro
+                    document.querySelectorAll('.calendario-conteudo').forEach(c => c.style.display = 'none');
+                    document.querySelectorAll('.calendario-header .fa-chevron-down').forEach(i => i.style.transform = 'rotate(0deg)');
+                    // Abrir o clicado
+                    conteudo.style.display = 'block';
+                    icon.style.transform = 'rotate(180deg)';
+                } else {
+                    conteudo.style.display = 'none';
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            };
+        });
         
     } catch (error) {
         console.error('Erro:', error);
         showToast('Erro ao gerar link', 'error');
     }
 }
-
         
 
 // ============================================
