@@ -11135,6 +11135,10 @@ async function renderizarTarefas(content) {
     
     let podeEditar = App.assinaturaAtiva;
     
+    console.log('🔵 renderizarTarefas chamada');
+    console.log('📊 Tarefas:', tarefas.length);
+    console.log('👤 Usuário atual:', usuarioAtual);
+    
     // Se não tem usuário atual, não mostrar nada
     if (!usuarioAtual) {
         content.innerHTML = `<div class="empty-state"><i class="fas fa-tasks"></i><p>Selecione seu nome no topo para ver suas tarefas</p></div>`;
@@ -11182,6 +11186,9 @@ async function renderizarTarefas(content) {
         return !t.responsavel_id && !t.responsavel_ids;
     });
     
+    console.log('📋 Tarefas pendentes:', minhasTarefas.length);
+    console.log('✅ Tarefas concluídas:', tarefasConcluidas.length);
+    
     let pendentes = minhasTarefas;
     
     if (pendentes.length === 0 && tarefasConcluidas.length === 0) {
@@ -11222,6 +11229,7 @@ async function renderizarTarefas(content) {
     
     html += '</div>';
     content.innerHTML = html;
+    console.log('✅ renderizarTarefas concluída');
 }
 
 function renderizarTarefaItem(tarefa, usuarios, podeEditar, isConcluida = false) {
