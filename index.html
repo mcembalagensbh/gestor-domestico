@@ -2734,75 +2734,37 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         async function registrarHistorico(tipo, descricao, detalhes) {
-            if (!App.currentUser) return;
-            try {
-                const { data, error } = await App.supabase.from('historico_acoes').insert({
-                    user_id: App.currentUser.id,
-                    tipo,
-                    descricao,
-                    detalhes: JSON.stringify(detalhes),
-                    data: new Date().toISOString(),
-                    usuario: App.usuarioAtual || 'desconhecido'
-                }).select();
-                
-                if (!error && data) {
-                    App.historicoAcoes.unshift({
-                        id: data[0].id,
-                        tipo,
-                        descricao,
-                        detalhes,
-                        data: new Date().toISOString(),
-                        usuario: App.usuarioAtual || 'desconhecido'
-                    });
-                    if (App.historicoAcoes.length > 100) App.historicoAcoes.pop();
-                }
-            } catch (e) { }
-        }
-
-      async function carregarAssinatura() {
     if (!App.currentUser) return;
-    
     try {
-        const { data, error } = await App.supabase
-            .from('assinaturas')
-            .select('data_expiracao, status, plano')
-            .eq('user_id', App.currentUser.id)
-            .maybeSingle();
-
-        if (data && data.status === 'ativo') {
-            // Guarda os dados da assinatura
-            App.dataExpiracao = new Date(data.data_expiracao);
-            App.plano = data.plano || 'gratis';
-            
-            let hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-            
-            let dataExp = new Date(data.data_expiracao);
-            dataExp.setHours(0, 0, 0, 0);
-            
-            if (dataExp >= hoje) {
-                App.assinaturaAtiva = true;
-            } else {
-                App.assinaturaAtiva = false;
-                App.plano = 'gratis'; // Se expirou, volta pra gratis
-            }
-        } else {
-            App.assinaturaAtiva = false;
-            App.dataExpiracao = null;
-            App.plano = 'gratis';
-        }
+        // 🔴 CORRIGIDO: usar apelido ou nome do objeto
+        const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
         
-        atualizarStatusAssinaturaMenu();
-    } catch (error) {
-        console.error('Erro ao carregar assinatura:', error);
-        App.assinaturaAtiva = false;
-        App.plano = 'gratis';
+        const { data, error } = await App.supabase.from('historico_acoes').insert({
+            user_id: App.currentUser.id,
+            tipo,
+            descricao,
+            detalhes: JSON.stringify(detalhes),
+            data: new Date().toISOString(),
+            usuario: nomeUsuario
+        }).select();
+        
+        if (!error && data) {
+            App.historicoAcoes.unshift({
+                id: data[0].id,
+                tipo,
+                descricao,
+                detalhes,
+                data: new Date().toISOString(),
+                usuario: nomeUsuario
+            });
+            if (App.historicoAcoes.length > 100) App.historicoAcoes.pop();
+        }
+    } catch (e) { 
+        console.error('Erro ao registrar histórico:', e);
     }
 }
 
-
-
-async function carregarAssinatura() {
+     async function carregarAssinatura() {
     if (!App.currentUser) return;
     
     try {
@@ -2835,13 +2797,13 @@ async function carregarAssinatura() {
         }
         
         atualizarStatusAssinaturaMenu();
-        atualizarFooterAssinatura();  // 🔴 ADICIONAR ESTA LINHA
+        atualizarFooterAssinatura();  // 🔴 ESTA LINHA É IMPORTANTE
         
     } catch (error) {
         console.error('Erro ao carregar assinatura:', error);
         App.assinaturaAtiva = false;
         App.plano = 'gratis';
-        atualizarFooterAssinatura();  // 🔴 ADICIONAR TAMBÉM AQUI
+        atualizarFooterAssinatura();  // 🔴 ESTA LINHA TAMBÉM
     }
 }
 
@@ -7615,7 +7577,7 @@ function abrirModalInstrucoesCalendario() {
                         data_original: dataInicioStr,
                         data_inicio: dataInicioStr,
                         data_fim: dataFimStr,
-                        added_by: App.usuarioAtual || 'desconhecido'
+                        added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                     });
                 } else {
                     // PASSO 1: Encontrar o evento original ANTIGO para saber o período antigo
@@ -7682,7 +7644,7 @@ function abrirModalInstrucoesCalendario() {
                                 data_inicio: dataInicioStr,
                                 data_fim: dataFimStr,
                                 is_recorrente: false,
-                                added_by: App.usuarioAtual || 'desconhecido'
+                                added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                             });
                             
                             dataAtual.setDate(dataAtual.getDate() + 1);
@@ -7703,7 +7665,7 @@ function abrirModalInstrucoesCalendario() {
                             data_inicio: dataInicioStr,
                             data_fim: null,
                             is_recorrente: false,
-                            added_by: App.usuarioAtual || 'desconhecido'
+                            added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                         });
                     }
                 }
@@ -7803,7 +7765,7 @@ function fecharModalInfoEConfirmar() {
                     regra_id: regraId,
                     data_excecao: dataParaString(ano, mes, dia),
                     acao: 'pagar',
-                    added_by: App.usuarioAtual || 'desconhecido'
+                   added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                 });
             } else {
                 await App.supabase.from('contas').update({
@@ -7838,7 +7800,7 @@ function fecharModalInfoEConfirmar() {
                 regra_id: regraId,
                 data_excecao: dataParaString(ano, mes, dia),
                 acao: 'pagar',
-                added_by: App.usuarioAtual || 'desconhecido'
+                added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
             });
         } else {
             await App.supabase.from('contas').update({
@@ -8198,7 +8160,7 @@ function atualizarEmailMenu() {
                                 regra_id: regraId,
                                 data_excecao: dataExcecao,
                                 acao: 'excluir',
-                                added_by: App.usuarioAtual || 'desconhecido'
+                                added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                             });
                         } else if (isIndividual && individualId) {
                             await App.supabase.from('eventos_individuais').delete().eq('id', individualId);
@@ -8332,7 +8294,7 @@ function abrirModalAssinaturaBloqueio() {
                                 regra_id: regraId,
                                 data_excecao: dataExcecao,
                                 acao: 'excluir',
-                                added_by: App.usuarioAtual || 'desconhecido'
+                                added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                             });
                         } else {
                             await App.supabase.from('contas').delete().eq('id', id);
@@ -9533,7 +9495,7 @@ function abrirManualRapido() {
                     mes: mes,
                     ano: ano,
                     data: data,
-                    added_by: App.usuarioAtual || 'desconhecido'
+                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                 };
                 if (cat === 'outros' && catCustom) gastoData.categoria_customizada = catCustom;
 
@@ -9628,7 +9590,7 @@ function abrirManualRapido() {
                     mes: mes,
                     ano: ano,
                     data: data,
-                    added_by: App.usuarioAtual || 'desconhecido'
+                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                 });
 
                 if (App.saldoCentral.id) {
@@ -9691,7 +9653,7 @@ async function salvarNovoItemLista() {
             quantidade: qtd,
             descricao: desc,
             comprado: false,
-            added_by: App.usuarioAtual || 'desconhecido'
+            added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
         });
 
         await registrarHistorico('criacao_lista', `Item adicionado: ${desc}`, { qtd, desc });
@@ -9858,7 +9820,7 @@ window.deletarItemLista = deletarItemLista;
                     descricao: desc,
                     valor_inicial: valor,
                     pessoa: pessoa,
-                    added_by: App.usuarioAtual || 'desconhecido'
+                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                 });
 
                 await registrarHistorico('criacao_giro', `Giro criado: ${desc}`, { desc, valor, pessoa, usuario: App.usuarioAtual });
@@ -9907,7 +9869,7 @@ window.deletarItemLista = deletarItemLista;
                     valor: valor,
                     descricao: descricao || `Pagamento para ${desc}`,
                     data: new Date().toISOString(),
-                    added_by: App.usuarioAtual || 'desconhecido'
+                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                 });
 
                 await registrarHistorico('pagamento_giro', `Pagamento de ${formatCurrency(valor)} para ${desc}`, { id, valor, usuario: App.usuarioAtual });
@@ -9956,7 +9918,7 @@ window.deletarItemLista = deletarItemLista;
                     valor: valor,
                     descricao: descricao || `Recebimento de ${desc}`,
                     data: new Date().toISOString(),
-                    added_by: App.usuarioAtual || 'desconhecido'
+                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                 });
 
                 await registrarHistorico('recebimento_giro', `Recebimento de ${formatCurrency(valor)} de ${desc}`, { id, valor, usuario: App.usuarioAtual });
@@ -10310,7 +10272,7 @@ window.deletarItemLista = deletarItemLista;
                     nome: nome,
                     valor: valor,
                     is_central: isCentral,
-                    added_by: App.usuarioAtual || 'desconhecido'
+                    added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
                 });
 
                 await registrarHistorico('criacao_saldo', `Saldo criado: ${nome}`, { nome, valor, isCentral, usuario: App.usuarioAtual });
