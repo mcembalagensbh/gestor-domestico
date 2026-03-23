@@ -11767,11 +11767,13 @@ async function deletarTarefa(id) {
             fecharAddMenu();
         });
 
-        // 🔴 BOTÃO TAREFAS
+       // 🔴 BOTÃO TAREFAS
         document.getElementById('navTarefas').addEventListener('click', () => {
-            console.log('🔵 Botão Tarefas clicado');  // 🔴 LOG PARA DEBUG
+            console.log('🔵 Botão Tarefas clicado - TESTE DIRETO');
             App.currentFilter = 'tarefas';
+            console.log('🔵 App.currentFilter alterado para:', App.currentFilter);
             mostrarConteudo();
+            console.log('🔵 mostrarConteudo chamado');
             fecharAddMenu();
         });
 
