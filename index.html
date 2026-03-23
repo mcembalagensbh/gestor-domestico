@@ -11133,20 +11133,56 @@ async function renderizarTarefas(content) {
     
     let podeEditar = App.assinaturaAtiva;
     
-    // Filtrar tarefas do usuário atual
+    // Se não tem usuário atual, não mostrar nada
+    if (!usuarioAtual) {
+        content.innerHTML = `<div class="empty-state"><i class="fas fa-tasks"></i><p>Selecione seu nome no topo para ver suas tarefas</p></div>`;
+        return;
+    }
+    
+    // Filtrar tarefas onde o usuário atual é responsável
     let minhasTarefas = tarefas.filter(t => {
-        // Se tem responsavel_id, verificar se é o usuário atual
-        if (t.responsavel_id && usuarioAtual) {
+        if (t.concluido) return false;
+        
+        // Verificar se tem responsavel_ids (múltiplos)
+        if (t.responsavel_ids) {
+            try {
+                const ids = typeof t.responsavel_ids === 'string' ? JSON.parse(t.responsavel_ids) : t.responsavel_ids;
+                if (Array.isArray(ids)) {
+                    return ids.includes(usuarioAtual.id);
+                }
+            } catch(e) {}
+        }
+        
+        // Verificar responsavel_id único (antigo)
+        if (t.responsavel_id) {
             return t.responsavel_id == usuarioAtual.id;
         }
-        // Se não tem responsavel, mostrar para todos (tarefas gerais)
-        return !t.responsavel_id;
+        
+        // Tarefa sem responsável (todos veem)
+        return !t.responsavel_id && !t.responsavel_ids;
     });
     
-    let pendentes = minhasTarefas.filter(t => !t.concluido);
-    let concluidas = minhasTarefas.filter(t => t.concluido);
+    // Tarefas concluídas do usuário
+    let tarefasConcluidas = tarefas.filter(t => {
+        if (!t.concluido) return false;
+        
+        if (t.responsavel_ids) {
+            try {
+                const ids = typeof t.responsavel_ids === 'string' ? JSON.parse(t.responsavel_ids) : t.responsavel_ids;
+                if (Array.isArray(ids)) {
+                    return ids.includes(usuarioAtual.id);
+                }
+            } catch(e) {}
+        }
+        if (t.responsavel_id) {
+            return t.responsavel_id == usuarioAtual.id;
+        }
+        return !t.responsavel_id && !t.responsavel_ids;
+    });
     
-    if (minhasTarefas.length === 0) {
+    let pendentes = minhasTarefas;
+    
+    if (pendentes.length === 0 && tarefasConcluidas.length === 0) {
         content.innerHTML = `<div class="empty-state"><i class="fas fa-tasks"></i><p>Nenhuma tarefa para você</p>${podeEditar ? '<button class="btn btn-primary" onclick="abrirNovaTarefa()" style="margin-top:16px"><i class="fas fa-plus"></i> Nova Tarefa</button>' : ''}</div>`;
         return;
     }
@@ -11169,17 +11205,17 @@ async function renderizarTarefas(content) {
     // Tarefas pendentes
     if (pendentes.length > 0) {
         html += '<div class="section-divider"><i class="fas fa-clock"></i> Pendentes</div>';
-        pendentes.forEach(t => {
+        for (const t of pendentes) {
             html += renderizarTarefaItem(t, usuarios, podeEditar);
-        });
+        }
     }
     
     // Tarefas concluídas
-    if (concluidas.length > 0) {
+    if (tarefasConcluidas.length > 0) {
         html += '<div class="section-divider"><i class="fas fa-check-double"></i> Concluídas</div>';
-        concluidas.forEach(t => {
+        for (const t of tarefasConcluidas) {
             html += renderizarTarefaItem(t, usuarios, podeEditar, true);
-        });
+        }
     }
     
     html += '</div>';
@@ -11199,9 +11235,27 @@ function renderizarTarefaItem(tarefa, usuarios, podeEditar, isConcluida = false)
     const dataLimiteHtml = tarefa.data_limite ? 
         `<div style="font-size: 10px; color: var(--gray); margin-top: 2px;">📅 Limite: ${new Date(tarefa.data_limite).toLocaleDateString('pt-BR')}</div>` : '';
     
-    const responsavel = usuarios.find(u => u.id == tarefa.responsavel_id);
-    const responsavelHtml = responsavel ? 
-        `<span class="item-badge" style="background: var(--purple-light);">👤 ${responsavel.apelido}</span>` : '';
+    // Suporte a múltiplos responsáveis
+    let responsaveisHtml = '';
+    if (tarefa.responsavel_ids) {
+        try {
+            const ids = typeof tarefa.responsavel_ids === 'string' ? JSON.parse(tarefa.responsavel_ids) : tarefa.responsavel_ids;
+            if (Array.isArray(ids) && ids.length > 0) {
+                const nomes = ids.map(id => {
+                    const u = usuarios.find(u => u.id == id);
+                    return u?.apelido || u?.nome;
+                }).filter(n => n);
+                if (nomes.length > 0) {
+                    responsaveisHtml = `<div style="font-size: 10px; margin-top: 2px;"><i class="fas fa-users"></i> ${nomes.join(', ')}</div>`;
+                }
+            }
+        } catch(e) {}
+    } else if (tarefa.responsavel_id) {
+        const responsavel = usuarios.find(u => u.id == tarefa.responsavel_id);
+        if (responsavel) {
+            responsaveisHtml = `<div style="font-size: 10px; margin-top: 2px;"><i class="fas fa-user"></i> ${responsavel.apelido}</div>`;
+        }
+    }
     
     const concluidaClass = isConcluida ? 'paga' : '';
     const tituloClass = isConcluida ? 'item-title' : '';
@@ -11212,10 +11266,10 @@ function renderizarTarefaItem(tarefa, usuarios, podeEditar, isConcluida = false)
                 <div class="${tituloClass}" style="${isConcluida ? 'text-decoration: line-through;' : ''}">
                     ${prioridadeHtml}
                     <strong>${tarefa.titulo}</strong>
-                    ${responsavelHtml}
                 </div>
                 ${tarefa.descricao ? `<div class="item-details">${tarefa.descricao.substring(0, 80)}${tarefa.descricao.length > 80 ? '...' : ''}</div>` : ''}
                 ${dataLimiteHtml}
+                ${responsaveisHtml}
                 <div class="item-details">Criada em: ${new Date(tarefa.data_criacao).toLocaleDateString('pt-BR')}</div>
             </div>
             <div class="item-actions">
