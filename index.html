@@ -7260,6 +7260,8 @@ function compartilharIphone() {
 
 
 async function exportarCalendario() {
+    console.log('🔵 Botão Sync Calendários clicado');
+    
     if (!App.currentUser) {
         showToast('Você precisa estar logado', 'warning');
         return;
@@ -7268,100 +7270,47 @@ async function exportarCalendario() {
     try {
         showToast('Gerando calendário...', 'info');
         
-        // 🔴 FORÇAR OBTER UMA SESSÃO NOVA
+        // Obter a sessão
         const { data: { session }, error: sessionError } = await App.supabase.auth.getSession();
         
-        if (sessionError) {
+        if (sessionError || !session) {
             console.error('Erro ao obter sessão:', sessionError);
-            showToast('Erro de autenticação. Faça login novamente.', 'error');
+            showToast('Faça login novamente', 'error');
             return;
         }
         
-        if (!session) {
-            showToast('Sessão expirada. Faça login novamente.', 'error');
-            // Tentar renovar a sessão
-            const { data: refreshData } = await App.supabase.auth.refreshSession();
-            if (!refreshData.session) {
-                showToast('Não foi possível renovar a sessão. Faça login novamente.', 'error');
-                return;
-            }
-        }
+        console.log('✅ Sessão obtida');
         
-        // Pegar a sessão atualizada
-        const { data: { session: currentSession } } = await App.supabase.auth.getSession();
-        
-        if (!currentSession) {
-            showToast('Sessão inválida. Faça login novamente.', 'error');
-            return;
-        }
-        
-        console.log('Token obtido, enviando requisição...');
-        console.log('Token (primeiros 20 caracteres):', currentSession.access_token.substring(0, 20) + '...');
-        
-        // Criar URL da Edge Function
         const functionUrl = 'https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/export-ical';
         
-        // Fazer requisição autenticada
+        // 🔴 ADICIONAR O APIKEY NO HEADER
         const response = await fetch(functionUrl, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${currentSession.access_token}`,
-                'Content-Type': 'application/json',
-                'apikey': CONFIG.supabase.anonKey
+                'Authorization': `Bearer ${session.access_token}`,
+                'apikey': CONFIG.supabase.anonKey,
+                'Content-Type': 'application/json'
             }
         });
         
-        console.log('Status da resposta:', response.status);
+        console.log('Status:', response.status);
         
         if (response.status === 401) {
-            // Tentar renovar a sessão e tentar novamente
-            console.log('Tentando renovar sessão...');
-            const { data: refreshData } = await App.supabase.auth.refreshSession();
-            if (refreshData.session) {
-                const newResponse = await fetch(functionUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${refreshData.session.access_token}`,
-                        'Content-Type': 'application/json',
-                        'apikey': CONFIG.supabase.anonKey
-                    }
-                });
-                
-                if (newResponse.ok) {
-                    const blob = await newResponse.blob();
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `mylife_calendario.ics`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    showToast('✅ Calendário exportado com sucesso!', 'success');
-                    setTimeout(() => abrirModalInstrucoesCalendario(), 500);
-                    return;
-                }
-            }
+            console.log('❌ Token inválido');
             showToast('Sessão expirada. Faça login novamente.', 'error');
-            return;
-        }
-        
-        if (response.status === 404) {
-            showToast('Função de calendário não encontrada. Contate o suporte.', 'error');
             return;
         }
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Erro resposta:', errorText);
-            throw new Error(`Erro ${response.status}: ${errorText}`);
+            console.error('Erro:', errorText);
+            showToast('Erro: ' + response.status, 'error');
+            return;
         }
         
-        // Obter o arquivo ICS
+        // Download do arquivo
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
-        
-        // Criar link para download
         const a = document.createElement('a');
         a.href = url;
         a.download = `mylife_calendario.ics`;
@@ -7370,15 +7319,12 @@ async function exportarCalendario() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        showToast('✅ Calendário exportado com sucesso!', 'success');
-        
-        setTimeout(() => {
-            abrirModalInstrucoesCalendario();
-        }, 500);
+        showToast('✅ Calendário exportado!', 'success');
+        setTimeout(() => abrirModalInstrucoesCalendario(), 500);
         
     } catch (error) {
-        console.error('Erro ao exportar:', error);
-        showToast('Erro ao exportar calendário: ' + error.message, 'error');
+        console.error('Erro:', error);
+        showToast('Erro: ' + error.message, 'error');
     }
 }
 
