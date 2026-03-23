@@ -11232,7 +11232,9 @@ async function renderizarTarefas(content) {
         }
     }
     
-    html += '</div>';
+        html += '</div>';
+    
+    console.log('📄 HTML gerado:', html);
     content.innerHTML = html;
     console.log('✅ renderizarTarefas concluída');
 }
