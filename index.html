@@ -11304,11 +11304,24 @@ function abrirNovaTarefa() {
     let usuarios = App.dataCache.usuariosFamilia || [];
     let usuarioAtual = App.usuarioAtual;
     
-    let usuariosHtml = '<option value="">-- Selecione um responsável (opcional) --</option>';
-    usuarios.forEach(u => {
-        const selected = (usuarioAtual && u.id == usuarioAtual.id) ? 'selected' : '';
-        usuariosHtml += `<option value="${u.id}" ${selected}>${u.apelido} (${u.nome})</option>`;
-    });
+    // Gerar HTML com checkboxes para selecionar múltiplos responsáveis
+    let usuariosHtml = '';
+    if (usuarios.length > 0) {
+        usuariosHtml = `
+            <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+                ${usuarios.map(u => `
+                    <div style="margin-bottom: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" class="responsavel-checkbox" value="${u.id}" data-nome="${u.apelido}">
+                            <span><strong>${u.apelido}</strong> <span style="color: var(--gray);">(${u.nome})</span></span>
+                        </label>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else {
+        usuariosHtml = '<p style="color: var(--gray);">Nenhum usuário cadastrado. Cadastre usuários em Segurança.</p>';
+    }
     
     let conteudo = `
         <div class="form-group">
@@ -11320,11 +11333,15 @@ function abrirNovaTarefa() {
             <textarea id="tarefaDescricao" class="form-textarea" rows="3" placeholder="Detalhes da tarefa..."></textarea>
         </div>
         <div class="form-group">
-            <label class="form-label"><i class="fas fa-user"></i> Responsável</label>
-            <select id="tarefaResponsavel" class="form-select">
-                ${usuariosHtml}
-            </select>
-            <small style="color: var(--gray);">Deixe em branco para tarefa geral (todos veem)</small>
+            <label class="form-label"><i class="fas fa-users"></i> Responsáveis (selecione um ou mais)</label>
+            ${usuariosHtml}
+            <div style="margin-top: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="tarefaGeral" value="geral">
+                    <span><i class="fas fa-globe"></i> Tarefa geral (todos veem)</span>
+                </label>
+            </div>
+            <small style="color: var(--gray); font-size: 11px;">💡 Selecione os responsáveis ou marque "Tarefa geral"</small>
         </div>
         <div class="form-group">
             <label class="form-label"><i class="fas fa-calendar-day"></i> Data limite (opcional)</label>
@@ -11349,9 +11366,15 @@ function abrirNovaTarefa() {
 async function salvarNovaTarefa() {
     let titulo = document.getElementById('tarefaTitulo')?.value.trim();
     let descricao = document.getElementById('tarefaDescricao')?.value.trim();
-    let responsavelId = document.getElementById('tarefaResponsavel')?.value;
     let dataLimite = document.getElementById('tarefaDataLimite')?.value;
     let prioridade = document.getElementById('tarefaPrioridade')?.value;
+    
+    // Pegar responsáveis selecionados (múltiplos)
+    const checkboxes = document.querySelectorAll('.responsavel-checkbox:checked');
+    const responsaveisIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+    const responsaveisNomes = Array.from(checkboxes).map(cb => cb.getAttribute('data-nome'));
+    
+    const tarefaGeral = document.getElementById('tarefaGeral')?.checked;
     
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
     
@@ -11360,36 +11383,48 @@ async function salvarNovaTarefa() {
         return;
     }
     
-    // Se tiver responsavel, buscar o nome
-    let responsavelNome = null;
-    if (responsavelId) {
-        const usuario = App.dataCache.usuariosFamilia?.find(u => u.id == responsavelId);
-        responsavelNome = usuario?.apelido || usuario?.nome;
+    // Verificar se tem responsáveis selecionados e não é geral
+    if (!tarefaGeral && responsaveisIds.length === 0) {
+        showToast('Selecione pelo menos um responsável ou marque "Tarefa geral"', 'warning');
+        return;
     }
     
     try {
-        await App.supabase.from('tarefas').insert({
+        let insertData = {
             user_id: App.currentUser.id,
             titulo: titulo,
             descricao: descricao || null,
-            responsavel_id: responsavelId ? parseInt(responsavelId) : null,
-            responsavel_nome: responsavelNome,
             data_limite: dataLimite || null,
             prioridade: prioridade || 'normal',
             concluido: false,
             added_by: nomeUsuario
+        };
+        
+        if (tarefaGeral) {
+            // Tarefa geral (todos veem)
+            insertData.responsavel_ids = null;
+            insertData.responsavel_id = null;
+            insertData.responsavel_nome = null;
+        } else {
+            // Tarefa para usuários específicos (múltiplos)
+            insertData.responsavel_ids = JSON.stringify(responsaveisIds);
+            insertData.responsavel_id = null;
+            insertData.responsavel_nome = responsaveisNomes.join(', ');
+        }
+        
+        await App.supabase.from('tarefas').insert(insertData);
+        
+        await registrarHistorico('criacao_tarefa', `Tarefa criada: ${titulo}`, { 
+            titulo, 
+            responsaveis: responsaveisNomes, 
+            geral: tarefaGeral,
+            usuario: nomeUsuario 
         });
         
-        await registrarHistorico('criacao_tarefa', `Tarefa criada: ${titulo}`, { titulo, responsavel: responsavelNome, usuario: nomeUsuario });
         showToast('Tarefa criada!', 'success');
         fecharModal();
         await carregarDados(true);
         await mostrarConteudo();
-        
-        // Notificar responsável se for diferente do criador
-        if (responsavelId && responsavelId != App.usuarioAtual?.id) {
-            showToast(`📢 Tarefa atribuída a ${responsavelNome}`, 'info');
-        }
         
     } catch (error) {
         console.error('Erro ao salvar tarefa:', error);
@@ -11403,11 +11438,39 @@ async function editarTarefa(id) {
     
     let usuarios = App.dataCache.usuariosFamilia || [];
     
-    let usuariosHtml = '<option value="">-- Selecione um responsável (opcional) --</option>';
-    usuarios.forEach(u => {
-        const selected = (tarefa.responsavel_id && u.id == tarefa.responsavel_id) ? 'selected' : '';
-        usuariosHtml += `<option value="${u.id}" ${selected}>${u.apelido} (${u.nome})</option>`;
-    });
+    // Obter IDs dos responsáveis atuais
+    let responsaveisAtuais = [];
+    if (tarefa.responsavel_ids) {
+        try {
+            responsaveisAtuais = typeof tarefa.responsavel_ids === 'string' ? JSON.parse(tarefa.responsavel_ids) : tarefa.responsavel_ids;
+        } catch(e) {}
+    } else if (tarefa.responsavel_id) {
+        responsaveisAtuais = [tarefa.responsavel_id];
+    }
+    
+    // Gerar HTML com checkboxes
+    let usuariosHtml = '';
+    if (usuarios.length > 0) {
+        usuariosHtml = `
+            <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+                ${usuarios.map(u => {
+                    const isChecked = responsaveisAtuais.includes(u.id);
+                    return `
+                        <div style="margin-bottom: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" class="responsavel-checkbox-edit" value="${u.id}" data-nome="${u.apelido}" ${isChecked ? 'checked' : ''}>
+                                <span><strong>${u.apelido}</strong> <span style="color: var(--gray);">(${u.nome})</span></span>
+                            </label>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    } else {
+        usuariosHtml = '<p style="color: var(--gray);">Nenhum usuário cadastrado.</p>';
+    }
+    
+    const isGeral = !tarefa.responsavel_id && !tarefa.responsavel_ids;
     
     let conteudo = `
         <div class="form-group">
@@ -11419,10 +11482,15 @@ async function editarTarefa(id) {
             <textarea id="tarefaDescricaoEdit" class="form-textarea" rows="3">${tarefa.descricao || ''}</textarea>
         </div>
         <div class="form-group">
-            <label class="form-label"><i class="fas fa-user"></i> Responsável</label>
-            <select id="tarefaResponsavelEdit" class="form-select">
-                ${usuariosHtml}
-            </select>
+            <label class="form-label"><i class="fas fa-users"></i> Responsáveis</label>
+            ${usuariosHtml}
+            <div style="margin-top: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="tarefaGeralEdit" value="geral" ${isGeral ? 'checked' : ''}>
+                    <span><i class="fas fa-globe"></i> Tarefa geral (todos veem)</span>
+                </label>
+            </div>
+            <small style="color: var(--gray); font-size: 11px;">💡 Selecione os responsáveis ou marque "Tarefa geral"</small>
         </div>
         <div class="form-group">
             <label class="form-label"><i class="fas fa-calendar-day"></i> Data limite</label>
@@ -11447,9 +11515,15 @@ async function editarTarefa(id) {
 async function salvarEdicaoTarefa(id) {
     let titulo = document.getElementById('tarefaTituloEdit')?.value.trim();
     let descricao = document.getElementById('tarefaDescricaoEdit')?.value.trim();
-    let responsavelId = document.getElementById('tarefaResponsavelEdit')?.value;
     let dataLimite = document.getElementById('tarefaDataLimiteEdit')?.value;
     let prioridade = document.getElementById('tarefaPrioridadeEdit')?.value;
+    
+    // Pegar responsáveis selecionados
+    const checkboxes = document.querySelectorAll('.responsavel-checkbox-edit:checked');
+    const responsaveisIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+    const responsaveisNomes = Array.from(checkboxes).map(cb => cb.getAttribute('data-nome'));
+    
+    const tarefaGeral = document.getElementById('tarefaGeralEdit')?.checked;
     
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
     
@@ -11458,23 +11532,39 @@ async function salvarEdicaoTarefa(id) {
         return;
     }
     
-    let responsavelNome = null;
-    if (responsavelId) {
-        const usuario = App.dataCache.usuariosFamilia?.find(u => u.id == responsavelId);
-        responsavelNome = usuario?.apelido || usuario?.nome;
+    // Verificar se tem responsáveis selecionados e não é geral
+    if (!tarefaGeral && responsaveisIds.length === 0) {
+        showToast('Selecione pelo menos um responsável ou marque "Tarefa geral"', 'warning');
+        return;
     }
     
     try {
-        await App.supabase.from('tarefas').update({
+        let updateData = {
             titulo: titulo,
             descricao: descricao || null,
-            responsavel_id: responsavelId ? parseInt(responsavelId) : null,
-            responsavel_nome: responsavelNome,
             data_limite: dataLimite || null,
             prioridade: prioridade || 'normal'
-        }).eq('id', id);
+        };
         
-        await registrarHistorico('edicao_tarefa', `Tarefa editada: ${titulo}`, { id, usuario: nomeUsuario });
+        if (tarefaGeral) {
+            updateData.responsavel_ids = null;
+            updateData.responsavel_id = null;
+            updateData.responsavel_nome = null;
+        } else {
+            updateData.responsavel_ids = JSON.stringify(responsaveisIds);
+            updateData.responsavel_id = null;
+            updateData.responsavel_nome = responsaveisNomes.join(', ');
+        }
+        
+        await App.supabase.from('tarefas').update(updateData).eq('id', id);
+        
+        await registrarHistorico('edicao_tarefa', `Tarefa editada: ${titulo}`, { 
+            id, 
+            responsaveis: responsaveisNomes, 
+            geral: tarefaGeral,
+            usuario: nomeUsuario 
+        });
+        
         showToast('Tarefa atualizada!', 'success');
         fecharModal();
         await carregarDados(true);
