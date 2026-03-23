@@ -2106,7 +2106,7 @@
     <div class="side-menu-item" onclick="abrirPoliticasTermos();fecharSideMenu()"><i class="fas fa-file-contract"></i> Políticas e Termos</div>
     <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()"><i class="fas fa-book"></i> Manual Rápido</div>
     <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()"><i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span></div>
-    <div class="side-menu-item" onclick="exportarCalendario();fecharSideMenu()"><i class="fas fa-calendar-alt"></i> Outros Calendários</div> 
+    <div class="side-menu-item" onclick="exportarCalendario();fecharSideMenu()"><i class="fas fa-calendar-alt"></i> Sync Calendários</div> 
     <!-- 🔴 NOVO ITEM: QUER USAR NO IPHONE? -->
     <div class="side-menu-item" onclick="abrirModalIphone();fecharSideMenu()">
         <i class="fab fa-apple"></i> Quer usar no Iphone?
@@ -7273,26 +7273,51 @@ async function exportarCalendario() {
         showToast('Gerando calendário...', 'info');
         
         // Obter a sessão atual
-        const { data: { session } } = await App.supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await App.supabase.auth.getSession();
+        
+        if (sessionError) {
+            console.error('Erro ao obter sessão:', sessionError);
+            showToast('Erro de autenticação. Faça login novamente.', 'error');
+            return;
+        }
         
         if (!session) {
             showToast('Sessão expirada. Faça login novamente.', 'error');
             return;
         }
         
+        console.log('Token obtido, enviando requisição...');
+        
         // Criar URL da Edge Function
         const functionUrl = 'https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/export-ical';
         
         // Fazer requisição autenticada
         const response = await fetch(functionUrl, {
+            method: 'GET',
             headers: {
-                'Authorization': `Bearer ${session.access_token}`
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json'
             }
         });
         
+        console.log('Status da resposta:', response.status);
+        
+        if (response.status === 401) {
+            showToast('Sessão expirada. Faça login novamente.', 'error');
+            // Tentar renovar sessão
+            await App.supabase.auth.refreshSession();
+            return;
+        }
+        
+        if (response.status === 404) {
+            showToast('Função de calendário não encontrada. Contate o suporte.', 'error');
+            return;
+        }
+        
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Erro ao gerar calendário');
+            const errorText = await response.text();
+            console.error('Erro resposta:', errorText);
+            throw new Error(`Erro ${response.status}: ${errorText}`);
         }
         
         // Obter o arquivo ICS
@@ -7310,7 +7335,6 @@ async function exportarCalendario() {
         
         showToast('✅ Calendário exportado com sucesso!', 'success');
         
-        // Mostrar instruções
         setTimeout(() => {
             abrirModalInstrucoesCalendario();
         }, 500);
