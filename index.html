@@ -3309,6 +3309,7 @@ async function mostrarConteudo() {
     document.getElementById('filterInfo').innerHTML = `<i class="fas fa-calendar-alt"></i> ${getNomeMes(mes)}/${ano}${diaText} | <strong>${Object.entries(App.activeFilters).filter(([k, v]) => v).map(([k]) => k).join(', ') || 'Nenhum'}</strong>`;
 
                 try {
+                    console.log('🔵 currentFilter:', App.currentFilter);  // 🔴 ADICIONAR ESTA LINHA
                 if (App.currentFilter === 'saldos') await renderizarSaldos(content);
                 else if (App.currentFilter === 'lista') await renderizarLista(content);
                 else if (App.currentFilter === 'gastos') await renderizarGastos(content, mes, ano);
