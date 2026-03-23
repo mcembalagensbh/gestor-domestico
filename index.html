@@ -1997,6 +1997,29 @@
     transition: transform 0.3s ease;
 }
 
+
+
+/* Badge para tarefas */
+.tarefa-badge {
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--success);
+    color: #fff;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border: 2px solid #fff;
+    font-weight: 700;
+    z-index: 10;
+}
+
         
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -2265,25 +2288,27 @@
             </div>
         </div>
 
-                      <div class="bottom-nav">
+                              <div class="bottom-nav">
             <button class="nav-item" id="navMenu"><i class="fas fa-bars"></i><span>Menu</span></button>
             <button class="nav-item" id="navGestor"><i class="fas fa-chart-line"></i><span>Gestor</span></button>
-            <button class="nav-item" id="navGastos"><i class="fas fa-shopping-bag"></i><span>Gastos</span></button>
+            <button class="nav-item" id="navTarefas"><i class="fas fa-tasks"></i><span>Tarefas</span><span class="tarefa-badge" id="tarefaBadge" style="display:none">0</span></button>
             <button class="nav-item" id="navNotas"><i class="fas fa-sticky-note"></i><span>Notas</span></button>
             <button class="nav-item" id="navLista"><i class="fas fa-shopping-cart"></i><span>Lista</span><span class="lista-badge" id="listaBadge" style="display:none">0</span></button>
             <button class="nav-item nav-add-btn" id="navAdd"><i class="fas fa-plus"></i></button>
         </div>
 
         <div class="add-options-menu" id="addOptionsMenu">
-            <div class="add-option contas" onclick="verificarEAcao('conta')"><i class="fas fa-file-invoice-dollar"></i><span>Nova Conta</span></div>
-            <div class="add-option eventos" onclick="verificarEAcao('evento')"><i class="fas fa-calendar-plus"></i><span>Novo Evento</span></div>
-            <div class="add-option gastos" onclick="verificarEAcao('gasto')"><i class="fas fa-shopping-bag"></i><span>Novo Gasto</span></div>
-            <div class="add-option lista" onclick="verificarEAcao('lista')"><i class="fas fa-shopping-cart"></i><span>Novo Item na Lista</span></div>
-            <div class="add-option giro" onclick="verificarEAcao('giro')"><i class="fas fa-hand-holding-usd"></i><span>Novo Giro</span></div>
-        </div>
+    <div class="add-option contas" onclick="verificarEAcao('conta')"><i class="fas fa-file-invoice-dollar"></i><span>Nova Conta</span></div>
+    <div class="add-option eventos" onclick="verificarEAcao('evento')"><i class="fas fa-calendar-plus"></i><span>Novo Evento</span></div>
+    <div class="add-option gastos" onclick="verificarEAcao('gasto')"><i class="fas fa-shopping-bag"></i><span>Novo Gasto</span></div>
+    <div class="add-option lista" onclick="verificarEAcao('lista')"><i class="fas fa-shopping-cart"></i><span>Novo Item na Lista</span></div>
+    <div class="add-option giro" onclick="verificarEAcao('giro')"><i class="fas fa-hand-holding-usd"></i><span>Novo Giro</span></div>
+    <div class="add-option tarefa" onclick="verificarEAcao('tarefa')"><i class="fas fa-tasks"></i><span>Nova Tarefa</span></div>  <!-- 🔴 ADICIONAR ESTA LINHA -->
+</div>
 
-                <!-- Menu flutuante para o botão Gestor -->
+                        <!-- Menu flutuante para o botão Gestor -->
         <div class="add-options-menu" id="gestorMenu" style="display: none;">
+            <div class="add-option" onclick="irParaGastos()"><i class="fas fa-shopping-bag"></i><span>Gastos</span></div>
             <div class="add-option" onclick="irParaSaldos()"><i class="fas fa-wallet"></i><span>Saldos</span></div>
             <div class="add-option" onclick="irParaGiros()"><i class="fas fa-hand-holding-usd"></i><span>Giros</span></div>
         </div>
@@ -2997,6 +3022,7 @@ function executarAcao(acao) {
         case 'gasto': abrirNovoGasto(); break;
         case 'lista': abrirNovoItemLista(); break;
         case 'giro': abrirNovoGiro(); break;
+        case 'tarefa': abrirNovaTarefa(); break;  // 🔴 ADICIONAR ESTA LINHA
     }
 }
 
@@ -3282,13 +3308,15 @@ async function mostrarConteudo() {
 
     document.getElementById('filterInfo').innerHTML = `<i class="fas fa-calendar-alt"></i> ${getNomeMes(mes)}/${ano}${diaText} | <strong>${Object.entries(App.activeFilters).filter(([k, v]) => v).map(([k]) => k).join(', ') || 'Nenhum'}</strong>`;
 
-    try {
-        if (App.currentFilter === 'saldos') await renderizarSaldos(content);
-        else if (App.currentFilter === 'lista') await renderizarLista(content);
-        else if (App.currentFilter === 'gastos') await renderizarGastos(content, mes, ano);
-        else if (App.currentFilter === 'giros') await renderizarGiros(content);
-        else await renderizarTudo(content, mes, ano);
-    } catch (error) {
+                try {
+                if (App.currentFilter === 'saldos') await renderizarSaldos(content);
+                else if (App.currentFilter === 'lista') await renderizarLista(content);
+                else if (App.currentFilter === 'gastos') await renderizarGastos(content, mes, ano);
+                else if (App.currentFilter === 'giros') await renderizarGiros(content);
+                else if (App.currentFilter === 'notas') await renderizarNotas(content);
+                else if (App.currentFilter === 'tarefas') await renderizarTarefas(content);  // 🔴 ADICIONAR
+                else await renderizarTudo(content, mes, ano);
+            } catch (error) {
         console.error(error);
         content.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i><p>Erro ao carregar dados</p></div>';
     }
@@ -3854,13 +3882,14 @@ function atualizarEmailMenu() {
             return resultados;
         }
 
-    async function carregarDados(forceRefresh) {
+   async function carregarDados(forceRefresh) {
     if (!App.currentUser) return;
     
     // Se não estiver online e tiver cache, usar cache
     if (!App.isOnline && App.cacheLoaded) {
         console.log('📡 Modo offline - usando dados em cache');
         atualizarListaBadge();
+        atualizarTarefaBadge();
         atualizarSaldoHeader();
         return;
     }
@@ -3868,6 +3897,7 @@ function atualizarEmailMenu() {
     // Se não for forceRefresh e tiver cache recente, usar cache
     if (!forceRefresh && App.cacheLoaded) {
         atualizarListaBadge();
+        atualizarTarefaBadge();
         atualizarSaldoHeader();
         return;
     }
@@ -3894,7 +3924,8 @@ function atualizarEmailMenu() {
                 App.supabase.from('giros').select('*').eq('user_id', App.currentUser.id),
                 App.supabase.from('movimentacoes_giro').select('*').eq('user_id', App.currentUser.id).order('data', { ascending: false }),
                 App.supabase.from('notas').select('*').eq('user_id', App.currentUser.id),
-                App.supabase.from('usuarios_familia').select('*').eq('user_id', App.currentUser.id)  // 🔴 NOVO
+                App.supabase.from('usuarios_familia').select('*').eq('user_id', App.currentUser.id),
+                App.supabase.from('tarefas').select('*').eq('user_id', App.currentUser.id)
             ];
 
             const results = await Promise.allSettled(promises);
@@ -3912,7 +3943,8 @@ function atualizarEmailMenu() {
             const giros = results[10].status === 'fulfilled' ? results[10].value.data : [];
             const movimentacoes = results[11].status === 'fulfilled' ? results[11].value.data : [];
             const notas = results[12].status === 'fulfilled' ? results[12].value.data : [];
-            const usuariosFamilia = results[13].status === 'fulfilled' ? results[13].value.data : [];  // 🔴 NOVO
+            const usuariosFamilia = results[13].status === 'fulfilled' ? results[13].value.data : [];
+            const tarefas = results[14].status === 'fulfilled' ? results[14].value.data : [];
 
             let excecoesRecorrencia = [];
             try {
@@ -3947,15 +3979,18 @@ function atualizarEmailMenu() {
                 eventosIndividuais: eventosIndividuais || [], regrasEventos: regrasEventos || [],
                 gastos: gastos || [], lista: lista || [], saldos: saldos || [], historico: historico || [],
                 excecoesRecorrencia: excecoesRecorrencia, giros: giros || [], movimentacoesGiro: movimentacoes || [],
-                notas: notas || [], usuariosFamilia: usuariosFamilia || []  // 🔴 NOVO
+                notas: notas || [], usuariosFamilia: usuariosFamilia || [], tarefas: tarefas || []
             };
 
-            // Salvar no localStorage para uso offline
             salvarCacheLocal();
             App.lastSync = new Date().toISOString();
             atualizarIndicadorConexao();
             
             agendarNotificacoes();
+            
+            atualizarListaBadge();
+            atualizarTarefaBadge();
+            atualizarSaldoHeader();
             
             document.getElementById('loadingState').style.display = 'none';
         } catch (error) {
@@ -3964,20 +3999,53 @@ function atualizarEmailMenu() {
             document.getElementById('loadingState').style.display = 'none';
         }
     } else {
-        // Modo offline - usar cache existente
         console.log('📡 Modo offline - usando cache local');
         document.getElementById('loadingState').style.display = 'none';
         if (!App.cacheLoaded) {
             showToast('📡 Você está offline e não há dados em cache. Conecte-se à internet.', 'warning');
         }
+        atualizarTarefaBadge();
     }
 }
+
+
         function atualizarListaBadge() {
             let totalLista = App.dataCache.lista.filter(i => !i.comprado).length;
             let badge = document.getElementById('listaBadge');
             badge.textContent = totalLista;
             badge.style.display = totalLista > 0 ? 'flex' : 'none';
         }
+
+// ============================================
+// ATUALIZAR BADGE DE TAREFAS PENDENTES
+// ============================================
+
+function atualizarTarefaBadge() {
+    let tarefas = App.dataCache.tarefas || [];
+    let usuarioAtual = App.usuarioAtual;
+    
+    // Filtrar tarefas pendentes do usuário atual
+    let minhasTarefasPendentes = tarefas.filter(t => {
+        if (t.concluido) return false;
+        // Se tem responsavel_id, verificar se é o usuário atual
+        if (t.responsavel_id && usuarioAtual) {
+            return t.responsavel_id == usuarioAtual.id;
+        }
+        // Se não tem responsavel, mostrar para todos (tarefas gerais)
+        return !t.responsavel_id;
+    });
+    
+    let total = minhasTarefasPendentes.length;
+    let badge = document.getElementById('tarefaBadge');
+    
+    if (badge) {
+        badge.textContent = total;
+        badge.style.display = total > 0 ? 'flex' : 'none';
+    }
+}
+
+
+
 
         async function atualizarCalendario() {
             let { mes, ano } = getMesAnoAtual();
@@ -11053,6 +11121,339 @@ async function salvarNovoUsuarioFamilia() {
 }
 
 
+// ============================================
+// FUNÇÕES PARA TAREFAS
+// ============================================
+
+// Renderizar lista de tarefas
+async function renderizarTarefas(content) {
+    let tarefas = App.dataCache.tarefas || [];
+    let usuarios = App.dataCache.usuariosFamilia || [];
+    let usuarioAtual = App.usuarioAtual;
+    
+    let podeEditar = App.assinaturaAtiva;
+    
+    // Filtrar tarefas do usuário atual
+    let minhasTarefas = tarefas.filter(t => {
+        // Se tem responsavel_id, verificar se é o usuário atual
+        if (t.responsavel_id && usuarioAtual) {
+            return t.responsavel_id == usuarioAtual.id;
+        }
+        // Se não tem responsavel, mostrar para todos (tarefas gerais)
+        return !t.responsavel_id;
+    });
+    
+    let pendentes = minhasTarefas.filter(t => !t.concluido);
+    let concluidas = minhasTarefas.filter(t => t.concluido);
+    
+    if (minhasTarefas.length === 0) {
+        content.innerHTML = `<div class="empty-state"><i class="fas fa-tasks"></i><p>Nenhuma tarefa para você</p>${podeEditar ? '<button class="btn btn-primary" onclick="abrirNovaTarefa()" style="margin-top:16px"><i class="fas fa-plus"></i> Nova Tarefa</button>' : ''}</div>`;
+        return;
+    }
+    
+    let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 5px;">
+            <h3 style="margin:0; color:var(--purple); font-size:1.2em;">
+                <i class="fas fa-tasks"></i> Minhas Tarefas
+            </h3>
+            ${podeEditar ? `
+                <button class="btn btn-primary btn-sm" onclick="abrirNovaTarefa()" style="border-radius:30px; padding:8px 15px;">
+                    <i class="fas fa-plus"></i> Nova Tarefa
+                </button>
+            ` : ''}
+        </div>
+    `;
+    
+    html += '<div class="items-list">';
+    
+    // Tarefas pendentes
+    if (pendentes.length > 0) {
+        html += '<div class="section-divider"><i class="fas fa-clock"></i> Pendentes</div>';
+        pendentes.forEach(t => {
+            html += renderizarTarefaItem(t, usuarios, podeEditar);
+        });
+    }
+    
+    // Tarefas concluídas
+    if (concluidas.length > 0) {
+        html += '<div class="section-divider"><i class="fas fa-check-double"></i> Concluídas</div>';
+        concluidas.forEach(t => {
+            html += renderizarTarefaItem(t, usuarios, podeEditar, true);
+        });
+    }
+    
+    html += '</div>';
+    content.innerHTML = html;
+}
+
+function renderizarTarefaItem(tarefa, usuarios, podeEditar, isConcluida = false) {
+    const prioridadeIcon = {
+        'alta': '<i class="fas fa-arrow-up" style="color: #dc3545;"></i>',
+        'normal': '<i class="fas fa-minus" style="color: #ffc107;"></i>',
+        'baixa': '<i class="fas fa-arrow-down" style="color: #28a745;"></i>'
+    };
+    
+    const prioridade = tarefa.prioridade || 'normal';
+    const prioridadeHtml = prioridadeIcon[prioridade] || '';
+    
+    const dataLimiteHtml = tarefa.data_limite ? 
+        `<div style="font-size: 10px; color: var(--gray); margin-top: 2px;">📅 Limite: ${new Date(tarefa.data_limite).toLocaleDateString('pt-BR')}</div>` : '';
+    
+    const responsavel = usuarios.find(u => u.id == tarefa.responsavel_id);
+    const responsavelHtml = responsavel ? 
+        `<span class="item-badge" style="background: var(--purple-light);">👤 ${responsavel.apelido}</span>` : '';
+    
+    const concluidaClass = isConcluida ? 'paga' : '';
+    const tituloClass = isConcluida ? 'item-title' : '';
+    
+    return `
+        <div class="item-card tarefa-card ${concluidaClass}" data-id="${tarefa.id}">
+            <div class="item-info" style="flex: 1;">
+                <div class="${tituloClass}" style="${isConcluida ? 'text-decoration: line-through;' : ''}">
+                    ${prioridadeHtml}
+                    <strong>${tarefa.titulo}</strong>
+                    ${responsavelHtml}
+                </div>
+                ${tarefa.descricao ? `<div class="item-details">${tarefa.descricao.substring(0, 80)}${tarefa.descricao.length > 80 ? '...' : ''}</div>` : ''}
+                ${dataLimiteHtml}
+                <div class="item-details">Criada em: ${new Date(tarefa.data_criacao).toLocaleDateString('pt-BR')}</div>
+            </div>
+            <div class="item-actions">
+                ${podeEditar ? `
+                    <button class="action-btn edit" onclick="event.stopPropagation(); editarTarefa('${tarefa.id}')" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn pay" onclick="event.stopPropagation(); alternarConcluidoTarefa('${tarefa.id}')" title="${isConcluida ? 'Reabrir' : 'Concluir'}"><i class="fas ${isConcluida ? 'fa-undo' : 'fa-check'}"></i></button>
+                    <button class="action-btn delete" onclick="event.stopPropagation(); deletarTarefa('${tarefa.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function abrirNovaTarefa() {
+    let usuarios = App.dataCache.usuariosFamilia || [];
+    let usuarioAtual = App.usuarioAtual;
+    
+    let usuariosHtml = '<option value="">-- Selecione um responsável (opcional) --</option>';
+    usuarios.forEach(u => {
+        const selected = (usuarioAtual && u.id == usuarioAtual.id) ? 'selected' : '';
+        usuariosHtml += `<option value="${u.id}" ${selected}>${u.apelido} (${u.nome})</option>`;
+    });
+    
+    let conteudo = `
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-heading"></i> Título da Tarefa</label>
+            <input type="text" id="tarefaTitulo" class="form-input" placeholder="Ex: Comprar leite, Pagar conta...">
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-align-left"></i> Descrição (opcional)</label>
+            <textarea id="tarefaDescricao" class="form-textarea" rows="3" placeholder="Detalhes da tarefa..."></textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-user"></i> Responsável</label>
+            <select id="tarefaResponsavel" class="form-select">
+                ${usuariosHtml}
+            </select>
+            <small style="color: var(--gray);">Deixe em branco para tarefa geral (todos veem)</small>
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-calendar-day"></i> Data limite (opcional)</label>
+            <input type="date" id="tarefaDataLimite" class="form-input">
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-flag"></i> Prioridade</label>
+            <select id="tarefaPrioridade" class="form-select">
+                <option value="baixa">🔽 Baixa</option>
+                <option value="normal" selected>➡️ Normal</option>
+                <option value="alta">🔼 Alta</option>
+            </select>
+        </div>
+        <div class="btn-group" style="margin-top:20px">
+            <button class="btn btn-primary" onclick="salvarNovaTarefa()" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
+            <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+        </div>
+    `;
+    abrirModal('Nova Tarefa', 'fa-tasks', conteudo);
+}
+
+async function salvarNovaTarefa() {
+    let titulo = document.getElementById('tarefaTitulo')?.value.trim();
+    let descricao = document.getElementById('tarefaDescricao')?.value.trim();
+    let responsavelId = document.getElementById('tarefaResponsavel')?.value;
+    let dataLimite = document.getElementById('tarefaDataLimite')?.value;
+    let prioridade = document.getElementById('tarefaPrioridade')?.value;
+    
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
+    if (!titulo) {
+        showToast('Digite o título da tarefa', 'warning');
+        return;
+    }
+    
+    // Se tiver responsavel, buscar o nome
+    let responsavelNome = null;
+    if (responsavelId) {
+        const usuario = App.dataCache.usuariosFamilia?.find(u => u.id == responsavelId);
+        responsavelNome = usuario?.apelido || usuario?.nome;
+    }
+    
+    try {
+        await App.supabase.from('tarefas').insert({
+            user_id: App.currentUser.id,
+            titulo: titulo,
+            descricao: descricao || null,
+            responsavel_id: responsavelId ? parseInt(responsavelId) : null,
+            responsavel_nome: responsavelNome,
+            data_limite: dataLimite || null,
+            prioridade: prioridade || 'normal',
+            concluido: false,
+            added_by: nomeUsuario
+        });
+        
+        await registrarHistorico('criacao_tarefa', `Tarefa criada: ${titulo}`, { titulo, responsavel: responsavelNome, usuario: nomeUsuario });
+        showToast('Tarefa criada!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+        
+        // Notificar responsável se for diferente do criador
+        if (responsavelId && responsavelId != App.usuarioAtual?.id) {
+            showToast(`📢 Tarefa atribuída a ${responsavelNome}`, 'info');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao salvar tarefa:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+async function editarTarefa(id) {
+    let tarefa = App.dataCache.tarefas.find(t => t.id == id);
+    if (!tarefa) return;
+    
+    let usuarios = App.dataCache.usuariosFamilia || [];
+    
+    let usuariosHtml = '<option value="">-- Selecione um responsável (opcional) --</option>';
+    usuarios.forEach(u => {
+        const selected = (tarefa.responsavel_id && u.id == tarefa.responsavel_id) ? 'selected' : '';
+        usuariosHtml += `<option value="${u.id}" ${selected}>${u.apelido} (${u.nome})</option>`;
+    });
+    
+    let conteudo = `
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-heading"></i> Título</label>
+            <input type="text" id="tarefaTituloEdit" class="form-input" value="${tarefa.titulo.replace(/"/g, '&quot;')}">
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-align-left"></i> Descrição</label>
+            <textarea id="tarefaDescricaoEdit" class="form-textarea" rows="3">${tarefa.descricao || ''}</textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-user"></i> Responsável</label>
+            <select id="tarefaResponsavelEdit" class="form-select">
+                ${usuariosHtml}
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-calendar-day"></i> Data limite</label>
+            <input type="date" id="tarefaDataLimiteEdit" class="form-input" value="${tarefa.data_limite || ''}">
+        </div>
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-flag"></i> Prioridade</label>
+            <select id="tarefaPrioridadeEdit" class="form-select">
+                <option value="baixa" ${tarefa.prioridade === 'baixa' ? 'selected' : ''}>🔽 Baixa</option>
+                <option value="normal" ${tarefa.prioridade === 'normal' ? 'selected' : ''}>➡️ Normal</option>
+                <option value="alta" ${tarefa.prioridade === 'alta' ? 'selected' : ''}>🔼 Alta</option>
+            </select>
+        </div>
+        <div class="btn-group" style="margin-top:20px">
+            <button class="btn btn-primary" onclick="salvarEdicaoTarefa('${id}')" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
+            <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+        </div>
+    `;
+    abrirModal('Editar Tarefa', 'fa-edit', conteudo);
+}
+
+async function salvarEdicaoTarefa(id) {
+    let titulo = document.getElementById('tarefaTituloEdit')?.value.trim();
+    let descricao = document.getElementById('tarefaDescricaoEdit')?.value.trim();
+    let responsavelId = document.getElementById('tarefaResponsavelEdit')?.value;
+    let dataLimite = document.getElementById('tarefaDataLimiteEdit')?.value;
+    let prioridade = document.getElementById('tarefaPrioridadeEdit')?.value;
+    
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
+    if (!titulo) {
+        showToast('Digite o título', 'warning');
+        return;
+    }
+    
+    let responsavelNome = null;
+    if (responsavelId) {
+        const usuario = App.dataCache.usuariosFamilia?.find(u => u.id == responsavelId);
+        responsavelNome = usuario?.apelido || usuario?.nome;
+    }
+    
+    try {
+        await App.supabase.from('tarefas').update({
+            titulo: titulo,
+            descricao: descricao || null,
+            responsavel_id: responsavelId ? parseInt(responsavelId) : null,
+            responsavel_nome: responsavelNome,
+            data_limite: dataLimite || null,
+            prioridade: prioridade || 'normal'
+        }).eq('id', id);
+        
+        await registrarHistorico('edicao_tarefa', `Tarefa editada: ${titulo}`, { id, usuario: nomeUsuario });
+        showToast('Tarefa atualizada!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+        
+    } catch (error) {
+        console.error('Erro ao editar tarefa:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+async function alternarConcluidoTarefa(id) {
+    let tarefa = App.dataCache.tarefas.find(t => t.id == id);
+    if (!tarefa) return;
+    
+    try {
+        await App.supabase.from('tarefas').update({
+            concluido: !tarefa.concluido,
+            data_conclusao: !tarefa.concluido ? new Date().toISOString() : null
+        }).eq('id', id);
+        
+        await registrarHistorico('alternar_tarefa', `Tarefa ${!tarefa.concluido ? 'concluída' : 'reaberta'}: ${tarefa.titulo}`, { id, usuario: App.usuarioAtual?.apelido });
+        showToast(tarefa.concluido ? '✅ Tarefa reaberta!' : '✅ Tarefa concluída!', 'success');
+        await carregarDados(true);
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao alternar tarefa:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+async function deletarTarefa(id) {
+    let tarefa = App.dataCache.tarefas.find(t => t.id == id);
+    if (!tarefa) return;
+    
+    if (!confirm(`Tem certeza que deseja excluir a tarefa "${tarefa.titulo}"?`)) return;
+    
+    try {
+        await App.supabase.from('tarefas').delete().eq('id', id);
+        await registrarHistorico('exclusao_tarefa', `Tarefa excluída: ${tarefa.titulo}`, { id, usuario: App.usuarioAtual?.apelido });
+        showToast('Tarefa excluída!', 'success');
+        await carregarDados(true);
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao excluir tarefa:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+
 
        async function init() {
     try {
@@ -11295,19 +11696,23 @@ async function salvarNovoUsuarioFamilia() {
             fecharAddMenu();
         });
 
-        // 🔴 BOTÃO GASTOS
-        document.getElementById('navGastos').addEventListener('click', () => {
-            App.currentFilter = 'gastos';
-            mostrarConteudo();
-            fecharAddMenu();
-        });
-
+        
         // 🔴 BOTÃO NOTAS
         document.getElementById('navNotas').addEventListener('click', () => {
             App.currentFilter = 'notas';
             mostrarConteudo();
             fecharAddMenu();
         });
+
+
+        // 🔴 BOTÃO TAREFAS
+        document.getElementById('navTarefas').addEventListener('click', () => {
+            App.currentFilter = 'tarefas';
+            mostrarConteudo();
+            fecharAddMenu();
+        });
+
+
 
         // 🔴 BOTÃO GESTOR (abre menu flutuante)
         document.getElementById('navGestor').addEventListener('click', (e) => {
@@ -11796,6 +12201,18 @@ function irParaSaldos() {
     App.currentFilter = 'saldos';
     mostrarConteudo();
 }
+
+function irParaGastos() {
+    // Fechar o menu Gestor
+    const gestorMenu = document.getElementById('gestorMenu');
+    if (gestorMenu) {
+        gestorMenu.style.display = 'none';
+    }
+    // Ir para a tela de gastos
+    App.currentFilter = 'gastos';
+    mostrarConteudo();
+}
+
 
 function irParaGiros() {
     // Fechar o menu Gestor
