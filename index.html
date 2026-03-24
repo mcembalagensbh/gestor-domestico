@@ -8212,317 +8212,87 @@ function abrirModalGoogleAgenda() {
     let configAtual = App.dataCache.configuracoesSync || {
         sincronizar_eventos: true,
         sincronizar_tarefas: true,
-        sincronizar_contas: true,
-        cor_calendario_eventos: '#9b59b6',
-        cor_calendario_tarefas: '#f39c12',
-        cor_calendario_contas: '#e74c3c',
-        icone_evento: 'fa-calendar-alt',
-        icone_tarefa: 'fa-check-circle',
-        icone_conta: 'fa-file-invoice-dollar'
+        sincronizar_contas: true
     };
-    
-    // OPÇÕES DE CORES
-    const cores = [
-        { nome: 'Roxo', codigo: '#9b59b6' },
-        { nome: 'Azul', codigo: '#3498db' },
-        { nome: 'Verde', codigo: '#2ecc71' },
-        { nome: 'Amarelo', codigo: '#f1c40f' },
-        { nome: 'Laranja', codigo: '#e67e22' },
-        { nome: 'Vermelho', codigo: '#e74c3c' },
-        { nome: 'Rosa', codigo: '#e84393' }
-    ];
-    
-    // OPÇÕES DE ÍCONES
-    const icones = [
-        { nome: 'Estrela', classe: 'fa-star' },
-        { nome: 'Calendário', classe: 'fa-calendar-alt' },
-        { nome: 'Tarefa', classe: 'fa-check-circle' },
-        { nome: 'Conta', classe: 'fa-file-invoice-dollar' },
-        { nome: 'Lembrete', classe: 'fa-bell' },
-        { nome: 'Alerta', classe: 'fa-exclamation-triangle' }
-    ];
     
     let conteudo = `
         <div style="padding: 0;">
             <!-- CABEÇALHO -->
-            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 16px; text-align: center;">
-                <i class="fab fa-google" style="font-size: 24px; color: #fff;"></i>
-                <h3 style="margin: 4px 0 0 0; color: #fff; font-size: 1.2rem;">Google Agenda</h3>
-                <p style="margin: 2px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.8);">Sincronize seus dados com o Google Calendar</p>
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; text-align: center;">
+                <div style="background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                    <i class="fab fa-google" style="font-size: 28px; color: #fff;"></i>
+                </div>
+                <h3 style="margin: 0; color: #fff; font-size: 1.3rem;">Google Agenda</h3>
+                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">Sincronize seus dados com o Google Calendar</p>
             </div>
             
-            <div style="padding: 16px;">
+            <div style="padding: 20px;">
                 <!-- STATUS DA CONEXÃO -->
-                <div id="googleStatus" style="margin-bottom: 16px; padding: 10px; background: #f8f9fa; border-radius: 8px; text-align: center; font-size: 13px;">
+                <div id="googleStatus" style="margin-bottom: 20px; padding: 12px; background: #f8f9fa; border-radius: 10px; text-align: center; font-size: 14px;">
                     <i class="fas fa-spinner fa-spin"></i> Verificando conexão...
                 </div>
                 
-                <!-- ITEM: EVENTOS -->
-                <div class="config-card" data-tipo="eventos" style="background: #fff; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e9ecef; overflow: hidden;">
-                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fafbfc; border-bottom: 1px solid #e9ecef;">
-                        <input type="checkbox" id="sync_eventos" ${configAtual.sincronizar_eventos ? 'checked' : ''} style="width: 18px; height: 18px;">
-                        <div style="width: 28px; height: 28px; background: ${configAtual.cor_calendario_eventos}; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                        <strong style="font-size: 15px; flex: 1;">📅 Eventos</strong>
-                        <div class="icone-preview" style="width: 32px; text-align: center;">
-                            <i class="fas ${configAtual.icone_evento}" style="font-size: 18px; color: ${configAtual.cor_calendario_eventos};"></i>
-                        </div>
-                        <i class="fas fa-chevron-down" style="color: var(--gray); cursor: pointer; transition: transform 0.2s;" onclick="toggleConfigCard(this)"></i>
-                    </div>
-                    <div class="config-content" style="display: none; padding: 16px;">
-                        <div style="margin-bottom: 16px;">
-                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Cor do calendário:</div>
-                            <div class="cores-container" data-tipo="eventos" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                ${cores.map(c => `
-                                    <div class="cor-option" data-tipo="eventos" data-cor="${c.codigo}" style="width: 32px; height: 32px; background: ${c.codigo}; border-radius: 50%; cursor: pointer; border: 2px solid ${configAtual.cor_calendario_eventos === c.codigo ? '#fff' : 'transparent'}; box-shadow: 0 1px 3px rgba(0,0,0,0.2); outline: ${configAtual.cor_calendario_eventos === c.codigo ? '2px solid var(--purple)' : 'none'};" title="${c.nome}"></div>
-                                `).join('')}
+                <!-- OPÇÕES DE SINCRONIZAÇÃO -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 12px 0; font-size: 14px; color: var(--dark);">
+                        <i class="fas fa-sliders-h"></i> O que sincronizar:
+                    </h4>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
+                            <input type="checkbox" id="syncEventosGoogle" ${configAtual.sincronizar_eventos ? 'checked' : ''} style="width: 18px; height: 18px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">📅 Eventos</div>
+                                <div style="font-size: 11px; color: var(--gray);">Compromissos, aniversários, reuniões</div>
                             </div>
-                        </div>
-                        <div>
-                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Ícone nos eventos:</div>
-                            <div class="icones-container" data-tipo="eventos" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                ${icones.map(i => `
-                                    <div class="icone-option" data-tipo="eventos" data-icone="${i.classe}" style="width: 40px; height: 40px; background: ${configAtual.icone_evento === i.classe ? 'var(--purple-light)' : '#f8f9fa'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid ${configAtual.icone_evento === i.classe ? 'var(--purple)' : '#ddd'};">
-                                        <i class="fas ${i.classe}" style="font-size: 20px; color: ${configAtual.icone_evento === i.classe ? 'var(--purple)' : 'var(--gray)'};"></i>
-                                    </div>
-                                `).join('')}
+                            <div style="width: 12px; height: 12px; background: #9b59b6; border-radius: 50%;"></div>
+                        </label>
+                        
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
+                            <input type="checkbox" id="syncTarefasGoogle" ${configAtual.sincronizar_tarefas ? 'checked' : ''} style="width: 18px; height: 18px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">✅ Tarefas</div>
+                                <div style="font-size: 11px; color: var(--gray);">Tarefas com data limite</div>
                             </div>
-                            <button type="button" class="reset-btn" data-tipo="eventos" style="margin-top: 12px; font-size: 11px; padding: 4px 12px; background: #e9ecef; border: none; border-radius: 16px; cursor: pointer;">
-                                <i class="fas fa-undo-alt"></i> Restaurar padrão
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- ITEM: TAREFAS -->
-                <div class="config-card" data-tipo="tarefas" style="background: #fff; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e9ecef; overflow: hidden;">
-                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fafbfc; border-bottom: 1px solid #e9ecef;">
-                        <input type="checkbox" id="sync_tarefas" ${configAtual.sincronizar_tarefas ? 'checked' : ''} style="width: 18px; height: 18px;">
-                        <div style="width: 28px; height: 28px; background: ${configAtual.cor_calendario_tarefas}; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                        <strong style="font-size: 15px; flex: 1;">✅ Tarefas</strong>
-                        <div class="icone-preview" style="width: 32px; text-align: center;">
-                            <i class="fas ${configAtual.icone_tarefa}" style="font-size: 18px; color: ${configAtual.cor_calendario_tarefas};"></i>
-                        </div>
-                        <i class="fas fa-chevron-down" style="color: var(--gray); cursor: pointer; transition: transform 0.2s;" onclick="toggleConfigCard(this)"></i>
-                    </div>
-                    <div class="config-content" style="display: none; padding: 16px;">
-                        <div style="margin-bottom: 16px;">
-                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Cor do calendário:</div>
-                            <div class="cores-container" data-tipo="tarefas" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                ${cores.map(c => `
-                                    <div class="cor-option" data-tipo="tarefas" data-cor="${c.codigo}" style="width: 32px; height: 32px; background: ${c.codigo}; border-radius: 50%; cursor: pointer; border: 2px solid ${configAtual.cor_calendario_tarefas === c.codigo ? '#fff' : 'transparent'}; box-shadow: 0 1px 3px rgba(0,0,0,0.2); outline: ${configAtual.cor_calendario_tarefas === c.codigo ? '2px solid var(--purple)' : 'none'};" title="${c.nome}"></div>
-                                `).join('')}
+                            <div style="width: 12px; height: 12px; background: #f39c12; border-radius: 50%;"></div>
+                        </label>
+                        
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
+                            <input type="checkbox" id="syncContasGoogle" ${configAtual.sincronizar_contas ? 'checked' : ''} style="width: 18px; height: 18px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">💰 Contas</div>
+                                <div style="font-size: 11px; color: var(--gray);">Contas a pagar (vencimentos)</div>
                             </div>
-                        </div>
-                        <div>
-                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Ícone nas tarefas:</div>
-                            <div class="icones-container" data-tipo="tarefas" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                ${icones.map(i => `
-                                    <div class="icone-option" data-tipo="tarefas" data-icone="${i.classe}" style="width: 40px; height: 40px; background: ${configAtual.icone_tarefa === i.classe ? 'var(--purple-light)' : '#f8f9fa'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid ${configAtual.icone_tarefa === i.classe ? 'var(--purple)' : '#ddd'};">
-                                        <i class="fas ${i.classe}" style="font-size: 20px; color: ${configAtual.icone_tarefa === i.classe ? 'var(--purple)' : 'var(--gray)'};"></i>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            <button type="button" class="reset-btn" data-tipo="tarefas" style="margin-top: 12px; font-size: 11px; padding: 4px 12px; background: #e9ecef; border: none; border-radius: 16px; cursor: pointer;">
-                                <i class="fas fa-undo-alt"></i> Restaurar padrão
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- ITEM: CONTAS -->
-                <div class="config-card" data-tipo="contas" style="background: #fff; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e9ecef; overflow: hidden;">
-                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fafbfc; border-bottom: 1px solid #e9ecef;">
-                        <input type="checkbox" id="sync_contas" ${configAtual.sincronizar_contas ? 'checked' : ''} style="width: 18px; height: 18px;">
-                        <div style="width: 28px; height: 28px; background: ${configAtual.cor_calendario_contas}; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                        <strong style="font-size: 15px; flex: 1;">💰 Contas</strong>
-                        <div class="icone-preview" style="width: 32px; text-align: center;">
-                            <i class="fas ${configAtual.icone_conta}" style="font-size: 18px; color: ${configAtual.cor_calendario_contas};"></i>
-                        </div>
-                        <i class="fas fa-chevron-down" style="color: var(--gray); cursor: pointer; transition: transform 0.2s;" onclick="toggleConfigCard(this)"></i>
-                    </div>
-                    <div class="config-content" style="display: none; padding: 16px;">
-                        <div style="margin-bottom: 16px;">
-                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Cor do calendário:</div>
-                            <div class="cores-container" data-tipo="contas" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                ${cores.map(c => `
-                                    <div class="cor-option" data-tipo="contas" data-cor="${c.codigo}" style="width: 32px; height: 32px; background: ${c.codigo}; border-radius: 50%; cursor: pointer; border: 2px solid ${configAtual.cor_calendario_contas === c.codigo ? '#fff' : 'transparent'}; box-shadow: 0 1px 3px rgba(0,0,0,0.2); outline: ${configAtual.cor_calendario_contas === c.codigo ? '2px solid var(--purple)' : 'none'};" title="${c.nome}"></div>
-                                `).join('')}
-                            </div>
-                        </div>
-                        <div>
-                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Ícone nas contas:</div>
-                            <div class="icones-container" data-tipo="contas" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                ${icones.map(i => `
-                                    <div class="icone-option" data-tipo="contas" data-icone="${i.classe}" style="width: 40px; height: 40px; background: ${configAtual.icone_conta === i.classe ? 'var(--purple-light)' : '#f8f9fa'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid ${configAtual.icone_conta === i.classe ? 'var(--purple)' : '#ddd'};">
-                                        <i class="fas ${i.classe}" style="font-size: 20px; color: ${configAtual.icone_conta === i.classe ? 'var(--purple)' : 'var(--gray)'};"></i>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            <button type="button" class="reset-btn" data-tipo="contas" style="margin-top: 12px; font-size: 11px; padding: 4px 12px; background: #e9ecef; border: none; border-radius: 16px; cursor: pointer;">
-                                <i class="fas fa-undo-alt"></i> Restaurar padrão
-                            </button>
-                        </div>
+                            <div style="width: 12px; height: 12px; background: #e74c3c; border-radius: 50%;"></div>
+                        </label>
                     </div>
                 </div>
                 
                 <!-- BOTÕES -->
-                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-                    <button id="btnConectarGoogle" class="btn" style="width: 100%; padding: 10px; background: #4285f4; color: #fff; border-radius: 25px;">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button id="btnConectarGoogle" class="btn btn-primary" style="width: 100%; padding: 12px; background: #4285f4; border-radius: 30px;">
                         <i class="fab fa-google"></i> Conectar com Google
                     </button>
-                    <button id="btnSincronizarGoogle" class="btn" style="width: 100%; padding: 10px; background: var(--purple); color: #fff; border-radius: 25px;">
+                    <button id="btnSincronizarGoogle" class="btn" style="width: 100%; padding: 12px; background: var(--purple); color: #fff; border-radius: 30px;">
                         <i class="fas fa-sync-alt"></i> Sincronizar Agora
                     </button>
-                    <button id="btnDesconectarGoogle" class="btn" style="width: 100%; padding: 10px; background: #dc3545; color: #fff; border-radius: 25px; display: none;">
+                    <button id="btnDesconectarGoogle" class="btn" style="width: 100%; padding: 12px; background: #dc3545; color: #fff; border-radius: 30px; display: none;">
                         <i class="fas fa-trash"></i> Desconectar
                     </button>
-                    <button onclick="fecharModal()" class="btn" style="width: 100%; padding: 10px; background: #6c757d; color: #fff; border-radius: 25px;">
+                    <button onclick="fecharModal()" class="btn" style="width: 100%; padding: 12px; background: #6c757d; color: #fff; border-radius: 30px;">
                         Fechar
                     </button>
                 </div>
                 
-                <div style="margin-top: 12px; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 10px; color: var(--gray); text-align: center;">
-                    <i class="fas fa-info-circle"></i> Altere as configurações e clique em "Sincronizar Agora" para aplicar
+                <div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 11px; color: var(--gray); text-align: center;">
+                    <i class="fas fa-info-circle"></i> As alterações nas opções são salvas automaticamente ao sincronizar
                 </div>
             </div>
         </div>
-        
-        <style>
-            .config-card {
-                transition: box-shadow 0.2s;
-            }
-            .config-card:hover {
-                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            }
-            .cor-option, .icone-option {
-                transition: all 0.2s;
-            }
-            .cor-option:hover, .icone-option:hover {
-                transform: scale(1.05);
-            }
-        </style>
     `;
     
     abrirModal('Google Agenda', 'fab fa-google', conteudo);
     
-    // ========== FUNÇÕES DO MODAL ==========
-    
-    // Função para expandir/recolher
-    window.toggleConfigCard = function(icon) {
-        const content = icon.closest('.config-card').querySelector('.config-content');
-        const isOpen = content.style.display !== 'none';
-        content.style.display = isOpen ? 'none' : 'block';
-        icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-    };
-    
-    // Função para selecionar cor (única)
-    window.selecionarCor = function(element, tipo, cor) {
-        // Atualizar preview da cor no cabeçalho
-        const previewDiv = document.querySelector(`.config-card[data-tipo="${tipo}"] .config-card > div:first-child div[style*="border-radius: 50%"]`);
-        if (previewDiv) previewDiv.style.background = cor;
-        
-        // Atualizar outline das opções de cor
-        const container = document.querySelector(`.cores-container[data-tipo="${tipo}"]`);
-        if (container) {
-            container.querySelectorAll('.cor-option').forEach(opt => {
-                opt.style.outline = 'none';
-                opt.style.border = '2px solid transparent';
-                if (opt.getAttribute('data-cor') === cor) {
-                    opt.style.outline = '2px solid var(--purple)';
-                    opt.style.border = '2px solid #fff';
-                }
-            });
-        }
-        
-        // Salvar no input hidden
-        const input = document.getElementById(`cor_${tipo}`);
-        if (input) input.value = cor;
-        
-        // Atualizar cor do ícone preview
-        const iconePreview = document.querySelector(`.config-card[data-tipo="${tipo}"] .icone-preview i`);
-        if (iconePreview) iconePreview.style.color = cor;
-    };
-    
-    // Função para selecionar ícone (única)
-    window.selecionarIcone = function(element, tipo, icone) {
-        // Atualizar preview do ícone no cabeçalho
-        const iconePreview = document.querySelector(`.config-card[data-tipo="${tipo}"] .icone-preview i`);
-        if (iconePreview) {
-            iconePreview.className = `fas ${icone}`;
-        }
-        
-        // Atualizar seleção visual
-        const container = document.querySelector(`.icones-container[data-tipo="${tipo}"]`);
-        if (container) {
-            container.querySelectorAll('.icone-option').forEach(opt => {
-                opt.style.background = '#f8f9fa';
-                opt.style.border = '1px solid #ddd';
-                const iconElem = opt.querySelector('i');
-                if (iconElem) iconElem.style.color = 'var(--gray)';
-                
-                if (opt.getAttribute('data-icone') === icone) {
-                    opt.style.background = 'var(--purple-light)';
-                    opt.style.border = '1px solid var(--purple)';
-                    if (iconElem) iconElem.style.color = 'var(--purple)';
-                }
-            });
-        }
-        
-        // Salvar no input hidden
-        const input = document.getElementById(`icone_${tipo}`);
-        if (input) input.value = icone;
-    };
-    
-    // Função para restaurar padrão
-    window.restaurarPadrao = function(tipo) {
-        const coresPadrao = { eventos: '#9b59b6', tarefas: '#f39c12', contas: '#e74c3c' };
-        const iconesPadrao = { eventos: 'fa-calendar-alt', tarefas: 'fa-check-circle', contas: 'fa-file-invoice-dollar' };
-        
-        const corPadrao = coresPadrao[tipo];
-        const iconePadrao = iconesPadrao[tipo];
-        
-        // Selecionar cor padrão
-        const corElement = document.querySelector(`.cores-container[data-tipo="${tipo}"] .cor-option[data-cor="${corPadrao}"]`);
-        if (corElement) corElement.click();
-        
-        // Selecionar ícone padrão
-        const iconeElement = document.querySelector(`.icones-container[data-tipo="${tipo}"] .icone-option[data-icone="${iconePadrao}"]`);
-        if (iconeElement) iconeElement.click();
-    };
-    
-    // Adicionar eventos após o modal ser criado
-    setTimeout(() => {
-        // Eventos de cor
-        document.querySelectorAll('.cor-option').forEach(el => {
-            el.onclick = (e) => {
-                e.stopPropagation();
-                const tipo = el.getAttribute('data-tipo');
-                const cor = el.getAttribute('data-cor');
-                window.selecionarCor(el, tipo, cor);
-            };
-        });
-        
-        // Eventos de ícone
-        document.querySelectorAll('.icone-option').forEach(el => {
-            el.onclick = (e) => {
-                e.stopPropagation();
-                const tipo = el.getAttribute('data-tipo');
-                const icone = el.getAttribute('data-icone');
-                window.selecionarIcone(el, tipo, icone);
-            };
-        });
-        
-        // Eventos de reset
-        document.querySelectorAll('.reset-btn').forEach(btn => {
-            btn.onclick = (e) => {
-                e.stopPropagation();
-                const tipo = btn.getAttribute('data-tipo');
-                window.restaurarPadrao(tipo);
-            };
-        });
-    }, 100);
-    
-    // ========== VERIFICAR STATUS DA CONEXÃO ==========
+    // Verificar status da conexão
     setTimeout(async () => {
         const statusEl = document.getElementById('googleStatus');
         const btnConectar = document.getElementById('btnConectarGoogle');
@@ -8541,108 +8311,123 @@ function abrirModalGoogleAgenda() {
             if (tokenData) {
                 const expiresAt = new Date(tokenData.expires_at);
                 if (expiresAt > new Date()) {
-                    statusEl.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i> Conectado ao Google Calendar`;
+                    statusEl.innerHTML = `
+                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                        <strong style="margin-left: 5px;">Conectado ao Google Calendar</strong>
+                        <div style="font-size: 11px; margin-top: 4px;">Sincronização ativa</div>
+                    `;
                     btnConectar.style.display = 'none';
                     btnSincronizar.style.display = 'block';
                     btnDesconectar.style.display = 'block';
                 } else {
-                    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i> Conexão expirada - reconecte`;
+                    statusEl.innerHTML = `
+                        <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
+                        <strong style="margin-left: 5px;">Conexão expirada</strong>
+                        <div style="font-size: 11px; margin-top: 4px;">Clique em "Conectar" para renovar</div>
+                    `;
                 }
             } else {
-                statusEl.innerHTML = `<i class="fas fa-plug"></i> Não conectado`;
+                statusEl.innerHTML = `
+                    <i class="fas fa-plug"></i>
+                    <strong style="margin-left: 5px;">Não conectado</strong>
+                    <div style="font-size: 11px; margin-top: 4px;">Conecte sua conta Google para sincronizar</div>
+                `;
                 btnSincronizar.style.display = 'none';
             }
         } catch (e) {
-            statusEl.innerHTML = `<i class="fas fa-plug"></i> Não conectado`;
+            statusEl.innerHTML = `
+                <i class="fas fa-plug"></i>
+                <strong style="margin-left: 5px;">Não conectado</strong>
+                <div style="font-size: 11px; margin-top: 4px;">Conecte sua conta Google para sincronizar</div>
+            `;
             btnSincronizar.style.display = 'none';
         }
     }, 100);
     
-    // ========== EVENTOS DOS BOTÕES ==========
+    // Evento: Conectar
     document.getElementById('btnConectarGoogle').onclick = async () => {
         try {
             showToast('Abrindo Google...', 'info');
+            
             const { data: { session } } = await App.supabase.auth.getSession();
             if (!session) {
                 showToast('Faça login novamente', 'error');
                 return;
             }
+            
             const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/google-calendar-auth', {
                 method: 'GET',
-                headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                }
             });
+            
             const data = await response.json();
+            
             if (data.url) {
                 window.open(data.url, '_blank', 'width=600,height=700');
             } else {
                 showToast('Erro ao iniciar conexão', 'error');
             }
+            
         } catch (error) {
             console.error('Erro:', error);
             showToast('Erro ao conectar com Google', 'error');
         }
     };
     
+    // Evento: Desconectar
     document.getElementById('btnDesconectarGoogle').onclick = async () => {
         if (!confirm('Tem certeza que deseja desconectar sua conta Google?')) return;
+        
         try {
-            const { error } = await App.supabase.from('google_tokens').delete().eq('user_id', App.currentUser.id);
+            const { error } = await App.supabase
+                .from('google_tokens')
+                .delete()
+                .eq('user_id', App.currentUser.id);
+            
             if (error) throw error;
+            
             showToast('✅ Conta Google desconectada!', 'success');
             fecharModal();
+            
         } catch (error) {
             console.error('Erro:', error);
             showToast('Erro ao desconectar', 'error');
         }
     };
     
+    // Evento: Sincronizar (salva configurações e sincroniza)
     document.getElementById('btnSincronizarGoogle').onclick = async () => {
-        // Coletar configurações
-        const syncEventos = document.getElementById('sync_eventos').checked;
-        const syncTarefas = document.getElementById('sync_tarefas').checked;
-        const syncContas = document.getElementById('sync_contas').checked;
+        const syncEventos = document.getElementById('syncEventosGoogle').checked;
+        const syncTarefas = document.getElementById('syncTarefasGoogle').checked;
+        const syncContas = document.getElementById('syncContasGoogle').checked;
         
-        // Coletar cores selecionadas
-        const corEventos = document.querySelector(`.cores-container[data-tipo="eventos"] .cor-option[style*="outline: 2px solid var(--purple)"]`)?.getAttribute('data-cor') || '#9b59b6';
-        const corTarefas = document.querySelector(`.cores-container[data-tipo="tarefas"] .cor-option[style*="outline: 2px solid var(--purple)"]`)?.getAttribute('data-cor') || '#f39c12';
-        const corContas = document.querySelector(`.cores-container[data-tipo="contas"] .cor-option[style*="outline: 2px solid var(--purple)"]`)?.getAttribute('data-cor') || '#e74c3c';
-        
-        // Coletar ícones selecionados
-        const iconeEvento = document.querySelector(`.icones-container[data-tipo="eventos"] .icone-option[style*="background: var(--purple-light)"]`)?.getAttribute('data-icone') || 'fa-calendar-alt';
-        const iconeTarefa = document.querySelector(`.icones-container[data-tipo="tarefas"] .icone-option[style*="background: var(--purple-light)"]`)?.getAttribute('data-icone') || 'fa-check-circle';
-        const iconeConta = document.querySelector(`.icones-container[data-tipo="contas"] .icone-option[style*="background: var(--purple-light)"]`)?.getAttribute('data-icone') || 'fa-file-invoice-dollar';
-        
+        // Salvar configurações
         try {
-            const { error } = await App.supabase.from('configuracoes_sync').upsert({
-                user_id: App.currentUser.id,
-                sincronizar_eventos: syncEventos,
-                sincronizar_tarefas: syncTarefas,
-                sincronizar_contas: syncContas,
-                cor_calendario_eventos: corEventos,
-                cor_calendario_tarefas: corTarefas,
-                cor_calendario_contas: corContas,
-                icone_evento: iconeEvento,
-                icone_tarefa: iconeTarefa,
-                icone_conta: iconeConta,
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'user_id' });
+            const { error } = await App.supabase
+                .from('configuracoes_sync')
+                .upsert({
+                    user_id: App.currentUser.id,
+                    sincronizar_eventos: syncEventos,
+                    sincronizar_tarefas: syncTarefas,
+                    sincronizar_contas: syncContas,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
             
             if (error) throw error;
             
+            // Atualizar cache local
             App.dataCache.configuracoesSync = {
-                ...App.dataCache.configuracoesSync,
                 sincronizar_eventos: syncEventos,
                 sincronizar_tarefas: syncTarefas,
-                sincronizar_contas: syncContas,
-                cor_calendario_eventos: corEventos,
-                cor_calendario_tarefas: corTarefas,
-                cor_calendario_contas: corContas,
-                icone_evento: iconeEvento,
-                icone_tarefa: iconeTarefa,
-                icone_conta: iconeConta
+                sincronizar_contas: syncContas
             };
             
             showToast('Configurações salvas! Sincronizando...', 'success');
+            
+            // Chamar sincronização
             sincronizarGoogle();
             
         } catch (error) {
