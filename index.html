@@ -12163,11 +12163,28 @@ function abrirNovaTarefa() {
     let usuarios = App.dataCache.usuariosFamilia || [];
     let usuarioAtual = App.usuarioAtual;
     
-    let usuariosHtml = '<option value="">-- Selecione um responsável (opcional) --</option>';
-    usuarios.forEach(u => {
-        const selected = (usuarioAtual && u.id == usuarioAtual.id) ? 'selected' : '';
-        usuariosHtml += `<option value="${u.id}" ${selected}>${u.apelido} (${u.nome})</option>`;
-    });
+    // Gerar HTML com checkboxes para selecionar múltiplos responsáveis
+    let usuariosHtml = '';
+    if (usuarios.length > 0) {
+        usuariosHtml = `
+            <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+                <p style="margin-bottom: 8px; font-size: 12px; color: var(--gray);"><i class="fas fa-info-circle"></i> Selecione um ou mais responsáveis:</p>
+                ${usuarios.map(u => {
+                    const checked = (usuarioAtual && u.id == usuarioAtual.id) ? 'checked' : '';
+                    return `
+                        <div style="margin-bottom: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" class="responsavel-checkbox" value="${u.id}" data-nome="${u.apelido}" ${checked}>
+                                <span><strong>${u.apelido}</strong> <span style="color: var(--gray);">(${u.nome})</span></span>
+                            </label>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    } else {
+        usuariosHtml = '<p style="color: var(--gray);">Nenhum usuário cadastrado. Cadastre usuários em Segurança.</p>';
+    }
     
     let conteudo = `
         <div class="form-group">
@@ -12179,11 +12196,9 @@ function abrirNovaTarefa() {
             <textarea id="tarefaDescricao" class="form-textarea" rows="3" placeholder="Detalhes da tarefa..."></textarea>
         </div>
         <div class="form-group">
-            <label class="form-label"><i class="fas fa-user"></i> Responsável</label>
-            <select id="tarefaResponsavel" class="form-select">
-                ${usuariosHtml}
-            </select>
-            <small style="color: var(--gray);">Deixe em branco para tarefa geral (todos veem)</small>
+            <label class="form-label"><i class="fas fa-users"></i> Responsáveis (selecione um ou mais)</label>
+            ${usuariosHtml}
+            <small style="color: var(--gray); font-size: 11px;">💡 Selecione pelo menos um responsável</small>
         </div>
         <div class="form-group">
             <label class="form-label"><i class="fas fa-calendar-day"></i> Data limite (opcional)</label>
@@ -12208,9 +12223,13 @@ function abrirNovaTarefa() {
 async function salvarNovaTarefa() {
     let titulo = document.getElementById('tarefaTitulo')?.value.trim();
     let descricao = document.getElementById('tarefaDescricao')?.value.trim();
-    let responsavelId = document.getElementById('tarefaResponsavel')?.value;
     let dataLimite = document.getElementById('tarefaDataLimite')?.value;
     let prioridade = document.getElementById('tarefaPrioridade')?.value;
+    
+    // 🔴 PEGAR RESPONSÁVEIS SELECIONADOS (MÚLTIPLOS)
+    const checkboxes = document.querySelectorAll('.responsavel-checkbox:checked');
+    const responsaveisIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+    const responsaveisNomes = Array.from(checkboxes).map(cb => cb.getAttribute('data-nome'));
     
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
     
@@ -12219,45 +12238,39 @@ async function salvarNovaTarefa() {
         return;
     }
     
-    // 🔴 TRATAR RESPONSÁVEL
-    let responsavelIdValue = null;
-    let responsavelNome = null;
-    
-    if (responsavelId && responsavelId !== '') {
-        responsavelIdValue = parseInt(responsavelId);
-        const usuario = App.dataCache.usuariosFamilia?.find(u => u.id == responsavelIdValue);
-        responsavelNome = usuario?.apelido || usuario?.nome;
+    // 🔴 VERIFICAR SE TEM PELO MENOS UM RESPONSÁVEL
+    if (responsaveisIds.length === 0) {
+        showToast('Selecione pelo menos um responsável', 'warning');
+        return;
     }
     
-    const dadosTarefa = {
-        user_id: App.currentUser.id,
-        titulo: titulo,
-        descricao: descricao || null,
-        responsavel_id: responsavelIdValue,
-        responsavel_nome: responsavelNome,
-        data_limite: dataLimite || null,
-        prioridade: prioridade || 'normal',
-        concluido: false,
-        added_by: nomeUsuario
-    };
-    
-    console.log('🔵 Dados completos da tarefa:', dadosTarefa);
+    console.log('🔵 Salvando tarefa:', {
+        titulo,
+        descricao,
+        responsaveisIds,
+        responsaveisNomes,
+        dataLimite,
+        prioridade
+    });
     
     try {
-        const { data, error } = await App.supabase.from('tarefas').insert(dadosTarefa).select();
+        const { data, error } = await App.supabase.from('tarefas').insert({
+            user_id: App.currentUser.id,
+            titulo: titulo,
+            descricao: descricao || null,
+            responsavel_ids: JSON.stringify(responsaveisIds),  // 🔴 ARRAY COMO JSON
+            responsavel_nome: responsaveisNomes.join(', '),    // 🔴 NOMES COMO TEXTO
+            data_limite: dataLimite || null,
+            prioridade: prioridade || 'normal',
+            concluido: false,
+            added_by: nomeUsuario
+        }).select();
         
-        if (error) {
-            console.error('❌ Erro detalhado do Supabase:', error);
-            console.error('❌ Mensagem:', error.message);
-            console.error('❌ Código:', error.code);
-            console.error('❌ Detalhes:', error.details);
-            showToast('Erro: ' + error.message, 'error');
-            return;
-        }
+        if (error) throw error;
         
         await registrarHistorico('criacao_tarefa', `Tarefa criada: ${titulo}`, { 
             titulo, 
-            responsavel: responsavelNome, 
+            responsaveis: responsaveisNomes, 
             usuario: nomeUsuario 
         });
         
@@ -12266,13 +12279,16 @@ async function salvarNovaTarefa() {
         await carregarDados(true);
         await mostrarConteudo();
         
-        if (responsavelIdValue && responsavelIdValue != App.usuarioAtual?.id) {
-            showToast(`📢 Tarefa atribuída a ${responsavelNome}`, 'info');
+        // Notificar se o responsável não é o criador
+        const criadorId = App.usuarioAtual?.id;
+        const outros = responsaveisIds.filter(id => id !== criadorId);
+        if (outros.length > 0) {
+            showToast(`📢 Tarefa atribuída a ${responsaveisNomes.join(', ')}`, 'info');
         }
         
     } catch (error) {
-        console.error('❌ Erro na requisição:', error);
-        showToast('Erro ao salvar tarefa', 'error');
+        console.error('❌ Erro ao salvar tarefa:', error);
+        showToast('Erro: ' + error.message, 'error');
     }
 }
 
