@@ -8215,7 +8215,7 @@ function abrirModalGoogleAgenda() {
         sincronizar_contas: true
     };
     
-    // Opções de cores (nomes e códigos)
+    // 🔴 OPÇÕES DE CORES (7 opções)
     const cores = [
         { nome: 'Roxo', codigo: '#9b59b6' },
         { nome: 'Azul', codigo: '#3498db' },
@@ -8223,20 +8223,17 @@ function abrirModalGoogleAgenda() {
         { nome: 'Amarelo', codigo: '#f1c40f' },
         { nome: 'Laranja', codigo: '#e67e22' },
         { nome: 'Vermelho', codigo: '#e74c3c' },
-        { nome: 'Rosa', codigo: '#e84393' },
-        { nome: 'Cinza', codigo: '#95a5a6' }
+        { nome: 'Rosa', codigo: '#e84393' }
     ];
     
-    // Opções de ícones
+    // 🔴 OPÇÕES DE ÍCONES (6 opções)
     const icones = [
         { nome: 'Estrela', classe: 'fa-star' },
-        { nome: 'Coração', classe: 'fa-heart' },
         { nome: 'Calendário', classe: 'fa-calendar-alt' },
         { nome: 'Tarefa', classe: 'fa-check-circle' },
         { nome: 'Conta', classe: 'fa-file-invoice-dollar' },
         { nome: 'Lembrete', classe: 'fa-bell' },
-        { nome: 'Alerta', classe: 'fa-exclamation-triangle' },
-        { nome: 'Meta', classe: 'fa-flag-checkered' }
+        { nome: 'Alerta', classe: 'fa-exclamation-triangle' }
     ];
     
     // Função para gerar HTML de seleção de cores e ícones
@@ -8277,13 +8274,13 @@ function abrirModalGoogleAgenda() {
     
     let conteudo = `
         <div style="padding: 0;">
-            <!-- CABEÇALHO COMPACTO -->
+            <!-- CABEÇALHO -->
             <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 12px 16px; text-align: center;">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <i class="fab fa-google" style="color: #fff; font-size: 18px;"></i>
                     <h3 style="margin: 0; color: #fff; font-size: 1.1rem;">Google Agenda</h3>
                 </div>
-                <p style="margin: 4px 0 0 0; font-size: 11px; opacity: 0.8;">Sincronize com seu calendário</p>
+                <p style="margin: 4px 0 0 0; font-size: 11px; color: #fff; opacity: 0.9;">Sincronize com seu calendário</p>
             </div>
             
             <div style="padding: 16px;">
@@ -8292,23 +8289,23 @@ function abrirModalGoogleAgenda() {
                     <i class="fas fa-spinner fa-spin"></i> Verificando conexão...
                 </div>
                 
-                <!-- O QUE SINCRONIZAR -->
-                <div style="margin-bottom: 16px; background: #f8f9fa; border-radius: 8px; padding: 12px;">
-                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">
+                <!-- O QUE SINCRONIZAR (UMA EMBAIXO DA OUTRA) -->
+                <div style="margin-bottom: 20px; background: #f8f9fa; border-radius: 8px; padding: 12px;">
+                    <h4 style="margin: 0 0 12px 0; font-size: 13px;">
                         <i class="fas fa-sliders-h"></i> O que sincronizar:
                     </h4>
-                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                            <input type="checkbox" id="syncEventosGoogle" ${configAtual.sincronizar_eventos ? 'checked' : ''}>
-                            <span><i class="fas fa-calendar-alt" style="color: #9b59b6;"></i> Eventos</span>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
+                            <input type="checkbox" id="syncEventosGoogle" ${configAtual.sincronizar_eventos ? 'checked' : ''} style="width: 18px; height: 18px;">
+                            <span><i class="fas fa-calendar-alt" style="color: #9b59b6; width: 20px;"></i> <strong>Eventos</strong> <span style="color: var(--gray);">(compromissos, aniversários)</span></span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                            <input type="checkbox" id="syncTarefasGoogle" ${configAtual.sincronizar_tarefas ? 'checked' : ''}>
-                            <span><i class="fas fa-tasks" style="color: #f39c12;"></i> Tarefas</span>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
+                            <input type="checkbox" id="syncTarefasGoogle" ${configAtual.sincronizar_tarefas ? 'checked' : ''} style="width: 18px; height: 18px;">
+                            <span><i class="fas fa-check-circle" style="color: #f39c12; width: 20px;"></i> <strong>Tarefas</strong> <span style="color: var(--gray);">(com data limite)</span></span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                            <input type="checkbox" id="syncContasGoogle" ${configAtual.sincronizar_contas ? 'checked' : ''}>
-                            <span><i class="fas fa-file-invoice-dollar" style="color: #e74c3c;"></i> Contas</span>
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
+                            <input type="checkbox" id="syncContasGoogle" ${configAtual.sincronizar_contas ? 'checked' : ''} style="width: 18px; height: 18px;">
+                            <span><i class="fas fa-file-invoice-dollar" style="color: #e74c3c; width: 20px;"></i> <strong>Contas</strong> <span style="color: var(--gray);">(vencimentos)</span></span>
                         </label>
                     </div>
                 </div>
@@ -8363,17 +8360,15 @@ function abrirModalGoogleAgenda() {
     
     abrirModal('Google Agenda', 'fab fa-google', conteudo);
     
-    // Adicionar funções globais para seleção
+    // Funções globais para seleção
     window.selecionarCor = function(tipo, cor) {
         const input = document.getElementById(`${tipo}_cor`);
         if (input) input.value = cor;
         
-        // Remover seleção anterior
         document.querySelectorAll(`[onclick*="selecionarCor('${tipo}')"]`).forEach(el => {
             el.classList.remove('cor-opcao-selecionada');
         });
         
-        // Adicionar seleção no elemento clicado
         event.target.classList.add('cor-opcao-selecionada');
     };
     
@@ -8381,12 +8376,10 @@ function abrirModalGoogleAgenda() {
         const input = document.getElementById(`${tipo}_icone`);
         if (input) input.value = icone;
         
-        // Remover seleção anterior
         document.querySelectorAll(`[onclick*="selecionarIcone('${tipo}')"]`).forEach(el => {
             el.classList.remove('icone-opcao-selecionada');
         });
         
-        // Adicionar seleção no elemento clicado
         event.target.closest('div').classList.add('icone-opcao-selecionada');
     };
     
@@ -8426,7 +8419,7 @@ function abrirModalGoogleAgenda() {
         }
     }, 100);
     
-    // Eventos dos botões (mantêm os mesmos)
+    // Eventos dos botões
     document.getElementById('btnConectarGoogle').onclick = async () => {
         try {
             showToast('Abrindo Google...', 'info');
@@ -8469,7 +8462,6 @@ function abrirModalGoogleAgenda() {
         const syncTarefas = document.getElementById('syncTarefasGoogle').checked;
         const syncContas = document.getElementById('syncContasGoogle').checked;
         
-        // Pegar cores e ícones selecionados
         const corEvento = document.getElementById('evento_cor')?.value || '#9b59b6';
         const iconeEvento = document.getElementById('evento_icone')?.value || 'fa-calendar-alt';
         const corTarefa = document.getElementById('tarefa_cor')?.value || '#f39c12';
@@ -8477,7 +8469,6 @@ function abrirModalGoogleAgenda() {
         const corConta = document.getElementById('conta_cor')?.value || '#e74c3c';
         const iconeConta = document.getElementById('conta_icone')?.value || 'fa-file-invoice-dollar';
         
-        // Salvar configurações
         try {
             const { error } = await App.supabase.from('configuracoes_sync').upsert({
                 user_id: App.currentUser.id,
