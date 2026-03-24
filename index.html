@@ -12229,29 +12229,31 @@ async function salvarNovaTarefa() {
         responsavelNome = usuario?.apelido || usuario?.nome;
     }
     
-    console.log('🔵 Salvando tarefa:', {
-        titulo,
-        descricao,
-        responsavelId: responsavelIdValue,
-        responsavelNome,
-        dataLimite,
-        prioridade
-    });
+    const dadosTarefa = {
+        user_id: App.currentUser.id,
+        titulo: titulo,
+        descricao: descricao || null,
+        responsavel_id: responsavelIdValue,
+        responsavel_nome: responsavelNome,
+        data_limite: dataLimite || null,
+        prioridade: prioridade || 'normal',
+        concluido: false,
+        added_by: nomeUsuario
+    };
+    
+    console.log('🔵 Dados completos da tarefa:', dadosTarefa);
     
     try {
-        const { data, error } = await App.supabase.from('tarefas').insert({
-            user_id: App.currentUser.id,
-            titulo: titulo,
-            descricao: descricao || null,
-            responsavel_id: responsavelIdValue,
-            responsavel_nome: responsavelNome,
-            data_limite: dataLimite || null,
-            prioridade: prioridade || 'normal',
-            concluido: false,
-            added_by: nomeUsuario
-        }).select();
+        const { data, error } = await App.supabase.from('tarefas').insert(dadosTarefa).select();
         
-        if (error) throw error;
+        if (error) {
+            console.error('❌ Erro detalhado do Supabase:', error);
+            console.error('❌ Mensagem:', error.message);
+            console.error('❌ Código:', error.code);
+            console.error('❌ Detalhes:', error.details);
+            showToast('Erro: ' + error.message, 'error');
+            return;
+        }
         
         await registrarHistorico('criacao_tarefa', `Tarefa criada: ${titulo}`, { 
             titulo, 
@@ -12264,14 +12266,13 @@ async function salvarNovaTarefa() {
         await carregarDados(true);
         await mostrarConteudo();
         
-        // Notificar responsável se for diferente do criador
         if (responsavelIdValue && responsavelIdValue != App.usuarioAtual?.id) {
             showToast(`📢 Tarefa atribuída a ${responsavelNome}`, 'info');
         }
         
     } catch (error) {
-        console.error('❌ Erro ao salvar tarefa:', error);
-        showToast('Erro: ' + error.message, 'error');
+        console.error('❌ Erro na requisição:', error);
+        showToast('Erro ao salvar tarefa', 'error');
     }
 }
 
