@@ -2417,7 +2417,7 @@
          dataCache: {
     contas: [], regrasContas: [], eventos: [], eventosIndividuais: [], regrasEventos: [],
     gastos: [], lista: [], saldos: [], historico: [], excecoesRecorrencia: [],
-    giros: [], movimentacoesGiro: [], notas: [], usuariosFamilia: [], tarefas: []
+    giros: [], movimentacoesGiro: [], notas: [], usuariosFamilia: [], tarefas: [], configuracoesSync: {}
 },
             notificacoesAgendadas: [],
             serviceWorkerRegistration: null,
@@ -3927,7 +3927,8 @@ function atualizarEmailMenu() {
                 App.supabase.from('movimentacoes_giro').select('*').eq('user_id', App.currentUser.id).order('data', { ascending: false }),
                 App.supabase.from('notas').select('*').eq('user_id', App.currentUser.id),
                 App.supabase.from('usuarios_familia').select('*').eq('user_id', App.currentUser.id),
-                App.supabase.from('tarefas').select('*').eq('user_id', App.currentUser.id)
+                App.supabase.from('tarefas').select('*').eq('user_id', App.currentUser.id),
+                App.supabase.from('configuracoes_sync').select('*').eq('user_id', App.currentUser.id).maybeSingle()  // 🔴 NOVO
             ];
 
             const results = await Promise.allSettled(promises);
@@ -3947,6 +3948,7 @@ function atualizarEmailMenu() {
             const notas = results[12].status === 'fulfilled' ? results[12].value.data : [];
             const usuariosFamilia = results[13].status === 'fulfilled' ? results[13].value.data : [];
             const tarefas = results[14].status === 'fulfilled' ? results[14].value.data : [];
+            const configuracoesSync = results[15].status === 'fulfilled' ? results[15].value.data : {};  // 🔴 NOVO
 
             let excecoesRecorrencia = [];
             try {
@@ -3981,7 +3983,8 @@ function atualizarEmailMenu() {
                 eventosIndividuais: eventosIndividuais || [], regrasEventos: regrasEventos || [],
                 gastos: gastos || [], lista: lista || [], saldos: saldos || [], historico: historico || [],
                 excecoesRecorrencia: excecoesRecorrencia, giros: giros || [], movimentacoesGiro: movimentacoes || [],
-                notas: notas || [], usuariosFamilia: usuariosFamilia || [], tarefas: tarefas || []
+                notas: notas || [], usuariosFamilia: usuariosFamilia || [], tarefas: tarefas || [],
+                configuracoesSync: configuracoesSync || {}  // 🔴 NOVO
             };
 
             salvarCacheLocal();
@@ -7517,6 +7520,29 @@ async function gerarTokenCalendario() {
     try {
         showToast('Carregando...', 'info');
         
+        // Buscar configurações atuais do usuário
+        let configAtual = {
+            sincronizar_eventos: true,
+            sincronizar_tarefas: true,
+            sincronizar_contas: true
+        };
+        
+        // Verificar se já tem configurações no cache
+        if (App.dataCache.configuracoesSync && App.dataCache.configuracoesSync.sincronizar_eventos !== undefined) {
+            configAtual = App.dataCache.configuracoesSync;
+        } else {
+            // Buscar do banco
+            const { data: configData, error: configError } = await App.supabase
+                .from('configuracoes_sync')
+                .select('*')
+                .eq('user_id', App.currentUser.id)
+                .maybeSingle();
+            
+            if (configData) {
+                configAtual = configData;
+            }
+        }
+        
         // Verificar se já tem um token
         const { data: existingToken, error: searchError } = await App.supabase
             .from('calendario_tokens')
@@ -7541,7 +7567,7 @@ async function gerarTokenCalendario() {
         
         const calendarUrl = `https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/ical-user/${token}.ics`;
         
-        // Modal com todas as instruções
+        // Modal com configurações
         const modal = document.createElement('div');
         modal.id = 'syncModal';
         modal.style.cssText = `
@@ -7562,16 +7588,38 @@ async function gerarTokenCalendario() {
                 <!-- CABEÇALHO -->
                 <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
                     <h3 style="margin: 0; color: #fff;"><i class="fas fa-calendar-alt"></i> Sincronizar Calendário</h3>
-                    <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">Seus eventos do My Life em qualquer calendário</p>
+                    <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">Selecione o que deseja sincronizar</p>
                 </div>
                 
                 <div style="padding: 16px; overflow-y: auto;">
+                    <!-- CONFIGURAÇÕES DE SINCRONIZAÇÃO -->
+                    <div style="background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 12px 0;"><i class="fas fa-sliders-h"></i> O que sincronizar:</h4>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="syncEventos" ${configAtual.sincronizar_eventos ? 'checked' : ''}>
+                                <span><i class="fas fa-calendar-alt" style="color: #28a745;"></i> <strong>Eventos</strong> <span style="color: var(--gray);">(compromissos, aniversários)</span></span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="syncTarefas" ${configAtual.sincronizar_tarefas ? 'checked' : ''}>
+                                <span><i class="fas fa-tasks" style="color: #ffc107;"></i> <strong>Tarefas</strong> <span style="color: var(--gray);">(com data limite)</span></span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="syncContas" ${configAtual.sincronizar_contas ? 'checked' : ''}>
+                                <span><i class="fas fa-file-invoice-dollar" style="color: #dc3545;"></i> <strong>Contas</strong> <span style="color: var(--gray);">(vencimentos)</span></span>
+                            </label>
+                        </div>
+                        <div style="margin-top: 15px; padding: 8px; background: #e8f4fd; border-radius: 8px;">
+                            <small><i class="fas fa-info-circle"></i> Período: próximos 6 meses</small>
+                        </div>
+                    </div>
+                    
                     <!-- SEÇÃO DO LINK -->
                     <div style="background: #f0f7ff; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <strong><i class="fas fa-link"></i> Seu link exclusivo:</strong>
-                            <button id="btnGerarLink" class="btn btn-sm btn-primary" style="padding: 5px 12px;">
-                                <i class="fas fa-sync-alt"></i> Gerar/Atualizar Link
+                            <button id="btnSalvarConfig" class="btn btn-sm btn-primary" style="padding: 5px 12px;">
+                                <i class="fas fa-save"></i> Salvar e Gerar Link
                             </button>
                         </div>
                         <div id="linkContainer" style="background: #fff; padding: 10px; border-radius: 8px; word-break: break-all; font-family: monospace; font-size: 11px; border: 1px solid #ddd; margin-bottom: 10px;">
@@ -7658,24 +7706,6 @@ async function gerarTokenCalendario() {
                             </div>
                         </div>
                         
-                        <!-- Yahoo Calendar -->
-                        <div class="calendario-item" style="margin-bottom: 8px;">
-                            <div class="calendario-header" style="background: #f8f9fa; padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
-                                <i class="fab fa-yahoo" style="color: #6001d2; font-size: 20px;"></i>
-                                <span style="font-weight: 600;">Yahoo Calendar</span>
-                                <i class="fas fa-chevron-down" style="margin-left: auto; color: var(--gray);"></i>
-                            </div>
-                            <div class="calendario-conteudo" style="display: none; padding: 12px; background: #fff; border: 1px solid #eee; border-radius: 8px; margin-top: 4px;">
-                                <p><strong>Como sincronizar:</strong></p>
-                                <ol style="margin: 8px 0 8px 20px; font-size: 13px;">
-                                    <li>Copie o link acima</li>
-                                    <li>Acesse <strong>calendar.yahoo.com</strong></li>
-                                    <li>Clique em <strong>"Calendários"</strong> → <strong>"Adicionar"</strong> → <strong>"Da Web"</strong></li>
-                                    <li>Cole o link e clique em <strong>"Adicionar calendário"</strong></li>
-                                </ol>
-                            </div>
-                        </div>
-                        
                         <!-- Outros Calendários -->
                         <div class="calendario-item" style="margin-bottom: 8px;">
                             <div class="calendario-header" style="background: #f8f9fa; padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
@@ -7705,7 +7735,7 @@ async function gerarTokenCalendario() {
         
         document.body.appendChild(modal);
         
-        // Eventos do modal
+        // Evento para copiar link
         document.getElementById('btnCopiarLink').onclick = () => {
             navigator.clipboard.writeText(calendarUrl).then(() => {
                 showToast('✅ Link copiado!', 'success');
@@ -7714,35 +7744,44 @@ async function gerarTokenCalendario() {
             });
         };
         
+        // Evento para fechar modal
         document.getElementById('btnFecharModal').onclick = () => modal.remove();
         
-        // Botão gerar novo link
-        document.getElementById('btnGerarLink').onclick = async () => {
-            // Gerar novo token
-            const novoTokene = crypto.randomUUID().replace(/-/g, '');
-            const { error: insertError } = await App.supabase
-                .from('calendario_tokens')
-                .insert({
-                    user_id: App.currentUser.id,
-                    token: novoTokene
-                });
+        // Evento para salvar configurações e gerar link
+        document.getElementById('btnSalvarConfig').onclick = async () => {
+            const syncEventos = document.getElementById('syncEventos').checked;
+            const syncTarefas = document.getElementById('syncTarefas').checked;
+            const syncContas = document.getElementById('syncContas').checked;
             
-            if (insertError) {
-                showToast('Erro ao gerar novo link', 'error');
-                return;
+            try {
+                showToast('Salvando configurações...', 'info');
+                
+                // Salvar no Supabase
+                const { error } = await App.supabase
+                    .from('configuracoes_sync')
+                    .upsert({
+                        user_id: App.currentUser.id,
+                        sincronizar_eventos: syncEventos,
+                        sincronizar_tarefas: syncTarefas,
+                        sincronizar_contas: syncContas,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
+                
+                if (error) throw error;
+                
+                // Atualizar cache local
+                App.dataCache.configuracoesSync = {
+                    sincronizar_eventos: syncEventos,
+                    sincronizar_tarefas: syncTarefas,
+                    sincronizar_contas: syncContas
+                };
+                
+                showToast('✅ Configurações salvas!', 'success');
+                
+            } catch (error) {
+                console.error('Erro ao salvar configurações:', error);
+                showToast('Erro: ' + error.message, 'error');
             }
-            
-            const novoUrl = `https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/ical-user/${novoTokene}.ics`;
-            document.getElementById('linkContainer').innerHTML = novoUrl;
-            
-            // Atualizar função de cópia
-            document.getElementById('btnCopiarLink').onclick = () => {
-                navigator.clipboard.writeText(novoUrl).then(() => {
-                    showToast('✅ Link copiado!', 'success');
-                });
-            };
-            
-            showToast('✅ Novo link gerado! O link antigo não funciona mais.', 'success');
         };
         
         // Função para abrir/fechar acordeão
@@ -7751,10 +7790,8 @@ async function gerarTokenCalendario() {
                 const conteudo = header.nextElementSibling;
                 const icon = header.querySelector('.fa-chevron-down');
                 if (conteudo.style.display === 'none' || !conteudo.style.display) {
-                    // Fechar todos primeiro
                     document.querySelectorAll('.calendario-conteudo').forEach(c => c.style.display = 'none');
                     document.querySelectorAll('.calendario-header .fa-chevron-down').forEach(i => i.style.transform = 'rotate(0deg)');
-                    // Abrir o clicado
                     conteudo.style.display = 'block';
                     icon.style.transform = 'rotate(180deg)';
                 } else {
