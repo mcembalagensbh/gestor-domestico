@@ -8224,6 +8224,13 @@ function abrirModalGoogleAgenda() {
                         <i class="fas fa-trash"></i> Desconectar
                     </button>
                 </div>
+                
+                <div class="btn-group" style="margin-top: 10px;">
+                    <button id="btnSincronizarGoogle" class="btn btn-success" style="flex: 2;">
+                        <i class="fas fa-sync-alt"></i> Sincronizar Agora
+                    </button>
+                </div>
+                
                 <div class="btn-group" style="margin-top: 10px;">
                     <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
                         Fechar
@@ -8240,6 +8247,7 @@ function abrirModalGoogleAgenda() {
         const statusEl = document.getElementById('googleStatus');
         const btnConectar = document.getElementById('btnConectarGoogle');
         const btnDesconectar = document.getElementById('btnDesconectarGoogle');
+        const btnSincronizar = document.getElementById('btnSincronizarGoogle');
         
         if (!statusEl) return;
         
@@ -8261,6 +8269,7 @@ function abrirModalGoogleAgenda() {
                     `;
                     btnConectar.style.display = 'none';
                     btnDesconectar.style.display = 'block';
+                    if (btnSincronizar) btnSincronizar.style.display = 'block';
                 } else {
                     statusEl.innerHTML = `
                         <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
@@ -8274,6 +8283,7 @@ function abrirModalGoogleAgenda() {
                     <strong>Não conectado</strong>
                     <div style="font-size: 11px; margin-top: 5px;">Conecte sua conta Google para sincronizar</div>
                 `;
+                if (btnSincronizar) btnSincronizar.style.display = 'none';
             }
         } catch (e) {
             statusEl.innerHTML = `
@@ -8281,62 +8291,77 @@ function abrirModalGoogleAgenda() {
                 <strong>Não conectado</strong>
                 <div style="font-size: 11px; margin-top: 5px;">Conecte sua conta Google para sincronizar</div>
             `;
+            if (btnSincronizar) btnSincronizar.style.display = 'none';
         }
     }, 100);
     
     // Evento para conectar
-    document.getElementById('btnConectarGoogle').onclick = async () => {
-        try {
-            showToast('Abrindo Google...', 'info');
-            
-            const { data: { session } } = await App.supabase.auth.getSession();
-            if (!session) {
-                showToast('Faça login novamente', 'error');
-                return;
-            }
-            
-            const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/google-calendar-auth', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
-                    'Content-Type': 'application/json'
+    const btnConectar = document.getElementById('btnConectarGoogle');
+    if (btnConectar) {
+        btnConectar.onclick = async () => {
+            try {
+                showToast('Abrindo Google...', 'info');
+                
+                const { data: { session } } = await App.supabase.auth.getSession();
+                if (!session) {
+                    showToast('Faça login novamente', 'error');
+                    return;
                 }
-            });
-            
-            const data = await response.json();
-            
-            if (data.url) {
-                window.open(data.url, '_blank', 'width=600,height=700');
-            } else {
-                showToast('Erro ao iniciar conexão', 'error');
+                
+                const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/google-calendar-auth', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.url) {
+                    window.open(data.url, '_blank', 'width=600,height=700');
+                } else {
+                    showToast('Erro ao iniciar conexão', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('Erro ao conectar com Google', 'error');
             }
-            
-        } catch (error) {
-            console.error('Erro:', error);
-            showToast('Erro ao conectar com Google', 'error');
-        }
-    };
+        };
+    }
     
     // Evento para desconectar
-    document.getElementById('btnDesconectarGoogle').onclick = async () => {
-        if (!confirm('Tem certeza que deseja desconectar sua conta Google? A sincronização será interrompida.')) return;
-        
-        try {
-            const { error } = await App.supabase
-                .from('google_tokens')
-                .delete()
-                .eq('user_id', App.currentUser.id);
+    const btnDesconectar = document.getElementById('btnDesconectarGoogle');
+    if (btnDesconectar) {
+        btnDesconectar.onclick = async () => {
+            if (!confirm('Tem certeza que deseja desconectar sua conta Google? A sincronização será interrompida.')) return;
             
-            if (error) throw error;
-            
-            showToast('✅ Conta Google desconectada!', 'success');
-            fecharModal();
-            
-        } catch (error) {
-            console.error('Erro:', error);
-            showToast('Erro ao desconectar', 'error');
-        }
-    };
+            try {
+                const { error } = await App.supabase
+                    .from('google_tokens')
+                    .delete()
+                    .eq('user_id', App.currentUser.id);
+                
+                if (error) throw error;
+                
+                showToast('✅ Conta Google desconectada!', 'success');
+                fecharModal();
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('Erro ao desconectar', 'error');
+            }
+        };
+    }
+    
+    // Evento para sincronizar
+    const btnSincronizar = document.getElementById('btnSincronizarGoogle');
+    if (btnSincronizar) {
+        btnSincronizar.onclick = () => {
+            sincronizarGoogle();
+        };
+    }
 }
 
 
@@ -8576,6 +8601,57 @@ async function gerarLinkCalendario() {
         showToast('Erro ao gerar link', 'error');
     }
 }
+
+
+// ============================================
+// SINCRONIZAR COM GOOGLE CALENDAR
+// ============================================
+
+async function sincronizarGoogle() {
+    if (!App.currentUser) {
+        showToast('Você precisa estar logado', 'warning');
+        return;
+    }
+    
+    try {
+        showToast('Sincronizando com Google Calendar...', 'info');
+        
+        const { data: { session } } = await App.supabase.auth.getSession();
+        if (!session) {
+            showToast('Faça login novamente', 'error');
+            return;
+        }
+        
+        const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/sincronizar-google', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            showToast(`✅ Sincronizado! ${data.eventos_enviados} eventos enviados para o Google Calendar`, 'success');
+            
+            // Perguntar se quer ver o calendário
+            setTimeout(() => {
+                if (confirm('Calendário sincronizado! Deseja abrir o Google Calendar?')) {
+                    window.open('https://calendar.google.com', '_blank');
+                }
+            }, 500);
+            
+        } else {
+            showToast('Erro: ' + (data.error || 'Erro desconhecido'), 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao sincronizar com Google', 'error');
+    }
+}
+
 
 
 
