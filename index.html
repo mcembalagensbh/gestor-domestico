@@ -8111,10 +8111,42 @@ async function renderizarCalendariosAssinados(content) {
 
 async function atualizarCalendarioAssinado(id) {
     showToast('Atualizando calendário...', 'info');
-    // TODO: Implementar atualização
-    setTimeout(() => {
-        showToast('Calendário atualizado!', 'success');
-    }, 1500);
+    
+    try {
+        const { data: { session } } = await App.supabase.auth.getSession();
+        if (!session) {
+            showToast('Faça login novamente', 'error');
+            return;
+        }
+        
+        const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/atualizar-calendario-assinado', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ calendario_id: id })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            showToast(`✅ ${data.mensagem}`, 'success');
+            // Recarregar dados
+            await carregarDados(true);
+            // Se o modal estiver aberto, recarregar a lista
+            const container = document.getElementById('listaCalendariosAssinados');
+            if (container) {
+                carregarListaCalendariosAssinados();
+            }
+        } else {
+            showToast('Erro: ' + (data.error || 'Erro desconhecido'), 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao atualizar calendário', 'error');
+    }
 }
 
 async function deletarCalendarioAssinado(id) {
