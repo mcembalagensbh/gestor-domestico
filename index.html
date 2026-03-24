@@ -2020,11 +2020,6 @@
     z-index: 10;
 }
 
-
-/* Transição suave para as setas dos submenus */
-.side-menu-item .fa-chevron-down {
-    transition: transform 0.3s ease;
-}
         
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -2111,119 +2106,100 @@
         </div>
     </div>
 
-    <div class="side-menu" id="sideMenu">
-    <div class="side-menu-header">
-        <div style="display: flex; flex-direction: column; width: 100%;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <i class="fas fa-home"></i> 
-                <span>My Life - HCDtec</span>
-            </div>
-            <!-- Email do usuário (discreto) -->
-            <div id="menuUserEmail" style="font-size: 11px; opacity: 0.7; margin-top: 4px; padding-left: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                carregando...
-            </div>
-            <!-- Versão Grátis (mais compacto) -->
-            <div id="menuHeaderPremiumLink" style="font-size: 11px; margin-top: 6px; padding-left: 32px; cursor: pointer; display: none;" onclick="abrirModalAssinatura(); fecharSideMenu()">
-                <span>Versão Grátis - Assine Premium</span>
-            </div>
-            <div id="menuHeaderPremiumAssinante" style="font-size: 11px; margin-top: 6px; padding-left: 32px; display: none;">
-                <span>Plano Premium Ativo</span>
-            </div>
+    <div id="mainContainer">
+        <div class="side-menu-overlay" id="sideMenuOverlay"></div>
+        <div class="side-menu" id="sideMenu">
+            <div class="side-menu-header">
+    <div style="display: flex; flex-direction: column; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-home"></i> 
+            <span>My Life - HCDtec</span>
+        </div>
+        <!-- Email do usuário (discreto) -->
+        <div id="menuUserEmail" style="font-size: 11px; opacity: 0.7; margin-top: 4px; padding-left: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            carregando...
+        </div>
+        <!-- Texto condicional para não assinantes -->
+        <div id="menuHeaderPremiumLink" style="font-size: 12px; margin-top: 8px; padding-left: 32px; cursor: pointer; display: none;" onclick="abrirModalAssinatura(); fecharSideMenu()">
+            <i class="fas fa-crown" style="font-size: 11px; margin-right: 4px; color: #ffc107;"></i>
+            <span style="color: #ffc107;">✨ Versão Grátis</span> - <strong style="color: #fff;">Clique e use Premium</strong>
+        </div>
+        <div id="menuHeaderPremiumAssinante" style="font-size: 12px; margin-top: 8px; padding-left: 32px; display: none;">
+            <i class="fas fa-check-circle" style="color: #28a745; margin-right: 4px;"></i>
+            <span style="color: #fff;">Plano Premium Ativo</span>
         </div>
     </div>
-    
-    <div class="side-menu-content">
-        <!-- Relatório -->
-        <div class="side-menu-item" onclick="abrirMenuRelatorio();fecharSideMenu()">
-            <i class="fas fa-file-alt"></i> Relatório
-        </div>
-        
-        <!-- CONFIGURAÇÕES (com submenu) -->
-        <div class="side-menu-item" onclick="toggleSubmenuConfiguracoes()">
-            <i class="fas fa-cog"></i> Configurações
-            <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
-        </div>
-        <div id="submenuConfiguracoes" style="display: none; padding-left: 35px;">
-            <div class="side-menu-item" onclick="abrirNotificacoes();fecharSideMenu()">
-                <i class="fas fa-bell"></i> Notificações
-            </div>
-            <div class="side-menu-item" onclick="abrirMenuSeguranca();fecharSideMenu()">
-                <i class="fas fa-lock"></i> Segurança
-            </div>
-            <div class="side-menu-item" onclick="abrirUsuariosFamilia();fecharSideMenu()">
-                <i class="fas fa-users"></i> Usuários da Família
-            </div>
-        </div>
-        
-        <!-- AJUDA (com submenu) -->
-        <div class="side-menu-item" onclick="toggleSubmenuAjuda()">
-            <i class="fas fa-question-circle"></i> Ajuda
-            <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
-        </div>
-        <div id="submenuAjuda" style="display: none; padding-left: 35px;">
-            <div class="side-menu-item" onclick="enviarMensagemSuporte();fecharSideMenu()">
-                <i class="fas fa-envelope"></i> Enviar Mensagem
-            </div>
-            <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()">
-                <i class="fas fa-book"></i> Manual Rápido
-            </div>
-            <div class="side-menu-item" onclick="abrirModalIphone();fecharSideMenu()">
-                <i class="fab fa-apple"></i> Quer usar no Iphone?
-            </div>
-        </div>
-        
-        <!-- POLÍTICAS E TERMOS (com submenu) -->
-        <div class="side-menu-item" onclick="toggleSubmenuPoliticas()">
-            <i class="fas fa-file-contract"></i> Políticas e Termos
-            <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
-        </div>
-        <div id="submenuPoliticas" style="display: none; padding-left: 35px;">
-            <div class="side-menu-item" onclick="abrirPoliticasPrivacidade();fecharSideMenu()">
-                <i class="fas fa-shield-alt"></i> Política de Privacidade
-            </div>
-            <div class="side-menu-item" onclick="abrirTermosUso();fecharSideMenu()">
-                <i class="fas fa-file-alt"></i> Termos de Uso
-            </div>
-        </div>
-        
-        <!-- Premium -->
-        <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()">
-            <i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span>
-        </div>
-        
-        <!-- Sync Calendários com submenu -->
-        <div class="side-menu-item" onclick="toggleSubmenuCalendarios()">
-            <i class="fas fa-calendar-alt"></i> Sync Calendários
-            <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
-        </div>
-        <div id="submenuCalendarios" style="display: none; padding-left: 35px;">
-            <div class="side-menu-item" onclick="abrirModalGoogleAgenda();fecharSideMenu()">
-                <i class="fab fa-google"></i> Google Agenda
-            </div>
-            <div class="side-menu-item" onclick="abrirModalOutlookAgenda();fecharSideMenu()">
-                <i class="fab fa-microsoft"></i> Outlook Agenda
-            </div>
-            <div class="side-menu-item" onclick="abrirModalAssinarCalendario();fecharSideMenu()">
-                <i class="fas fa-rss"></i> Assinar Calendário
-            </div>
-            <div class="side-menu-item" onclick="abrirModalImportarICS();fecharSideMenu()">
-                <i class="fas fa-file-import"></i> Importar .ics
-            </div>
-        </div>
+</div>
+            <div class="side-menu-content">
+    <div class="side-menu-item" onclick="abrirMenuRelatorio();fecharSideMenu()"><i class="fas fa-file-alt"></i> Relatório</div>
+    <div class="side-menu-item" onclick="abrirNotificacoes();fecharSideMenu()"><i class="fas fa-bell"></i> Notificações</div>
+    <div class="side-menu-item" onclick="abrirMenuSeguranca();fecharSideMenu()"><i class="fas fa-lock"></i> Segurança</div>
+    <!-- REMOVER OU COMENTAR ESTA LINHA -->
+<!-- <div class="side-menu-item" onclick="abrirUltimasAcoes();fecharSideMenu()"><i class="fas fa-history"></i> Últimas Ações</div> -->
+    <div class="side-menu-item" onclick="abrirPoliticasTermos();fecharSideMenu()"><i class="fas fa-file-contract"></i> Políticas e Termos</div>
+    <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()"><i class="fas fa-book"></i> Manual Rápido</div>
+    <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()"><i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span></div>
+    <!-- Sync Calendários com submenu -->
+<div class="side-menu-item" onclick="toggleSubmenuCalendarios()">
+    <i class="fas fa-calendar-alt"></i> Sync Calendários
+    <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
+</div>
+<div id="submenuCalendarios" style="display: none; padding-left: 35px;">
+    <div class="side-menu-item" onclick="abrirModalGoogleAgenda();fecharSideMenu()">
+        <i class="fab fa-google"></i> Google Agenda
+    </div>
+    <div class="side-menu-item" onclick="abrirModalOutlookAgenda();fecharSideMenu()">
+        <i class="fab fa-microsoft"></i> Outlook Agenda
+    </div>
+    <div class="side-menu-item" onclick="abrirModalAssinarCalendario();fecharSideMenu()">
+        <i class="fas fa-rss"></i> Assinar Calendário
+    </div>
+    <div class="side-menu-item" onclick="abrirModalImportarICS();fecharSideMenu()">
+        <i class="fas fa-file-import"></i> Importar .ics
+    </div>
+</div>
+    <!-- 🔴 NOVO ITEM: QUER USAR NO IPHONE? -->
+    <div class="side-menu-item" onclick="abrirModalIphone();fecharSideMenu()">
+        <i class="fab fa-apple"></i> Quer usar no Iphone?
     </div>
     
-    <div class="side-menu-footer">
-        <!-- BOTÕES DE PARCEIROS (FUNDO BRANCO) -->
-        <div class="banner-carrossel" id="bannerCarrossel" style="height: auto; background: transparent; box-shadow: none; padding: 0;">
-            <!-- Botão 1 - Mundo Carol -->
-            <div class="banner-item-fixo" onclick="window.open('https://www.mundocarol.com.br', '_blank')" style="width: 100%; margin-bottom: 8px;">
-                <img src="https://cdn.awsli.com.br/1608/1608652/logo/logo-mundo-carol-cestas-e-kits-r8fnd70cew.png" alt="Mundo Carol">
-            </div>
-            
-            <!-- Botão 2 - MC Embalagens -->
-            <div class="banner-item-fixo" onclick="window.open('https://www.mcembalagens.com.br', '_blank')" style="width: 100%; margin-bottom: 8px;">
-                <img src="https://cdn.awsli.com.br/1819/1819304/logo/mc-logo-sem-fundo-r6kzmi7q1q.png" alt="MC Embalagens">
-            </div>
+    <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'"><i class="fas fa-question-circle"></i> Ajuda</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    <div class="side-menu-footer">
+    <!-- BOTÕES DE PARCEIROS (FUNDO BRANCO) -->
+    <div class="banner-carrossel" id="bannerCarrossel" style="height: auto; background: transparent; box-shadow: none; padding: 0;">
+        <!-- Botão 1 - Mundo Carol -->
+        <div class="banner-item-fixo" onclick="window.open('https://www.mundocarol.com.br', '_blank')" style="width: 100%; margin-bottom: 8px;">
+            <img src="https://cdn.awsli.com.br/1608/1608652/logo/logo-mundo-carol-cestas-e-kits-r8fnd70cew.png" alt="Mundo Carol">
+        </div>
+        
+        <!-- Botão 2 - MC Embalagens -->
+        <div class="banner-item-fixo" onclick="window.open('https://www.mcembalagens.com.br', '_blank')" style="width: 100%; margin-bottom: 8px;">
+            <img src="https://cdn.awsli.com.br/1819/1819304/logo/mc-logo-sem-fundo-r6kzmi7q1q.png" alt="MC Embalagens">
+        </div>
+        
+       
         </div>
     </div>
     
@@ -8208,6 +8184,24 @@ async function deletarCalendarioAssinado(id) {
 
 
 
+// ============================================
+// SUBMENU SYNC CALENDÁRIOS
+// ============================================
+
+function toggleSubmenuCalendarios() {
+    const submenu = document.getElementById('submenuCalendarios');
+    const icon = document.querySelector('.side-menu-item .fa-chevron-down');
+    
+    if (submenu.style.display === 'none' || !submenu.style.display) {
+        submenu.style.display = 'block';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+        submenu.style.display = 'none';
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+
 
 
 // ============================================
@@ -9866,12 +9860,46 @@ function abrirModalAssinaturaBloqueio() {
 }
 
         function abrirMenuSeguranca() {
+    let usuarios = App.dataCache.usuariosFamilia || [];
+    
+    let listaUsuariosHtml = '';
+    if (usuarios.length > 0) {
+        listaUsuariosHtml = `
+            <div style="max-height: 300px; overflow-y: auto;">
+                ${usuarios.map(u => `
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${u.apelido}</strong>
+                            <div style="font-size: 12px; color: var(--gray);">${u.nome}</div>
+                            <div style="font-size: 11px; color: var(--gray);">📱 ${formatarTelefone(u.telefone)}</div>
+                            <div style="font-size: 10px; color: var(--gray);">🔑 Código: ${u.codigo_acesso}</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm" onclick="editarUsuarioFamilia(${u.id})" style="background: var(--purple); color: #fff; padding: 4px 8px;">Editar</button>
+                            <button class="btn btn-sm" onclick="deletarUsuarioFamilia(${u.id})" style="background: var(--danger); color: #fff; padding: 4px 8px; margin-left: 4px;">Excluir</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else {
+        listaUsuariosHtml = '<p style="text-align: center; color: var(--gray);">Nenhum usuário cadastrado</p>';
+    }
+    
     let conteudo = `
         <div style="padding: 0;">
-            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
-                <h3 style="margin: 0; color: #fff;"><i class="fas fa-lock"></i> Alterar Senha de Acesso</h3>
+            <!-- ABAS -->
+            <div style="display: flex; border-bottom: 1px solid #eee; background: #fff;">
+                <div id="abaSenha" class="aba-ativa-seg" style="flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--purple); border-bottom: 2px solid var(--purple);">
+                    <i class="fas fa-lock"></i> Senha de Acesso
+                </div>
+                <div id="abaUsuarios" style="flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--gray);">
+                    <i class="fas fa-users"></i> Usuários (${usuarios.length})
+                </div>
             </div>
-            <div style="padding: 16px;">
+            
+            <!-- CONTEÚDO ABA SENHA -->
+            <div id="conteudoSenha" style="padding: 16px;">
                 <div class="form-group">
                     <label class="form-label">Senha Atual (acesso)</label>
                     <input type="password" id="senhaAtualAcesso" class="form-input" placeholder="Digite a senha atual" maxlength="6" inputmode="numeric">
@@ -9888,13 +9916,54 @@ function abrirModalAssinaturaBloqueio() {
                     <button class="btn btn-primary" onclick="alterarSenhas()"><i class="fas fa-save"></i> Salvar Alterações</button>
                 </div>
             </div>
-            <div style="padding: 16px; border-top: 1px solid #eee;">
-                <button class="btn" onclick="fecharModal()" style="background: var(--gray); color: #fff; width: 100%;">Fechar</button>
+            
+            <!-- CONTEÚDO ABA USUÁRIOS -->
+            <div id="conteudoUsuarios" style="padding: 16px; display: none;">
+                <h4 style="margin: 0 0 12px 0;"><i class="fas fa-users"></i> Membros da Família</h4>
+                ${listaUsuariosHtml}
+                <div style="margin-top: 16px;">
+                    <button class="btn btn-primary" onclick="abrirCadastroUsuarioRapido()" style="width: 100%;">
+                        <i class="fas fa-plus"></i> Adicionar Novo Usuário
+                    </button>
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: #e8f4fd; border-radius: 8px;">
+                    <small><i class="fas fa-info-circle"></i> Cada usuário terá um código de acesso único. Use o código para identificar quem está usando o app em cada dispositivo.</small>
+                </div>
+            </div>
+            
+            <div class="btn-group" style="padding: 16px; border-top: 1px solid #eee;">
+                <button class="btn" onclick="fecharModal()" style="background: var(--gray); color: #fff;">Fechar</button>
             </div>
         </div>
+        
+        <style>
+            .aba-ativa-seg { color: var(--purple) !important; border-bottom: 2px solid var(--purple) !important; }
+        </style>
     `;
     
     abrirModal('Segurança', 'fa-lock', conteudo);
+    
+    setTimeout(() => {
+        const abaSenha = document.getElementById('abaSenha');
+        const abaUsuarios = document.getElementById('abaUsuarios');
+        const conteudoSenha = document.getElementById('conteudoSenha');
+        const conteudoUsuarios = document.getElementById('conteudoUsuarios');
+        
+        if (abaSenha && abaUsuarios) {
+            abaSenha.onclick = () => {
+                abaSenha.classList.add('aba-ativa-seg');
+                abaUsuarios.classList.remove('aba-ativa-seg');
+                conteudoSenha.style.display = 'block';
+                conteudoUsuarios.style.display = 'none';
+            };
+            abaUsuarios.onclick = () => {
+                abaUsuarios.classList.add('aba-ativa-seg');
+                abaSenha.classList.remove('aba-ativa-seg');
+                conteudoSenha.style.display = 'none';
+                conteudoUsuarios.style.display = 'block';
+            };
+        }
+    }, 100);
 }
 
         function alterarSenhas() {
@@ -13232,364 +13301,6 @@ function irParaGiros() {
     mostrarConteudo();
 }
 
-
-// ============================================
-// FUNÇÕES PARA OS NOVOS SUBMENUS
-// ============================================
-
-// Toggle do submenu Configurações
-function toggleSubmenuConfiguracoes() {
-    const submenu = document.getElementById('submenuConfiguracoes');
-    const icon = document.querySelector('.side-menu-item:has(i.fa-cog) .fa-chevron-down');
-    
-    if (!submenu) return;
-    
-    if (submenu.style.display === 'none' || !submenu.style.display) {
-        submenu.style.display = 'block';
-        if (icon) icon.style.transform = 'rotate(180deg)';
-    } else {
-        submenu.style.display = 'none';
-        if (icon) icon.style.transform = 'rotate(0deg)';
-    }
-}
-
-// Toggle do submenu Ajuda
-function toggleSubmenuAjuda() {
-    const submenu = document.getElementById('submenuAjuda');
-    const icon = document.querySelector('.side-menu-item:has(i.fa-question-circle) .fa-chevron-down');
-    
-    if (!submenu) return;
-    
-    if (submenu.style.display === 'none' || !submenu.style.display) {
-        submenu.style.display = 'block';
-        if (icon) icon.style.transform = 'rotate(180deg)';
-    } else {
-        submenu.style.display = 'none';
-        if (icon) icon.style.transform = 'rotate(0deg)';
-    }
-}
-
-// Toggle do submenu Políticas e Termos
-function toggleSubmenuPoliticas() {
-    const submenu = document.getElementById('submenuPoliticas');
-    const icon = document.querySelector('.side-menu-item:has(i.fa-file-contract) .fa-chevron-down');
-    
-    if (!submenu) return;
-    
-    if (submenu.style.display === 'none' || !submenu.style.display) {
-        submenu.style.display = 'block';
-        if (icon) icon.style.transform = 'rotate(180deg)';
-    } else {
-        submenu.style.display = 'none';
-        if (icon) icon.style.transform = 'rotate(0deg)';
-    }
-}
-
-// Toggle do submenu Sync Calendários (se ainda não tiver)
-function toggleSubmenuCalendarios() {
-    const submenu = document.getElementById('submenuCalendarios');
-    const icon = document.querySelector('.side-menu-item:has(i.fa-calendar-alt) .fa-chevron-down');
-    
-    if (!submenu) return;
-    
-    if (submenu.style.display === 'none' || !submenu.style.display) {
-        submenu.style.display = 'block';
-        if (icon) icon.style.transform = 'rotate(180deg)';
-    } else {
-        submenu.style.display = 'none';
-        if (icon) icon.style.transform = 'rotate(0deg)';
-    }
-}
-
-
-
-// Função auxiliar para fechar todos os submenus
-function fecharTodosSubmenus() {
-    const submenus = [
-        'submenuConfiguracoes',
-        'submenuAjuda', 
-        'submenuPoliticas',
-        'submenuCalendarios'
-    ];
-    
-    const icons = [
-        '.side-menu-item:has(i.fa-cog) .fa-chevron-down',
-        '.side-menu-item:has(i.fa-question-circle) .fa-chevron-down',
-        '.side-menu-item:has(i.fa-file-contract) .fa-chevron-down',
-        '.side-menu-item:has(i.fa-calendar-alt) .fa-chevron-down'
-    ];
-    
-    submenus.forEach((id, index) => {
-        const sub = document.getElementById(id);
-        if (sub) {
-            sub.style.display = 'none';
-        }
-    });
-    
-    icons.forEach(selector => {
-        const icon = document.querySelector(selector);
-        if (icon) {
-            icon.style.transform = 'rotate(0deg)';
-        }
-    });
-}
-
-// Nova função para enviar mensagem de suporte (substitui o antigo botão Ajuda)
-function enviarMensagemSuporte() {
-    window.location.href = 'mailto:hcdtec.mylife@gmail.com';
-}
-
-// Abrir modal de usuários da família (separado da segurança)
-function abrirUsuariosFamilia() {
-    let usuarios = App.dataCache.usuariosFamilia || [];
-    
-    let listaUsuariosHtml = '';
-    if (usuarios.length > 0) {
-        listaUsuariosHtml = `
-            <div style="max-height: 400px; overflow-y: auto;">
-                ${usuarios.map(u => `
-                    <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>${u.apelido}</strong>
-                            <div style="font-size: 12px; color: var(--gray);">${u.nome}</div>
-                            <div style="font-size: 11px; color: var(--gray);">📱 ${formatarTelefone(u.telefone)}</div>
-                            <div style="font-size: 10px; color: var(--gray);">🔑 Código: ${u.codigo_acesso}</div>
-                        </div>
-                        <div>
-                            <button class="btn btn-sm" onclick="editarUsuarioFamilia(${u.id})" style="background: var(--purple); color: #fff; padding: 4px 8px;">Editar</button>
-                            <button class="btn btn-sm" onclick="deletarUsuarioFamilia(${u.id})" style="background: var(--danger); color: #fff; padding: 4px 8px; margin-left: 4px;">Excluir</button>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    } else {
-        listaUsuariosHtml = '<p style="text-align: center; color: var(--gray);">Nenhum usuário cadastrado</p>';
-    }
-    
-    let conteudo = `
-        <div style="padding: 0;">
-            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
-                <h3 style="margin: 0; color: #fff;"><i class="fas fa-users"></i> Membros da Família</h3>
-            </div>
-            <div style="padding: 16px;">
-                ${listaUsuariosHtml}
-                <div style="margin-top: 16px;">
-                    <button class="btn btn-primary" onclick="abrirCadastroUsuarioRapido()" style="width: 100%;">
-                        <i class="fas fa-plus"></i> Adicionar Novo Usuário
-                    </button>
-                </div>
-                <div style="margin-top: 12px; padding: 12px; background: #e8f4fd; border-radius: 8px;">
-                    <small><i class="fas fa-info-circle"></i> Cada usuário terá um código de acesso único. Use o código para identificar quem está usando o app em cada dispositivo.</small>
-                </div>
-            </div>
-            <div style="padding: 16px; border-top: 1px solid #eee;">
-                <button class="btn" onclick="fecharModal()" style="background: var(--gray); color: #fff; width: 100%;">Fechar</button>
-            </div>
-        </div>
-    `;
-    
-    abrirModal('Usuários da Família', 'fa-users', conteudo);
-}
-
-// Abrir modal de Política de Privacidade (substitui a antiga abrirPoliticasTermos)
-function abrirPoliticasPrivacidade() {
-    let conteudo = `
-        <iframe src="https://mcembalagensbh.github.io/mylife/politicas.html#privacidade" 
-                style="width:100%; height:60vh; border:none;"></iframe>
-        <div style="text-align:center; margin-top:16px">
-            <button class="btn btn-primary" onclick="fecharModal()">Fechar</button>
-        </div>
-    `;
-    abrirModal('Política de Privacidade', 'fa-shield-alt', conteudo);
-}
-
-// Abrir modal de Termos de Uso
-function abrirTermosUso() {
-    let conteudo = `
-        <iframe src="https://mcembalagensbh.github.io/mylife/politicas.html#termos" 
-                style="width:100%; height:60vh; border:none;"></iframe>
-        <div style="text-align:center; margin-top:16px">
-            <button class="btn btn-primary" onclick="fecharModal()">Fechar</button>
-        </div>
-    `;
-    abrirModal('Termos de Uso', 'fa-file-alt', conteudo);
-}
-
-// Remover ou modificar a antiga função abrirPoliticasTermos para não conflitar
-// Se quiser manter compatibilidade, pode deixar a antiga, mas vamos sobrescrever
-window.abrirPoliticasTermos = function() {
-    // Agora abre o submenu, ou se quiser manter, pode abrir um modal com as opções
-    // Mas como já temos submenu, podemos apenas mostrar uma mensagem
-    showToast('Escolha a opção no submenu Políticas e Termos', 'info');
-};
-
-
-
-// ============================================
-// FUNÇÕES PARA OS NOVOS SUBMENUS
-// ============================================
-
-// Toggle do submenu Configurações
-function toggleSubmenuConfiguracoes() {
-    const submenu = document.getElementById('submenuConfiguracoes');
-    const icon = document.querySelector('.side-menu-item:has(i.fa-cog) .fa-chevron-down');
-    
-    if (!submenu) return;
-    
-    if (submenu.style.display === 'none' || !submenu.style.display) {
-        submenu.style.display = 'block';
-        if (icon) icon.style.transform = 'rotate(180deg)';
-    } else {
-        submenu.style.display = 'none';
-        if (icon) icon.style.transform = 'rotate(0deg)';
-    }
-}
-
-// Toggle do submenu Ajuda
-function toggleSubmenuAjuda() {
-    const submenu = document.getElementById('submenuAjuda');
-    const icon = document.querySelector('.side-menu-item:has(i.fa-question-circle) .fa-chevron-down');
-    
-    if (!submenu) return;
-    
-    if (submenu.style.display === 'none' || !submenu.style.display) {
-        submenu.style.display = 'block';
-        if (icon) icon.style.transform = 'rotate(180deg)';
-    } else {
-        submenu.style.display = 'none';
-        if (icon) icon.style.transform = 'rotate(0deg)';
-    }
-}
-
-// Toggle do submenu Políticas e Termos
-function toggleSubmenuPoliticas() {
-    const submenu = document.getElementById('submenuPoliticas');
-    const icon = document.querySelector('.side-menu-item:has(i.fa-file-contract) .fa-chevron-down');
-    
-    if (!submenu) return;
-    
-    if (submenu.style.display === 'none' || !submenu.style.display) {
-        submenu.style.display = 'block';
-        if (icon) icon.style.transform = 'rotate(180deg)';
-    } else {
-        submenu.style.display = 'none';
-        if (icon) icon.style.transform = 'rotate(0deg)';
-    }
-}
-
-// Função para enviar mensagem de suporte
-function enviarMensagemSuporte() {
-    window.location.href = 'mailto:hcdtec.mylife@gmail.com';
-}
-
-// Função para abrir usuários da família (separado da segurança)
-function abrirUsuariosFamilia() {
-    let usuarios = App.dataCache.usuariosFamilia || [];
-    
-    let listaUsuariosHtml = '';
-    if (usuarios.length > 0) {
-        listaUsuariosHtml = `
-            <div style="max-height: 400px; overflow-y: auto;">
-                ${usuarios.map(u => `
-                    <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>${u.apelido}</strong>
-                            <div style="font-size: 12px; color: var(--gray);">${u.nome}</div>
-                            <div style="font-size: 11px; color: var(--gray);">📱 ${formatarTelefone(u.telefone)}</div>
-                            <div style="font-size: 10px; color: var(--gray);">🔑 Código: ${u.codigo_acesso}</div>
-                        </div>
-                        <div>
-                            <button class="btn btn-sm" onclick="editarUsuarioFamilia(${u.id})" style="background: var(--purple); color: #fff; padding: 4px 8px;">Editar</button>
-                            <button class="btn btn-sm" onclick="deletarUsuarioFamilia(${u.id})" style="background: var(--danger); color: #fff; padding: 4px 8px; margin-left: 4px;">Excluir</button>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    } else {
-        listaUsuariosHtml = '<p style="text-align: center; color: var(--gray);">Nenhum usuário cadastrado</p>';
-    }
-    
-    let conteudo = `
-        <div style="padding: 0;">
-            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
-                <h3 style="margin: 0; color: #fff;"><i class="fas fa-users"></i> Membros da Família</h3>
-            </div>
-            <div style="padding: 16px;">
-                ${listaUsuariosHtml}
-                <div style="margin-top: 16px;">
-                    <button class="btn btn-primary" onclick="abrirCadastroUsuarioRapido()" style="width: 100%;">
-                        <i class="fas fa-plus"></i> Adicionar Novo Usuário
-                    </button>
-                </div>
-                <div style="margin-top: 12px; padding: 12px; background: #e8f4fd; border-radius: 8px;">
-                    <small><i class="fas fa-info-circle"></i> Cada usuário terá um código de acesso único. Use o código para identificar quem está usando o app em cada dispositivo.</small>
-                </div>
-            </div>
-            <div style="padding: 16px; border-top: 1px solid #eee;">
-                <button class="btn" onclick="fecharModal()" style="background: var(--gray); color: #fff; width: 100%;">Fechar</button>
-            </div>
-        </div>
-    `;
-    
-    abrirModal('Usuários da Família', 'fa-users', conteudo);
-}
-
-// Função para abrir Política de Privacidade
-function abrirPoliticasPrivacidade() {
-    let conteudo = `
-        <iframe src="https://mcembalagensbh.github.io/mylife/politicas.html#privacidade" 
-                style="width:100%; height:60vh; border:none;"></iframe>
-        <div style="text-align:center; margin-top:16px">
-            <button class="btn btn-primary" onclick="fecharModal()">Fechar</button>
-        </div>
-    `;
-    abrirModal('Política de Privacidade', 'fa-shield-alt', conteudo);
-}
-
-// Função para abrir Termos de Uso
-function abrirTermosUso() {
-    let conteudo = `
-        <iframe src="https://mcembalagensbh.github.io/mylife/politicas.html#termos" 
-                style="width:100%; height:60vh; border:none;"></iframe>
-        <div style="text-align:center; margin-top:16px">
-            <button class="btn btn-primary" onclick="fecharModal()">Fechar</button>
-        </div>
-    `;
-    abrirModal('Termos de Uso', 'fa-file-alt', conteudo);
-}
-
-// Sobrescrever a antiga função abrirPoliticasTermos para não conflitar
-window.abrirPoliticasTermos = function() {
-    showToast('Escolha a opção no submenu Políticas e Termos', 'info');
-};
-
-
-// ============================================
-// TORNAR FUNÇÕES GLOBAIS PARA USO NO ONCLICK
-// ============================================
-
-window.toggleSubmenuConfiguracoes = toggleSubmenuConfiguracoes;
-window.toggleSubmenuAjuda = toggleSubmenuAjuda;
-window.toggleSubmenuPoliticas = toggleSubmenuPoliticas;
-window.enviarMensagemSuporte = enviarMensagemSuporte;
-window.abrirUsuariosFamilia = abrirUsuariosFamilia;
-window.abrirPoliticasPrivacidade = abrirPoliticasPrivacidade;
-window.abrirTermosUso = abrirTermosUso;
-window.abrirMenuSeguranca = abrirMenuSeguranca;
-window.abrirNotificacoes = abrirNotificacoes;
-window.abrirManualRapido = abrirManualRapido;
-window.abrirModalIphone = abrirModalIphone;
-window.abrirModalAssinatura = abrirModalAssinatura;
-window.abrirMenuRelatorio = abrirMenuRelatorio;
-window.toggleSubmenuCalendarios = toggleSubmenuCalendarios;
-window.abrirModalGoogleAgenda = abrirModalGoogleAgenda;
-window.abrirModalOutlookAgenda = abrirModalOutlookAgenda;
-window.abrirModalAssinarCalendario = abrirModalAssinarCalendario;
-window.abrirModalImportarICS = abrirModalImportarICS;
-window.fecharSideMenu = fecharSideMenu;
-window.fecharTodosSubmenus = fecharTodosSubmenus;
 
 </script>
 
