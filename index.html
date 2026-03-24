@@ -8215,82 +8215,180 @@ function abrirModalGoogleAgenda() {
         sincronizar_contas: true
     };
     
+    // Opções de cores (nomes e códigos)
+    const cores = [
+        { nome: 'Roxo', codigo: '#9b59b6' },
+        { nome: 'Azul', codigo: '#3498db' },
+        { nome: 'Verde', codigo: '#2ecc71' },
+        { nome: 'Amarelo', codigo: '#f1c40f' },
+        { nome: 'Laranja', codigo: '#e67e22' },
+        { nome: 'Vermelho', codigo: '#e74c3c' },
+        { nome: 'Rosa', codigo: '#e84393' },
+        { nome: 'Cinza', codigo: '#95a5a6' }
+    ];
+    
+    // Opções de ícones
+    const icones = [
+        { nome: 'Estrela', classe: 'fa-star' },
+        { nome: 'Coração', classe: 'fa-heart' },
+        { nome: 'Calendário', classe: 'fa-calendar-alt' },
+        { nome: 'Tarefa', classe: 'fa-check-circle' },
+        { nome: 'Conta', classe: 'fa-file-invoice-dollar' },
+        { nome: 'Lembrete', classe: 'fa-bell' },
+        { nome: 'Alerta', classe: 'fa-exclamation-triangle' },
+        { nome: 'Meta', classe: 'fa-flag-checkered' }
+    ];
+    
+    // Função para gerar HTML de seleção de cores e ícones
+    function gerarOpcoes(tipo, titulo, iconePadrao, corPadrao) {
+        return `
+            <div style="margin-bottom: 20px; border: 1px solid #e9ecef; border-radius: 12px; padding: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i class="fas ${iconePadrao}" style="color: ${corPadrao};"></i>
+                    <strong style="font-size: 14px;">${titulo}</strong>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 12px; color: var(--gray); margin-bottom: 6px;">Cor no Google Calendar:</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        ${cores.map(c => `
+                            <div onclick="selecionarCor('${tipo}', '${c.codigo}')" 
+                                 style="width: 32px; height: 32px; background: ${c.codigo}; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" 
+                                 title="${c.nome}"></div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: var(--gray); margin-bottom: 6px;">Ícone no título:</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        ${icones.map(i => `
+                            <div onclick="selecionarIcone('${tipo}', '${i.classe}')" 
+                                 style="width: 36px; height: 36px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #ddd;" 
+                                 title="${i.nome}">
+                                <i class="fas ${i.classe}" style="font-size: 18px;"></i>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <input type="hidden" id="${tipo}_cor" value="${corPadrao}">
+                <input type="hidden" id="${tipo}_icone" value="${iconePadrao}">
+            </div>
+        `;
+    }
+    
     let conteudo = `
         <div style="padding: 0;">
-            <!-- CABEÇALHO -->
-            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; text-align: center;">
-                <div style="background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
-                    <i class="fab fa-google" style="font-size: 28px; color: #fff;"></i>
+            <!-- CABEÇALHO COMPACTO -->
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 12px 16px; text-align: center;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fab fa-google" style="color: #fff; font-size: 18px;"></i>
+                    <h3 style="margin: 0; color: #fff; font-size: 1.1rem;">Google Agenda</h3>
                 </div>
-                <h3 style="margin: 0; color: #fff; font-size: 1.3rem;">Google Agenda</h3>
-                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">Sincronize seus dados com o Google Calendar</p>
+                <p style="margin: 4px 0 0 0; font-size: 11px; opacity: 0.8;">Sincronize com seu calendário</p>
             </div>
             
-            <div style="padding: 20px;">
+            <div style="padding: 16px;">
                 <!-- STATUS DA CONEXÃO -->
-                <div id="googleStatus" style="margin-bottom: 20px; padding: 12px; background: #f8f9fa; border-radius: 10px; text-align: center; font-size: 14px;">
+                <div id="googleStatus" style="margin-bottom: 16px; padding: 10px; background: #f8f9fa; border-radius: 8px; text-align: center; font-size: 13px;">
                     <i class="fas fa-spinner fa-spin"></i> Verificando conexão...
                 </div>
                 
-                <!-- OPÇÕES DE SINCRONIZAÇÃO -->
-                <div style="margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 12px 0; font-size: 14px; color: var(--dark);">
+                <!-- O QUE SINCRONIZAR -->
+                <div style="margin-bottom: 16px; background: #f8f9fa; border-radius: 8px; padding: 12px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">
                         <i class="fas fa-sliders-h"></i> O que sincronizar:
                     </h4>
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
-                            <input type="checkbox" id="syncEventosGoogle" ${configAtual.sincronizar_eventos ? 'checked' : ''} style="width: 18px; height: 18px;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600;">📅 Eventos</div>
-                                <div style="font-size: 11px; color: var(--gray);">Compromissos, aniversários, reuniões</div>
-                            </div>
-                            <div style="width: 12px; height: 12px; background: #9b59b6; border-radius: 50%;"></div>
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" id="syncEventosGoogle" ${configAtual.sincronizar_eventos ? 'checked' : ''}>
+                            <span><i class="fas fa-calendar-alt" style="color: #9b59b6;"></i> Eventos</span>
                         </label>
-                        
-                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
-                            <input type="checkbox" id="syncTarefasGoogle" ${configAtual.sincronizar_tarefas ? 'checked' : ''} style="width: 18px; height: 18px;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600;">✅ Tarefas</div>
-                                <div style="font-size: 11px; color: var(--gray);">Tarefas com data limite</div>
-                            </div>
-                            <div style="width: 12px; height: 12px; background: #f39c12; border-radius: 50%;"></div>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" id="syncTarefasGoogle" ${configAtual.sincronizar_tarefas ? 'checked' : ''}>
+                            <span><i class="fas fa-tasks" style="color: #f39c12;"></i> Tarefas</span>
                         </label>
-                        
-                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
-                            <input type="checkbox" id="syncContasGoogle" ${configAtual.sincronizar_contas ? 'checked' : ''} style="width: 18px; height: 18px;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600;">💰 Contas</div>
-                                <div style="font-size: 11px; color: var(--gray);">Contas a pagar (vencimentos)</div>
-                            </div>
-                            <div style="width: 12px; height: 12px; background: #e74c3c; border-radius: 50%;"></div>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="checkbox" id="syncContasGoogle" ${configAtual.sincronizar_contas ? 'checked' : ''}>
+                            <span><i class="fas fa-file-invoice-dollar" style="color: #e74c3c;"></i> Contas</span>
                         </label>
                     </div>
                 </div>
                 
+                <!-- PERSONALIZAÇÃO DE CORES E ÍCONES -->
+                <div style="margin-bottom: 16px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">
+                        <i class="fas fa-palette"></i> Personalizar aparência no Google:
+                    </h4>
+                    <div style="font-size: 11px; color: var(--gray); margin-bottom: 12px;">
+                        Escolha a cor e o ícone para cada tipo de item
+                    </div>
+                    ${gerarOpcoes('evento', 'Eventos', 'fa-calendar-alt', '#9b59b6')}
+                    ${gerarOpcoes('tarefa', 'Tarefas', 'fa-check-circle', '#f39c12')}
+                    ${gerarOpcoes('conta', 'Contas', 'fa-file-invoice-dollar', '#e74c3c')}
+                </div>
+                
                 <!-- BOTÕES -->
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button id="btnConectarGoogle" class="btn btn-primary" style="width: 100%; padding: 12px; background: #4285f4; border-radius: 30px;">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button id="btnConectarGoogle" class="btn" style="width: 100%; padding: 10px; background: #4285f4; color: #fff; border-radius: 25px;">
                         <i class="fab fa-google"></i> Conectar com Google
                     </button>
-                    <button id="btnSincronizarGoogle" class="btn" style="width: 100%; padding: 12px; background: var(--purple); color: #fff; border-radius: 30px;">
+                    <button id="btnSincronizarGoogle" class="btn" style="width: 100%; padding: 10px; background: var(--purple); color: #fff; border-radius: 25px;">
                         <i class="fas fa-sync-alt"></i> Sincronizar Agora
                     </button>
-                    <button id="btnDesconectarGoogle" class="btn" style="width: 100%; padding: 12px; background: #dc3545; color: #fff; border-radius: 30px; display: none;">
+                    <button id="btnDesconectarGoogle" class="btn" style="width: 100%; padding: 10px; background: #dc3545; color: #fff; border-radius: 25px; display: none;">
                         <i class="fas fa-trash"></i> Desconectar
                     </button>
-                    <button onclick="fecharModal()" class="btn" style="width: 100%; padding: 12px; background: #6c757d; color: #fff; border-radius: 30px;">
+                    <button onclick="fecharModal()" class="btn" style="width: 100%; padding: 10px; background: #6c757d; color: #fff; border-radius: 25px;">
                         Fechar
                     </button>
                 </div>
                 
-                <div style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 11px; color: var(--gray); text-align: center;">
-                    <i class="fas fa-info-circle"></i> As alterações nas opções são salvas automaticamente ao sincronizar
+                <div style="margin-top: 12px; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 10px; color: var(--gray); text-align: center;">
+                    <i class="fas fa-info-circle"></i> As alterações são salvas automaticamente ao sincronizar
                 </div>
             </div>
         </div>
+        
+        <style>
+            .cor-opcao-selecionada {
+                border: 3px solid #fff !important;
+                box-shadow: 0 0 0 2px var(--purple) !important;
+                transform: scale(1.05);
+            }
+            .icone-opcao-selecionada {
+                background: var(--purple-light) !important;
+                border-color: var(--purple) !important;
+            }
+        </style>
     `;
     
     abrirModal('Google Agenda', 'fab fa-google', conteudo);
+    
+    // Adicionar funções globais para seleção
+    window.selecionarCor = function(tipo, cor) {
+        const input = document.getElementById(`${tipo}_cor`);
+        if (input) input.value = cor;
+        
+        // Remover seleção anterior
+        document.querySelectorAll(`[onclick*="selecionarCor('${tipo}')"]`).forEach(el => {
+            el.classList.remove('cor-opcao-selecionada');
+        });
+        
+        // Adicionar seleção no elemento clicado
+        event.target.classList.add('cor-opcao-selecionada');
+    };
+    
+    window.selecionarIcone = function(tipo, icone) {
+        const input = document.getElementById(`${tipo}_icone`);
+        if (input) input.value = icone;
+        
+        // Remover seleção anterior
+        document.querySelectorAll(`[onclick*="selecionarIcone('${tipo}')"]`).forEach(el => {
+            el.classList.remove('icone-opcao-selecionada');
+        });
+        
+        // Adicionar seleção no elemento clicado
+        event.target.closest('div').classList.add('icone-opcao-selecionada');
+    };
     
     // Verificar status da conexão
     setTimeout(async () => {
@@ -8311,123 +8409,106 @@ function abrirModalGoogleAgenda() {
             if (tokenData) {
                 const expiresAt = new Date(tokenData.expires_at);
                 if (expiresAt > new Date()) {
-                    statusEl.innerHTML = `
-                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                        <strong style="margin-left: 5px;">Conectado ao Google Calendar</strong>
-                        <div style="font-size: 11px; margin-top: 4px;">Sincronização ativa</div>
-                    `;
+                    statusEl.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i> Conectado ao Google Calendar`;
                     btnConectar.style.display = 'none';
                     btnSincronizar.style.display = 'block';
                     btnDesconectar.style.display = 'block';
                 } else {
-                    statusEl.innerHTML = `
-                        <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
-                        <strong style="margin-left: 5px;">Conexão expirada</strong>
-                        <div style="font-size: 11px; margin-top: 4px;">Clique em "Conectar" para renovar</div>
-                    `;
+                    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i> Conexão expirada - reconecte`;
                 }
             } else {
-                statusEl.innerHTML = `
-                    <i class="fas fa-plug"></i>
-                    <strong style="margin-left: 5px;">Não conectado</strong>
-                    <div style="font-size: 11px; margin-top: 4px;">Conecte sua conta Google para sincronizar</div>
-                `;
+                statusEl.innerHTML = `<i class="fas fa-plug"></i> Não conectado`;
                 btnSincronizar.style.display = 'none';
             }
         } catch (e) {
-            statusEl.innerHTML = `
-                <i class="fas fa-plug"></i>
-                <strong style="margin-left: 5px;">Não conectado</strong>
-                <div style="font-size: 11px; margin-top: 4px;">Conecte sua conta Google para sincronizar</div>
-            `;
+            statusEl.innerHTML = `<i class="fas fa-plug"></i> Não conectado`;
             btnSincronizar.style.display = 'none';
         }
     }, 100);
     
-    // Evento: Conectar
+    // Eventos dos botões (mantêm os mesmos)
     document.getElementById('btnConectarGoogle').onclick = async () => {
         try {
             showToast('Abrindo Google...', 'info');
-            
             const { data: { session } } = await App.supabase.auth.getSession();
             if (!session) {
                 showToast('Faça login novamente', 'error');
                 return;
             }
-            
             const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/google-calendar-auth', {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }
             });
-            
             const data = await response.json();
-            
             if (data.url) {
                 window.open(data.url, '_blank', 'width=600,height=700');
             } else {
                 showToast('Erro ao iniciar conexão', 'error');
             }
-            
         } catch (error) {
             console.error('Erro:', error);
             showToast('Erro ao conectar com Google', 'error');
         }
     };
     
-    // Evento: Desconectar
     document.getElementById('btnDesconectarGoogle').onclick = async () => {
         if (!confirm('Tem certeza que deseja desconectar sua conta Google?')) return;
-        
         try {
-            const { error } = await App.supabase
-                .from('google_tokens')
-                .delete()
-                .eq('user_id', App.currentUser.id);
-            
+            const { error } = await App.supabase.from('google_tokens').delete().eq('user_id', App.currentUser.id);
             if (error) throw error;
-            
             showToast('✅ Conta Google desconectada!', 'success');
             fecharModal();
-            
         } catch (error) {
             console.error('Erro:', error);
             showToast('Erro ao desconectar', 'error');
         }
     };
     
-    // Evento: Sincronizar (salva configurações e sincroniza)
     document.getElementById('btnSincronizarGoogle').onclick = async () => {
         const syncEventos = document.getElementById('syncEventosGoogle').checked;
         const syncTarefas = document.getElementById('syncTarefasGoogle').checked;
         const syncContas = document.getElementById('syncContasGoogle').checked;
         
+        // Pegar cores e ícones selecionados
+        const corEvento = document.getElementById('evento_cor')?.value || '#9b59b6';
+        const iconeEvento = document.getElementById('evento_icone')?.value || 'fa-calendar-alt';
+        const corTarefa = document.getElementById('tarefa_cor')?.value || '#f39c12';
+        const iconeTarefa = document.getElementById('tarefa_icone')?.value || 'fa-check-circle';
+        const corConta = document.getElementById('conta_cor')?.value || '#e74c3c';
+        const iconeConta = document.getElementById('conta_icone')?.value || 'fa-file-invoice-dollar';
+        
         // Salvar configurações
         try {
-            const { error } = await App.supabase
-                .from('configuracoes_sync')
-                .upsert({
-                    user_id: App.currentUser.id,
-                    sincronizar_eventos: syncEventos,
-                    sincronizar_tarefas: syncTarefas,
-                    sincronizar_contas: syncContas,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'user_id' });
+            const { error } = await App.supabase.from('configuracoes_sync').upsert({
+                user_id: App.currentUser.id,
+                sincronizar_eventos: syncEventos,
+                sincronizar_tarefas: syncTarefas,
+                sincronizar_contas: syncContas,
+                cor_evento: corEvento,
+                icone_evento: iconeEvento,
+                cor_tarefa: corTarefa,
+                icone_tarefa: iconeTarefa,
+                cor_conta: corConta,
+                icone_conta: iconeConta,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
             
             if (error) throw error;
             
-            // Atualizar cache local
             App.dataCache.configuracoesSync = {
+                ...App.dataCache.configuracoesSync,
                 sincronizar_eventos: syncEventos,
                 sincronizar_tarefas: syncTarefas,
-                sincronizar_contas: syncContas
+                sincronizar_contas: syncContas,
+                cor_evento: corEvento,
+                icone_evento: iconeEvento,
+                cor_tarefa: corTarefa,
+                icone_tarefa: iconeTarefa,
+                cor_conta: corConta,
+                icone_conta: iconeConta
             };
             
             showToast('Configurações salvas! Sincronizando...', 'success');
-            
-            // Chamar sincronização
             sincronizarGoogle();
             
         } catch (error) {
