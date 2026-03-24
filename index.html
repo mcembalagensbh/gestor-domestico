@@ -7885,11 +7885,17 @@ async function assinarCalendario() {
     try {
         showToast('Assinando calendário...', 'info');
         
-        const { data: { session } } = await App.supabase.auth.getSession();
+        // 🔴 LOG: Verificar se tem sessão
+        const { data: { session }, error: sessionError } = await App.supabase.auth.getSession();
+        console.log('🔵 Sessão obtida?', !!session);
+        console.log('🔵 Erro sessão?', sessionError);
+        
         if (!session) {
             showToast('Faça login novamente', 'error');
             return;
         }
+        
+        console.log('🔵 Token (primeiros 20):', session.access_token.substring(0, 20) + '...');
         
         const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/importar-calendario-url', {
             method: 'POST',
@@ -7900,7 +7906,10 @@ async function assinarCalendario() {
             body: JSON.stringify({ nome, url })
         });
         
+        console.log('🔵 Status da resposta:', response.status);
+        
         const data = await response.json();
+        console.log('🔵 Dados da resposta:', data);
         
         if (response.ok && data.success) {
             showToast('✅ Calendário assinado com sucesso!', 'success');
@@ -7912,7 +7921,7 @@ async function assinarCalendario() {
         }
         
     } catch (error) {
-        console.error('Erro:', error);
+        console.error('❌ Erro detalhado:', error);
         showToast('Erro ao assinar calendário', 'error');
     }
 }
