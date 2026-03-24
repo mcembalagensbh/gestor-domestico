@@ -7841,9 +7841,21 @@ function abrirModalAssinarCalendarioOriginal() {
     let conteudo = `
         <div style="padding: 0;">
             <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
-                <h3 style="margin: 0; color: #fff;"><i class="fas fa-rss"></i> Assinar Calendário</h3>
+                <h3 style="margin: 0; color: #fff;"><i class="fas fa-rss"></i> Calendários Externos</h3>
             </div>
-            <div style="padding: 20px;">
+            
+            <!-- ABAS -->
+            <div style="display: flex; border-bottom: 1px solid #eee; background: #fff;">
+                <div id="abaAssinar" class="aba-ativa-cal" style="flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--purple); border-bottom: 2px solid var(--purple);">
+                    <i class="fas fa-plus-circle"></i> Assinar
+                </div>
+                <div id="abaLista" style="flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--gray);">
+                    <i class="fas fa-list"></i> Meus Calendários
+                </div>
+            </div>
+            
+            <!-- CONTEÚDO ABA ASSINAR -->
+            <div id="conteudoAssinar" style="padding: 20px;">
                 <div style="background: #e8f4fd; border-left: 4px solid #3498db; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
                     <p style="margin: 0; font-size: 13px;">
                         <i class="fas fa-info-circle" style="color: #3498db;"></i>
@@ -7872,9 +7884,97 @@ function abrirModalAssinarCalendarioOriginal() {
                     </button>
                 </div>
             </div>
+            
+            <!-- CONTEÚDO ABA LISTA (calendários assinados) -->
+            <div id="conteudoLista" style="padding: 20px; display: none; max-height: 400px; overflow-y: auto;">
+                <div id="listaCalendariosAssinados"></div>
+            </div>
+            
+            <div style="padding: 16px; border-top: 1px solid #eee; text-align: center;">
+                <button class="btn" onclick="fecharModal()" style="background: #6c757d; color: #fff;">Fechar</button>
+            </div>
         </div>
+        
+        <style>
+            .aba-ativa-cal {
+                color: var(--purple) !important;
+                border-bottom: 2px solid var(--purple) !important;
+            }
+        </style>
     `;
-    abrirModal('Assinar Calendário', 'fa-rss', conteudo);
+    
+    abrirModal('Calendários Externos', 'fa-rss', conteudo);
+    
+    // Adicionar eventos de troca de aba
+    setTimeout(() => {
+        const abaAssinar = document.getElementById('abaAssinar');
+        const abaLista = document.getElementById('abaLista');
+        const conteudoAssinar = document.getElementById('conteudoAssinar');
+        const conteudoLista = document.getElementById('conteudoLista');
+        
+        if (abaAssinar && abaLista) {
+            abaAssinar.onclick = () => {
+                abaAssinar.classList.add('aba-ativa-cal');
+                abaLista.classList.remove('aba-ativa-cal');
+                conteudoAssinar.style.display = 'block';
+                conteudoLista.style.display = 'none';
+            };
+            
+            abaLista.onclick = () => {
+                abaLista.classList.add('aba-ativa-cal');
+                abaAssinar.classList.remove('aba-ativa-cal');
+                conteudoAssinar.style.display = 'none';
+                conteudoLista.style.display = 'block';
+                // Carregar a lista de calendários
+                carregarListaCalendariosAssinados();
+            };
+        }
+    }, 100);
+}
+
+async function carregarListaCalendariosAssinados() {
+    const container = document.getElementById('listaCalendariosAssinados');
+    if (!container) return;
+    
+    let calendarios = App.dataCache.calendariosAssinados || [];
+    
+    if (calendarios.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: var(--gray);">
+                <i class="fas fa-calendar-alt" style="font-size: 32px; margin-bottom: 10px; opacity: 0.5;"></i>
+                <p>Nenhum calendário assinado</p>
+                <p style="font-size: 12px;">Clique na aba "Assinar" para adicionar um calendário</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    for (const c of calendarios) {
+        const ultimaAtualizacao = c.ultima_atualizacao ? new Date(c.ultima_atualizacao).toLocaleDateString('pt-BR') : 'Nunca';
+        
+        html += `
+            <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 12px; border-left: 3px solid #3498db;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <strong><i class="fas fa-calendar-alt" style="color: #3498db;"></i> ${c.nome}</strong>
+                        <div style="font-size: 12px; color: var(--gray); word-break: break-all;">🔗 ${c.url}</div>
+                        <div style="font-size: 11px; color: var(--gray); margin-top: 4px;">📅 Última atualização: ${ultimaAtualizacao}</div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-sm" onclick="atualizarCalendarioAssinado(${c.id})" style="background: var(--purple); color: #fff; padding: 4px 8px;" title="Atualizar">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="btn btn-sm" onclick="deletarCalendarioAssinado(${c.id})" style="background: var(--danger); color: #fff; padding: 4px 8px;" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
 }
 
 async function assinarCalendario() {
