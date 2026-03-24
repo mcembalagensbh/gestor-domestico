@@ -7174,7 +7174,7 @@ function atualizarTipoFimEvento() {
             fecharSeletorIcones();
         }
 
-      async function salvarNovoEvento() {
+     async function salvarNovoEvento() {
     let titulo = document.getElementById('eventoTitulo')?.value.trim();
     let desc = document.getElementById('eventoDescricao')?.value.trim();
     let hora = document.getElementById('eventoHora')?.value;
@@ -7231,7 +7231,7 @@ function atualizarTipoFimEvento() {
                     data_inicio: dataInicioStr,
                     data_fim: dataFimStr,
                     is_recorrente: false,
-                    added_by: nomeUsuario  // 🔴 CORRIGIDO
+                    added_by: nomeUsuario
                 });
                 
                 dataAtual.setDate(dataAtual.getDate() + 1);
@@ -7286,7 +7286,7 @@ function atualizarTipoFimEvento() {
                 frequencia: frequencia,
                 data_inicio: dataInicioStr,
                 ativo: true,
-                added_by: nomeUsuario  // 🔴 CORRIGIDO
+                added_by: nomeUsuario
             };
             
             if (dataFimStr) {
@@ -7300,6 +7300,18 @@ function atualizarTipoFimEvento() {
         await registrarHistorico('criacao_evento', `Evento criado: ${titulo}`, { titulo, icone, usuario: nomeUsuario });
         
         showToast('Evento salvo com sucesso!', 'success');
+        
+        // 🔴 SINCRONIZAR COM GOOGLE (SE CONECTADO)
+        const { data: googleToken } = await App.supabase
+            .from('google_tokens')
+            .select('*')
+            .eq('user_id', App.currentUser.id)
+            .maybeSingle();
+        
+        if (googleToken) {
+            sincronizarGoogle();
+        }
+        
         fecharModal();
         await carregarDados(true);
         await atualizarCalendario();
@@ -8774,7 +8786,7 @@ async function sincronizarGoogle() {
             fecharSeletorIconesEdit();
         }
 
-        async function salvarEdicaoEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
+       async function salvarEdicaoEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
     let titulo = document.getElementById('eventoTituloEdit')?.value.trim();
     let desc = document.getElementById('eventoDescricaoEdit')?.value.trim();
     let dataInicioStr = document.getElementById('eventoDataInicioEdit')?.value;
@@ -8823,7 +8835,7 @@ async function sincronizarGoogle() {
                 data_original: dataInicioStr,
                 data_inicio: dataInicioStr,
                 data_fim: dataFimStr,
-                added_by: nomeUsuario  // 🔴 CORRIGIDO
+                added_by: nomeUsuario
             });
         } else {
             // PASSO 1: Encontrar o evento original ANTIGO para saber o período antigo
@@ -8883,7 +8895,7 @@ async function sincronizarGoogle() {
                         data_inicio: dataInicioStr,
                         data_fim: dataFimStr,
                         is_recorrente: false,
-                        added_by: nomeUsuario  // 🔴 CORRIGIDO
+                        added_by: nomeUsuario
                     });
                     
                     dataAtual.setDate(dataAtual.getDate() + 1);
@@ -8903,13 +8915,25 @@ async function sincronizarGoogle() {
                     data_inicio: dataInicioStr,
                     data_fim: null,
                     is_recorrente: false,
-                    added_by: nomeUsuario  // 🔴 CORRIGIDO
+                    added_by: nomeUsuario
                 });
             }
         }
 
         await registrarHistorico('edicao_evento', `Evento editado: ${titulo}`, { id, usuario: nomeUsuario });
         showToast('Evento atualizado!', 'success');
+        
+        // 🔴 SINCRONIZAR COM GOOGLE (SE CONECTADO)
+        const { data: googleToken } = await App.supabase
+            .from('google_tokens')
+            .select('*')
+            .eq('user_id', App.currentUser.id)
+            .maybeSingle();
+        
+        if (googleToken) {
+            sincronizarGoogle();
+        }
+        
         fecharModal();
         await carregarDados(true);
         await atualizarCalendario();
@@ -8919,6 +8943,47 @@ async function sincronizarGoogle() {
         showToast('Erro: ' + error.message, 'error');
     }
 }
+
+
+
+async function sincronizarGoogle() {
+    if (!App.currentUser) return;
+    
+    try {
+        const { data: googleToken } = await App.supabase
+            .from('google_tokens')
+            .select('*')
+            .eq('user_id', App.currentUser.id)
+            .maybeSingle();
+        
+        if (!googleToken) return;
+        
+        console.log('🔄 Sincronizando com Google Calendar...');
+        
+        const { data: { session } } = await App.supabase.auth.getSession();
+        if (!session) return;
+        
+        const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/sincronizar-google', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log(`✅ Google sincronizado: ${data.criados} criados, ${data.atualizados} atualizados, ${data.deletados} deletados`);
+        }
+        
+    } catch (error) {
+        console.error('Erro ao sincronizar com Google:', error);
+    }
+}
+
+
+
 
 
         // Funções para o modal informativo
