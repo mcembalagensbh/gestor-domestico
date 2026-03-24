@@ -8215,10 +8215,13 @@ function abrirModalGoogleAgenda() {
         sincronizar_contas: true,
         cor_calendario_eventos: '#9b59b6',
         cor_calendario_tarefas: '#f39c12',
-        cor_calendario_contas: '#e74c3c'
+        cor_calendario_contas: '#e74c3c',
+        icone_evento: 'fa-calendar-alt',
+        icone_tarefa: 'fa-check-circle',
+        icone_conta: 'fa-file-invoice-dollar'
     };
     
-    // OPÇÕES DE CORES (7 opções)
+    // OPÇÕES DE CORES
     const cores = [
         { nome: 'Roxo', codigo: '#9b59b6' },
         { nome: 'Azul', codigo: '#3498db' },
@@ -8229,7 +8232,7 @@ function abrirModalGoogleAgenda() {
         { nome: 'Rosa', codigo: '#e84393' }
     ];
     
-    // OPÇÕES DE ÍCONES (6 opções)
+    // OPÇÕES DE ÍCONES
     const icones = [
         { nome: 'Estrela', classe: 'fa-star' },
         { nome: 'Calendário', classe: 'fa-calendar-alt' },
@@ -8239,62 +8242,13 @@ function abrirModalGoogleAgenda() {
         { nome: 'Alerta', classe: 'fa-exclamation-triangle' }
     ];
     
-    // Função para gerar HTML de seleção de cores do calendário
-    function gerarSelecaoCorCalendario(tipo, titulo, corAtual) {
-        return `
-            <div style="margin-bottom: 12px;">
-                <div style="font-size: 12px; margin-bottom: 6px;">${titulo}:</div>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    ${cores.map(c => `
-                        <div onclick="selecionarCorCalendario('${tipo}', '${c.codigo}')" 
-                             style="width: 28px; height: 28px; background: ${c.codigo}; border-radius: 50%; cursor: pointer; border: 2px solid ${corAtual === c.codigo ? '#fff' : 'transparent'}; box-shadow: 0 1px 3px rgba(0,0,0,0.2); outline: ${corAtual === c.codigo ? '2px solid var(--purple)' : 'none'};" 
-                             title="${c.nome}"></div>
-                    `).join('')}
-                </div>
-                <input type="hidden" id="cor_calendario_${tipo}" value="${corAtual}">
-            </div>
-        `;
-    }
-    
-    // Função para gerar HTML de seleção de ícones (já existente)
-    function gerarOpcoesIcones(tipo, titulo, iconePadrao, corPadrao) {
-        return `
-            <div style="margin-bottom: 20px; border: 1px solid #e9ecef; border-radius: 12px; padding: 12px;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                    <i class="fas ${iconePadrao}" style="color: ${corPadrao};"></i>
-                    <strong style="font-size: 14px;">${titulo}</strong>
-                </div>
-                <div>
-                    <div style="font-size: 12px; color: var(--gray); margin-bottom: 6px;">Ícone no título:</div>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        ${icones.map(i => `
-                            <div onclick="selecionarIcone('${tipo}', '${i.classe}')" 
-                                 style="width: 36px; height: 36px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #ddd;" 
-                                 title="${i.nome}">
-                                <i class="fas ${i.classe}" style="font-size: 18px;"></i>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                <div style="margin-top: 8px;">
-                    <button type="button" onclick="resetarOpcoesIcone('${tipo}')" style="font-size: 10px; padding: 2px 8px; background: #e9ecef; border: none; border-radius: 12px; cursor: pointer;">
-                        <i class="fas fa-undo-alt"></i> Usar padrão
-                    </button>
-                </div>
-                <input type="hidden" id="${tipo}_icone" value="${iconePadrao}">
-            </div>
-        `;
-    }
-    
     let conteudo = `
         <div style="padding: 0;">
             <!-- CABEÇALHO -->
-            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 12px 16px; text-align: center;">
-                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fab fa-google" style="color: #fff; font-size: 18px;"></i>
-                    <h3 style="margin: 0; color: #fff; font-size: 1.1rem;">Google Agenda</h3>
-                </div>
-                <p style="margin: 4px 0 0 0; font-size: 11px; color: #fff; opacity: 0.9;">Sincronize com seu calendário</p>
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 16px; text-align: center;">
+                <i class="fab fa-google" style="font-size: 24px; color: #fff;"></i>
+                <h3 style="margin: 4px 0 0 0; color: #fff; font-size: 1.2rem;">Google Agenda</h3>
+                <p style="margin: 2px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.8);">Sincronize seus dados com o Google Calendar</p>
             </div>
             
             <div style="padding: 16px;">
@@ -8303,55 +8257,116 @@ function abrirModalGoogleAgenda() {
                     <i class="fas fa-spinner fa-spin"></i> Verificando conexão...
                 </div>
                 
-                <!-- O QUE SINCRONIZAR -->
-                <div style="margin-bottom: 20px; background: #f8f9fa; border-radius: 8px; padding: 12px;">
-                    <h4 style="margin: 0 0 12px 0; font-size: 13px;">
-                        <i class="fas fa-sliders-h"></i> O que sincronizar:
-                    </h4>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
-                            <input type="checkbox" id="syncEventosGoogle" ${configAtual.sincronizar_eventos ? 'checked' : ''}>
-                            <span><i class="fas fa-calendar-alt" style="color: #9b59b6;"></i> <strong>Eventos</strong> <span style="color: var(--gray);">(compromissos, aniversários)</span></span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
-                            <input type="checkbox" id="syncTarefasGoogle" ${configAtual.sincronizar_tarefas ? 'checked' : ''}>
-                            <span><i class="fas fa-check-circle" style="color: #f39c12;"></i> <strong>Tarefas</strong> <span style="color: var(--gray);">(com data limite)</span></span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; background: #fff; border-radius: 8px; border: 1px solid #e9ecef;">
-                            <input type="checkbox" id="syncContasGoogle" ${configAtual.sincronizar_contas ? 'checked' : ''}>
-                            <span><i class="fas fa-file-invoice-dollar" style="color: #e74c3c;"></i> <strong>Contas</strong> <span style="color: var(--gray);">(vencimentos)</span></span>
-                        </label>
+                <!-- ITEM: EVENTOS -->
+                <div class="config-card" data-tipo="eventos" style="background: #fff; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e9ecef; overflow: hidden;">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fafbfc; border-bottom: 1px solid #e9ecef;">
+                        <input type="checkbox" id="sync_eventos" ${configAtual.sincronizar_eventos ? 'checked' : ''} style="width: 18px; height: 18px;">
+                        <div style="width: 28px; height: 28px; background: ${configAtual.cor_calendario_eventos}; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                        <strong style="font-size: 15px; flex: 1;">📅 Eventos</strong>
+                        <div class="icone-preview" style="width: 32px; text-align: center;">
+                            <i class="fas ${configAtual.icone_evento}" style="font-size: 18px; color: ${configAtual.cor_calendario_eventos};"></i>
+                        </div>
+                        <i class="fas fa-chevron-down" style="color: var(--gray); cursor: pointer; transition: transform 0.2s;" onclick="toggleConfigCard(this)"></i>
+                    </div>
+                    <div class="config-content" style="display: none; padding: 16px;">
+                        <div style="margin-bottom: 16px;">
+                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Cor do calendário:</div>
+                            <div class="cores-container" data-tipo="eventos" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${cores.map(c => `
+                                    <div class="cor-option" data-tipo="eventos" data-cor="${c.codigo}" style="width: 32px; height: 32px; background: ${c.codigo}; border-radius: 50%; cursor: pointer; border: 2px solid ${configAtual.cor_calendario_eventos === c.codigo ? '#fff' : 'transparent'}; box-shadow: 0 1px 3px rgba(0,0,0,0.2); outline: ${configAtual.cor_calendario_eventos === c.codigo ? '2px solid var(--purple)' : 'none'};" title="${c.nome}"></div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Ícone nos eventos:</div>
+                            <div class="icones-container" data-tipo="eventos" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${icones.map(i => `
+                                    <div class="icone-option" data-tipo="eventos" data-icone="${i.classe}" style="width: 40px; height: 40px; background: ${configAtual.icone_evento === i.classe ? 'var(--purple-light)' : '#f8f9fa'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid ${configAtual.icone_evento === i.classe ? 'var(--purple)' : '#ddd'};">
+                                        <i class="fas ${i.classe}" style="font-size: 20px; color: ${configAtual.icone_evento === i.classe ? 'var(--purple)' : 'var(--gray)'};"></i>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button type="button" class="reset-btn" data-tipo="eventos" style="margin-top: 12px; font-size: 11px; padding: 4px 12px; background: #e9ecef; border: none; border-radius: 16px; cursor: pointer;">
+                                <i class="fas fa-undo-alt"></i> Restaurar padrão
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- CORES DOS CALENDÁRIOS -->
-                <div style="margin-bottom: 20px; background: #f8f9fa; border-radius: 8px; padding: 12px;">
-                    <h4 style="margin: 0 0 12px 0; font-size: 13px;">
-                        <i class="fas fa-palette"></i> Cores dos calendários:
-                    </h4>
-                    <div style="font-size: 11px; color: var(--gray); margin-bottom: 12px;">
-                        Escolha a cor de cada calendário no Google
+                <!-- ITEM: TAREFAS -->
+                <div class="config-card" data-tipo="tarefas" style="background: #fff; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e9ecef; overflow: hidden;">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fafbfc; border-bottom: 1px solid #e9ecef;">
+                        <input type="checkbox" id="sync_tarefas" ${configAtual.sincronizar_tarefas ? 'checked' : ''} style="width: 18px; height: 18px;">
+                        <div style="width: 28px; height: 28px; background: ${configAtual.cor_calendario_tarefas}; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                        <strong style="font-size: 15px; flex: 1;">✅ Tarefas</strong>
+                        <div class="icone-preview" style="width: 32px; text-align: center;">
+                            <i class="fas ${configAtual.icone_tarefa}" style="font-size: 18px; color: ${configAtual.cor_calendario_tarefas};"></i>
+                        </div>
+                        <i class="fas fa-chevron-down" style="color: var(--gray); cursor: pointer; transition: transform 0.2s;" onclick="toggleConfigCard(this)"></i>
                     </div>
-                    ${gerarSelecaoCorCalendario('eventos', '📅 Calendário de Eventos', configAtual.cor_calendario_eventos)}
-                    ${gerarSelecaoCorCalendario('tarefas', '✅ Calendário de Tarefas', configAtual.cor_calendario_tarefas)}
-                    ${gerarSelecaoCorCalendario('contas', '💰 Calendário de Contas', configAtual.cor_calendario_contas)}
+                    <div class="config-content" style="display: none; padding: 16px;">
+                        <div style="margin-bottom: 16px;">
+                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Cor do calendário:</div>
+                            <div class="cores-container" data-tipo="tarefas" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${cores.map(c => `
+                                    <div class="cor-option" data-tipo="tarefas" data-cor="${c.codigo}" style="width: 32px; height: 32px; background: ${c.codigo}; border-radius: 50%; cursor: pointer; border: 2px solid ${configAtual.cor_calendario_tarefas === c.codigo ? '#fff' : 'transparent'}; box-shadow: 0 1px 3px rgba(0,0,0,0.2); outline: ${configAtual.cor_calendario_tarefas === c.codigo ? '2px solid var(--purple)' : 'none'};" title="${c.nome}"></div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Ícone nas tarefas:</div>
+                            <div class="icones-container" data-tipo="tarefas" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${icones.map(i => `
+                                    <div class="icone-option" data-tipo="tarefas" data-icone="${i.classe}" style="width: 40px; height: 40px; background: ${configAtual.icone_tarefa === i.classe ? 'var(--purple-light)' : '#f8f9fa'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid ${configAtual.icone_tarefa === i.classe ? 'var(--purple)' : '#ddd'};">
+                                        <i class="fas ${i.classe}" style="font-size: 20px; color: ${configAtual.icone_tarefa === i.classe ? 'var(--purple)' : 'var(--gray)'};"></i>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button type="button" class="reset-btn" data-tipo="tarefas" style="margin-top: 12px; font-size: 11px; padding: 4px 12px; background: #e9ecef; border: none; border-radius: 16px; cursor: pointer;">
+                                <i class="fas fa-undo-alt"></i> Restaurar padrão
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- ÍCONES DOS EVENTOS -->
-                <div style="margin-bottom: 16px;">
-                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">
-                        <i class="fas fa-icons"></i> Ícones nos títulos:
-                    </h4>
-                    <div style="font-size: 11px; color: var(--gray); margin-bottom: 12px;">
-                        Escolha o ícone que aparece antes do título no Google Calendar
+                <!-- ITEM: CONTAS -->
+                <div class="config-card" data-tipo="contas" style="background: #fff; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e9ecef; overflow: hidden;">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fafbfc; border-bottom: 1px solid #e9ecef;">
+                        <input type="checkbox" id="sync_contas" ${configAtual.sincronizar_contas ? 'checked' : ''} style="width: 18px; height: 18px;">
+                        <div style="width: 28px; height: 28px; background: ${configAtual.cor_calendario_contas}; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                        <strong style="font-size: 15px; flex: 1;">💰 Contas</strong>
+                        <div class="icone-preview" style="width: 32px; text-align: center;">
+                            <i class="fas ${configAtual.icone_conta}" style="font-size: 18px; color: ${configAtual.cor_calendario_contas};"></i>
+                        </div>
+                        <i class="fas fa-chevron-down" style="color: var(--gray); cursor: pointer; transition: transform 0.2s;" onclick="toggleConfigCard(this)"></i>
                     </div>
-                    ${gerarOpcoesIcones('evento', 'Eventos', configAtual.icone_evento || 'fa-calendar-alt', '#9b59b6')}
-                    ${gerarOpcoesIcones('tarefa', 'Tarefas', configAtual.icone_tarefa || 'fa-check-circle', '#f39c12')}
-                    ${gerarOpcoesIcones('conta', 'Contas', configAtual.icone_conta || 'fa-file-invoice-dollar', '#e74c3c')}
+                    <div class="config-content" style="display: none; padding: 16px;">
+                        <div style="margin-bottom: 16px;">
+                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Cor do calendário:</div>
+                            <div class="cores-container" data-tipo="contas" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${cores.map(c => `
+                                    <div class="cor-option" data-tipo="contas" data-cor="${c.codigo}" style="width: 32px; height: 32px; background: ${c.codigo}; border-radius: 50%; cursor: pointer; border: 2px solid ${configAtual.cor_calendario_contas === c.codigo ? '#fff' : 'transparent'}; box-shadow: 0 1px 3px rgba(0,0,0,0.2); outline: ${configAtual.cor_calendario_contas === c.codigo ? '2px solid var(--purple)' : 'none'};" title="${c.nome}"></div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--gray); margin-bottom: 8px;">Ícone nas contas:</div>
+                            <div class="icones-container" data-tipo="contas" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${icones.map(i => `
+                                    <div class="icone-option" data-tipo="contas" data-icone="${i.classe}" style="width: 40px; height: 40px; background: ${configAtual.icone_conta === i.classe ? 'var(--purple-light)' : '#f8f9fa'}; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid ${configAtual.icone_conta === i.classe ? 'var(--purple)' : '#ddd'};">
+                                        <i class="fas ${i.classe}" style="font-size: 20px; color: ${configAtual.icone_conta === i.classe ? 'var(--purple)' : 'var(--gray)'};"></i>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button type="button" class="reset-btn" data-tipo="contas" style="margin-top: 12px; font-size: 11px; padding: 4px 12px; background: #e9ecef; border: none; border-radius: 16px; cursor: pointer;">
+                                <i class="fas fa-undo-alt"></i> Restaurar padrão
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- BOTÕES -->
-                <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
                     <button id="btnConectarGoogle" class="btn" style="width: 100%; padding: 10px; background: #4285f4; color: #fff; border-radius: 25px;">
                         <i class="fab fa-google"></i> Conectar com Google
                     </button>
@@ -8367,58 +8382,147 @@ function abrirModalGoogleAgenda() {
                 </div>
                 
                 <div style="margin-top: 12px; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 10px; color: var(--gray); text-align: center;">
-                    <i class="fas fa-info-circle"></i> As alterações são salvas automaticamente ao sincronizar
+                    <i class="fas fa-info-circle"></i> Altere as configurações e clique em "Sincronizar Agora" para aplicar
                 </div>
             </div>
         </div>
         
         <style>
-            .cor-opcao-selecionada {
-                outline: 2px solid var(--purple) !important;
-                transform: scale(1.05);
+            .config-card {
+                transition: box-shadow 0.2s;
             }
-            .icone-opcao-selecionada {
-                background: var(--purple-light) !important;
-                border-color: var(--purple) !important;
+            .config-card:hover {
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            }
+            .cor-option, .icone-option {
+                transition: all 0.2s;
+            }
+            .cor-option:hover, .icone-option:hover {
+                transform: scale(1.05);
             }
         </style>
     `;
     
     abrirModal('Google Agenda', 'fab fa-google', conteudo);
     
-    // Funções de seleção
-    window.selecionarCorCalendario = function(tipo, cor) {
-        const input = document.getElementById(`cor_calendario_${tipo}`);
+    // ========== FUNÇÕES DO MODAL ==========
+    
+    // Função para expandir/recolher
+    window.toggleConfigCard = function(icon) {
+        const content = icon.closest('.config-card').querySelector('.config-content');
+        const isOpen = content.style.display !== 'none';
+        content.style.display = isOpen ? 'none' : 'block';
+        icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    };
+    
+    // Função para selecionar cor (única)
+    window.selecionarCor = function(element, tipo, cor) {
+        // Atualizar preview da cor no cabeçalho
+        const previewDiv = document.querySelector(`.config-card[data-tipo="${tipo}"] .config-card > div:first-child div[style*="border-radius: 50%"]`);
+        if (previewDiv) previewDiv.style.background = cor;
+        
+        // Atualizar outline das opções de cor
+        const container = document.querySelector(`.cores-container[data-tipo="${tipo}"]`);
+        if (container) {
+            container.querySelectorAll('.cor-option').forEach(opt => {
+                opt.style.outline = 'none';
+                opt.style.border = '2px solid transparent';
+                if (opt.getAttribute('data-cor') === cor) {
+                    opt.style.outline = '2px solid var(--purple)';
+                    opt.style.border = '2px solid #fff';
+                }
+            });
+        }
+        
+        // Salvar no input hidden
+        const input = document.getElementById(`cor_${tipo}`);
         if (input) input.value = cor;
         
-        document.querySelectorAll(`[onclick*="selecionarCorCalendario('${tipo}')"]`).forEach(el => {
-            el.style.outline = 'none';
-            el.style.border = '2px solid transparent';
-        });
-        event.target.style.outline = '2px solid var(--purple)';
-        event.target.style.border = '2px solid #fff';
+        // Atualizar cor do ícone preview
+        const iconePreview = document.querySelector(`.config-card[data-tipo="${tipo}"] .icone-preview i`);
+        if (iconePreview) iconePreview.style.color = cor;
     };
     
-    window.selecionarIcone = function(tipo, icone) {
-        const input = document.getElementById(`${tipo}_icone`);
+    // Função para selecionar ícone (única)
+    window.selecionarIcone = function(element, tipo, icone) {
+        // Atualizar preview do ícone no cabeçalho
+        const iconePreview = document.querySelector(`.config-card[data-tipo="${tipo}"] .icone-preview i`);
+        if (iconePreview) {
+            iconePreview.className = `fas ${icone}`;
+        }
+        
+        // Atualizar seleção visual
+        const container = document.querySelector(`.icones-container[data-tipo="${tipo}"]`);
+        if (container) {
+            container.querySelectorAll('.icone-option').forEach(opt => {
+                opt.style.background = '#f8f9fa';
+                opt.style.border = '1px solid #ddd';
+                const iconElem = opt.querySelector('i');
+                if (iconElem) iconElem.style.color = 'var(--gray)';
+                
+                if (opt.getAttribute('data-icone') === icone) {
+                    opt.style.background = 'var(--purple-light)';
+                    opt.style.border = '1px solid var(--purple)';
+                    if (iconElem) iconElem.style.color = 'var(--purple)';
+                }
+            });
+        }
+        
+        // Salvar no input hidden
+        const input = document.getElementById(`icone_${tipo}`);
         if (input) input.value = icone;
-        
-        document.querySelectorAll(`[onclick*="selecionarIcone('${tipo}')"]`).forEach(el => {
-            el.classList.remove('icone-opcao-selecionada');
-        });
-        event.target.closest('div').classList.add('icone-opcao-selecionada');
     };
     
-    window.resetarOpcoesIcone = function(tipo) {
-        const input = document.getElementById(`${tipo}_icone`);
-        if (input) input.value = '';
+    // Função para restaurar padrão
+    window.restaurarPadrao = function(tipo) {
+        const coresPadrao = { eventos: '#9b59b6', tarefas: '#f39c12', contas: '#e74c3c' };
+        const iconesPadrao = { eventos: 'fa-calendar-alt', tarefas: 'fa-check-circle', contas: 'fa-file-invoice-dollar' };
         
-        document.querySelectorAll(`[onclick*="selecionarIcone('${tipo}')"]`).forEach(el => {
-            el.classList.remove('icone-opcao-selecionada');
-        });
+        const corPadrao = coresPadrao[tipo];
+        const iconePadrao = iconesPadrao[tipo];
+        
+        // Selecionar cor padrão
+        const corElement = document.querySelector(`.cores-container[data-tipo="${tipo}"] .cor-option[data-cor="${corPadrao}"]`);
+        if (corElement) corElement.click();
+        
+        // Selecionar ícone padrão
+        const iconeElement = document.querySelector(`.icones-container[data-tipo="${tipo}"] .icone-option[data-icone="${iconePadrao}"]`);
+        if (iconeElement) iconeElement.click();
     };
     
-    // Verificar status da conexão (mesmo código anterior)
+    // Adicionar eventos após o modal ser criado
+    setTimeout(() => {
+        // Eventos de cor
+        document.querySelectorAll('.cor-option').forEach(el => {
+            el.onclick = (e) => {
+                e.stopPropagation();
+                const tipo = el.getAttribute('data-tipo');
+                const cor = el.getAttribute('data-cor');
+                window.selecionarCor(el, tipo, cor);
+            };
+        });
+        
+        // Eventos de ícone
+        document.querySelectorAll('.icone-option').forEach(el => {
+            el.onclick = (e) => {
+                e.stopPropagation();
+                const tipo = el.getAttribute('data-tipo');
+                const icone = el.getAttribute('data-icone');
+                window.selecionarIcone(el, tipo, icone);
+            };
+        });
+        
+        // Eventos de reset
+        document.querySelectorAll('.reset-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const tipo = btn.getAttribute('data-tipo');
+                window.restaurarPadrao(tipo);
+            };
+        });
+    }, 100);
+    
+    // ========== VERIFICAR STATUS DA CONEXÃO ==========
     setTimeout(async () => {
         const statusEl = document.getElementById('googleStatus');
         const btnConectar = document.getElementById('btnConectarGoogle');
@@ -8454,7 +8558,7 @@ function abrirModalGoogleAgenda() {
         }
     }, 100);
     
-    // Eventos dos botões
+    // ========== EVENTOS DOS BOTÕES ==========
     document.getElementById('btnConectarGoogle').onclick = async () => {
         try {
             showToast('Abrindo Google...', 'info');
@@ -8493,17 +8597,20 @@ function abrirModalGoogleAgenda() {
     };
     
     document.getElementById('btnSincronizarGoogle').onclick = async () => {
-        const syncEventos = document.getElementById('syncEventosGoogle').checked;
-        const syncTarefas = document.getElementById('syncTarefasGoogle').checked;
-        const syncContas = document.getElementById('syncContasGoogle').checked;
+        // Coletar configurações
+        const syncEventos = document.getElementById('sync_eventos').checked;
+        const syncTarefas = document.getElementById('sync_tarefas').checked;
+        const syncContas = document.getElementById('sync_contas').checked;
         
-        const corEventos = document.getElementById('cor_calendario_eventos')?.value || '#9b59b6';
-        const corTarefas = document.getElementById('cor_calendario_tarefas')?.value || '#f39c12';
-        const corContas = document.getElementById('cor_calendario_contas')?.value || '#e74c3c';
+        // Coletar cores selecionadas
+        const corEventos = document.querySelector(`.cores-container[data-tipo="eventos"] .cor-option[style*="outline: 2px solid var(--purple)"]`)?.getAttribute('data-cor') || '#9b59b6';
+        const corTarefas = document.querySelector(`.cores-container[data-tipo="tarefas"] .cor-option[style*="outline: 2px solid var(--purple)"]`)?.getAttribute('data-cor') || '#f39c12';
+        const corContas = document.querySelector(`.cores-container[data-tipo="contas"] .cor-option[style*="outline: 2px solid var(--purple)"]`)?.getAttribute('data-cor') || '#e74c3c';
         
-        const iconeEvento = document.getElementById('evento_icone')?.value || '';
-        const iconeTarefa = document.getElementById('tarefa_icone')?.value || '';
-        const iconeConta = document.getElementById('conta_icone')?.value || '';
+        // Coletar ícones selecionados
+        const iconeEvento = document.querySelector(`.icones-container[data-tipo="eventos"] .icone-option[style*="background: var(--purple-light)"]`)?.getAttribute('data-icone') || 'fa-calendar-alt';
+        const iconeTarefa = document.querySelector(`.icones-container[data-tipo="tarefas"] .icone-option[style*="background: var(--purple-light)"]`)?.getAttribute('data-icone') || 'fa-check-circle';
+        const iconeConta = document.querySelector(`.icones-container[data-tipo="contas"] .icone-option[style*="background: var(--purple-light)"]`)?.getAttribute('data-icone') || 'fa-file-invoice-dollar';
         
         try {
             const { error } = await App.supabase.from('configuracoes_sync').upsert({
@@ -8514,9 +8621,9 @@ function abrirModalGoogleAgenda() {
                 cor_calendario_eventos: corEventos,
                 cor_calendario_tarefas: corTarefas,
                 cor_calendario_contas: corContas,
-                icone_evento: iconeEvento || null,
-                icone_tarefa: iconeTarefa || null,
-                icone_conta: iconeConta || null,
+                icone_evento: iconeEvento,
+                icone_tarefa: iconeTarefa,
+                icone_conta: iconeConta,
                 updated_at: new Date().toISOString()
             }, { onConflict: 'user_id' });
             
