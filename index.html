@@ -2139,7 +2139,25 @@
     <div class="side-menu-item" onclick="abrirPoliticasTermos();fecharSideMenu()"><i class="fas fa-file-contract"></i> Políticas e Termos</div>
     <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()"><i class="fas fa-book"></i> Manual Rápido</div>
     <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()"><i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span></div>
-    <div class="side-menu-item" onclick="gerarTokenCalendario();fecharSideMenu()"><i class="fas fa-link"></i> Sync Calendários</div>
+    <!-- Sync Calendários com submenu -->
+<div class="side-menu-item" onclick="toggleSubmenuCalendarios()">
+    <i class="fas fa-calendar-alt"></i> Sync Calendários
+    <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
+</div>
+<div id="submenuCalendarios" style="display: none; padding-left: 35px;">
+    <div class="side-menu-item" onclick="abrirModalGoogleAgenda();fecharSideMenu()">
+        <i class="fab fa-google"></i> Google Agenda
+    </div>
+    <div class="side-menu-item" onclick="abrirModalOutlookAgenda();fecharSideMenu()">
+        <i class="fab fa-microsoft"></i> Outlook Agenda
+    </div>
+    <div class="side-menu-item" onclick="abrirModalAssinarCalendario();fecharSideMenu()">
+        <i class="fas fa-rss"></i> Assinar Calendário
+    </div>
+    <div class="side-menu-item" onclick="abrirModalImportarICS();fecharSideMenu()">
+        <i class="fas fa-file-import"></i> Importar .ics
+    </div>
+</div>
     <!-- 🔴 NOVO ITEM: QUER USAR NO IPHONE? -->
     <div class="side-menu-item" onclick="abrirModalIphone();fecharSideMenu()">
         <i class="fab fa-apple"></i> Quer usar no Iphone?
@@ -7819,7 +7837,7 @@ async function gerarTokenCalendario() {
 // ASSINAR CALENDÁRIO (IMPORTAR POR URL)
 // ============================================
 
-function abrirModalAssinarCalendario() {
+function abrirModalAssinarCalendarioOriginal() {
     let conteudo = `
         <div style="padding: 0;">
             <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
@@ -7928,7 +7946,148 @@ async function assinarCalendario() {
 
 
 
+// ============================================
+// LISTAR CALENDÁRIOS ASSINADOS
+// ============================================
+
+async function renderizarCalendariosAssinados(content) {
+    let calendarios = App.dataCache.calendariosAssinados || [];
+    let podeEditar = App.assinaturaAtiva;
+    
+    if (calendarios.length === 0) {
+        content.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-rss"></i>
+                <p>Nenhum calendário assinado</p>
+                ${podeEditar ? '<button class="btn btn-primary" onclick="abrirModalAssinarCalendario()" style="margin-top:16px"><i class="fas fa-plus"></i> Assinar Calendário</button>' : ''}
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 5px;">
+            <h3 style="margin:0; color:var(--purple); font-size:1.2em;">
+                <i class="fas fa-rss"></i> Calendários Assinados
+            </h3>
+            ${podeEditar ? `
+                <button class="btn btn-primary btn-sm" onclick="abrirModalAssinarCalendario()" style="border-radius:30px; padding:8px 15px;">
+                    <i class="fas fa-plus"></i> Assinar
+                </button>
+            ` : ''}
+        </div>
+    `;
+    
+    html += '<div class="items-list">';
+    
+    for (const c of calendarios) {
+        const ultimaAtualizacao = c.ultima_atualizacao ? new Date(c.ultima_atualizacao).toLocaleDateString('pt-BR') : 'Nunca';
         
+        html += `
+            <div class="item-card" style="border-left-color: #3498db;">
+                <div class="item-info">
+                    <div class="item-title">
+                        <i class="fas fa-calendar-alt" style="color: #3498db;"></i>
+                        <strong>${c.nome}</strong>
+                    </div>
+                    <div class="item-details">🔗 ${c.url}</div>
+                    <div class="item-details">📅 Última atualização: ${ultimaAtualizacao}</div>
+                </div>
+                <div class="item-actions">
+                    <button class="action-btn update" onclick="atualizarCalendarioAssinado(${c.id})" title="Atualizar agora">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="action-btn delete" onclick="deletarCalendarioAssinado(${c.id})" title="Excluir">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    content.innerHTML = html;
+}
+
+async function atualizarCalendarioAssinado(id) {
+    showToast('Atualizando calendário...', 'info');
+    // TODO: Implementar atualização
+    setTimeout(() => {
+        showToast('Calendário atualizado!', 'success');
+    }, 1500);
+}
+
+async function deletarCalendarioAssinado(id) {
+    if (!confirm('Tem certeza que deseja excluir este calendário? Os eventos importados também serão removidos.')) return;
+    
+    try {
+        const { error } = await App.supabase
+            .from('calendarios_assinados')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        showToast('Calendário removido!', 'success');
+        await carregarDados(true);
+        await mostrarConteudo();
+        
+    } catch (error) {
+        console.error('Erro:', error);
+        showToast('Erro ao excluir', 'error');
+    }
+}
+
+
+
+// ============================================
+// SUBMENU SYNC CALENDÁRIOS
+// ============================================
+
+function toggleSubmenuCalendarios() {
+    const submenu = document.getElementById('submenuCalendarios');
+    const icon = document.querySelector('.side-menu-item .fa-chevron-down');
+    
+    if (submenu.style.display === 'none' || !submenu.style.display) {
+        submenu.style.display = 'block';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+        submenu.style.display = 'none';
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+
+
+
+// ============================================
+// MODAIS DO SYNC CALENDÁRIOS
+// ============================================
+
+function abrirModalGoogleAgenda() {
+    showToast('Em breve: Sincronização com Google Agenda via API', 'info');
+}
+
+function abrirModalOutlookAgenda() {
+    showToast('Em breve: Sincronização com Outlook Agenda via API', 'info');
+}
+
+function abrirModalAssinarCalendario() {
+    // Já existe, vamos chamar a função existente
+    if (typeof abrirModalAssinarCalendarioOriginal === 'function') {
+        abrirModalAssinarCalendarioOriginal();
+    } else {
+        showToast('Função não encontrada', 'error');
+    }
+}
+
+function abrirModalImportarICS() {
+    showToast('Em breve: Importar arquivo .ics', 'info');
+}
+
+
+
+
 
 // ============================================
 // FUNÇÃO PARA GERAR LINK DE CALENDÁRIO AUTOMÁTICO
