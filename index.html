@@ -8215,7 +8215,7 @@ function abrirModalGoogleAgenda() {
         sincronizar_contas: true
     };
     
-    // 🔴 OPÇÕES DE CORES (7 opções)
+    // OPÇÕES DE CORES (7 opções)
     const cores = [
         { nome: 'Roxo', codigo: '#9b59b6' },
         { nome: 'Azul', codigo: '#3498db' },
@@ -8226,7 +8226,7 @@ function abrirModalGoogleAgenda() {
         { nome: 'Rosa', codigo: '#e84393' }
     ];
     
-    // 🔴 OPÇÕES DE ÍCONES (6 opções)
+    // OPÇÕES DE ÍCONES (6 opções)
     const icones = [
         { nome: 'Estrela', classe: 'fa-star' },
         { nome: 'Calendário', classe: 'fa-calendar-alt' },
@@ -8265,6 +8265,11 @@ function abrirModalGoogleAgenda() {
                             </div>
                         `).join('')}
                     </div>
+                </div>
+                <div style="margin-top: 8px;">
+                    <button type="button" onclick="resetarOpcoes('${tipo}')" style="font-size: 10px; padding: 2px 8px; background: #e9ecef; border: none; border-radius: 12px; cursor: pointer;">
+                        <i class="fas fa-undo-alt"></i> Usar padrão
+                    </button>
                 </div>
                 <input type="hidden" id="${tipo}_cor" value="${corPadrao}">
                 <input type="hidden" id="${tipo}_icone" value="${iconePadrao}">
@@ -8360,27 +8365,54 @@ function abrirModalGoogleAgenda() {
     
     abrirModal('Google Agenda', 'fab fa-google', conteudo);
     
-    // Funções globais para seleção
+    // Função para selecionar/desmarcar cor
     window.selecionarCor = function(tipo, cor) {
         const input = document.getElementById(`${tipo}_cor`);
-        if (input) input.value = cor;
+        const elemento = event.target;
+        
+        if (elemento.classList.contains('cor-opcao-selecionada')) {
+            elemento.classList.remove('cor-opcao-selecionada');
+            input.value = '';
+        } else {
+            document.querySelectorAll(`[onclick*="selecionarCor('${tipo}')"]`).forEach(el => {
+                el.classList.remove('cor-opcao-selecionada');
+            });
+            elemento.classList.add('cor-opcao-selecionada');
+            input.value = cor;
+        }
+    };
+    
+    // Função para selecionar/desmarcar ícone
+    window.selecionarIcone = function(tipo, icone) {
+        const input = document.getElementById(`${tipo}_icone`);
+        const elemento = event.target.closest('div');
+        
+        if (elemento.classList.contains('icone-opcao-selecionada')) {
+            elemento.classList.remove('icone-opcao-selecionada');
+            input.value = '';
+        } else {
+            document.querySelectorAll(`[onclick*="selecionarIcone('${tipo}')"]`).forEach(el => {
+                el.classList.remove('icone-opcao-selecionada');
+            });
+            elemento.classList.add('icone-opcao-selecionada');
+            input.value = icone;
+        }
+    };
+    
+    // Função para resetar opções
+    window.resetarOpcoes = function(tipo) {
+        const inputCor = document.getElementById(`${tipo}_cor`);
+        const inputIcone = document.getElementById(`${tipo}_icone`);
+        
+        inputCor.value = '';
+        inputIcone.value = '';
         
         document.querySelectorAll(`[onclick*="selecionarCor('${tipo}')"]`).forEach(el => {
             el.classList.remove('cor-opcao-selecionada');
         });
-        
-        event.target.classList.add('cor-opcao-selecionada');
-    };
-    
-    window.selecionarIcone = function(tipo, icone) {
-        const input = document.getElementById(`${tipo}_icone`);
-        if (input) input.value = icone;
-        
         document.querySelectorAll(`[onclick*="selecionarIcone('${tipo}')"]`).forEach(el => {
             el.classList.remove('icone-opcao-selecionada');
         });
-        
-        event.target.closest('div').classList.add('icone-opcao-selecionada');
     };
     
     // Verificar status da conexão
@@ -8419,7 +8451,7 @@ function abrirModalGoogleAgenda() {
         }
     }, 100);
     
-    // Eventos dos botões
+    // Evento: Conectar
     document.getElementById('btnConectarGoogle').onclick = async () => {
         try {
             showToast('Abrindo Google...', 'info');
@@ -8444,6 +8476,7 @@ function abrirModalGoogleAgenda() {
         }
     };
     
+    // Evento: Desconectar
     document.getElementById('btnDesconectarGoogle').onclick = async () => {
         if (!confirm('Tem certeza que deseja desconectar sua conta Google?')) return;
         try {
@@ -8457,17 +8490,18 @@ function abrirModalGoogleAgenda() {
         }
     };
     
+    // Evento: Sincronizar
     document.getElementById('btnSincronizarGoogle').onclick = async () => {
         const syncEventos = document.getElementById('syncEventosGoogle').checked;
         const syncTarefas = document.getElementById('syncTarefasGoogle').checked;
         const syncContas = document.getElementById('syncContasGoogle').checked;
         
-        const corEvento = document.getElementById('evento_cor')?.value || '#9b59b6';
-        const iconeEvento = document.getElementById('evento_icone')?.value || 'fa-calendar-alt';
-        const corTarefa = document.getElementById('tarefa_cor')?.value || '#f39c12';
-        const iconeTarefa = document.getElementById('tarefa_icone')?.value || 'fa-check-circle';
-        const corConta = document.getElementById('conta_cor')?.value || '#e74c3c';
-        const iconeConta = document.getElementById('conta_icone')?.value || 'fa-file-invoice-dollar';
+        const corEvento = document.getElementById('evento_cor')?.value || '';
+        const iconeEvento = document.getElementById('evento_icone')?.value || '';
+        const corTarefa = document.getElementById('tarefa_cor')?.value || '';
+        const iconeTarefa = document.getElementById('tarefa_icone')?.value || '';
+        const corConta = document.getElementById('conta_cor')?.value || '';
+        const iconeConta = document.getElementById('conta_icone')?.value || '';
         
         try {
             const { error } = await App.supabase.from('configuracoes_sync').upsert({
@@ -8475,12 +8509,12 @@ function abrirModalGoogleAgenda() {
                 sincronizar_eventos: syncEventos,
                 sincronizar_tarefas: syncTarefas,
                 sincronizar_contas: syncContas,
-                cor_evento: corEvento,
-                icone_evento: iconeEvento,
-                cor_tarefa: corTarefa,
-                icone_tarefa: iconeTarefa,
-                cor_conta: corConta,
-                icone_conta: iconeConta,
+                cor_evento: corEvento || null,
+                icone_evento: iconeEvento || null,
+                cor_tarefa: corTarefa || null,
+                icone_tarefa: iconeTarefa || null,
+                cor_conta: corConta || null,
+                icone_conta: iconeConta || null,
                 updated_at: new Date().toISOString()
             }, { onConflict: 'user_id' });
             
