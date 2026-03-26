@@ -12951,7 +12951,7 @@ async function verificarEObrigarUsuario() {
 
 
 
-    async function init() {
+async function init() {
     try {
         App.supabase = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
         let { data: { session } } = await App.supabase.auth.getSession();
@@ -13009,11 +13009,15 @@ async function verificarEObrigarUsuario() {
                 iniciarPollingGoogle();
             }
 
-            // 🔴 VERIFICAR SE PRECISA DEFINIR USUÁRIO (depois dos dados carregados)
-            const usuarioDefinido = await verificarEObrigarUsuario();
-            if (!usuarioDefinido) {
-                await verificarEObrigarUsuario();
-            }
+            // 🔴 VERIFICAR USUÁRIO EM SEGUNDO PLANO (NÃO BLOQUEIA O CARREGAMENTO)
+            setTimeout(async () => {
+                if (!App.usuarioAtual) {
+                    const usuarioDefinido = await verificarEObrigarUsuario();
+                    if (!usuarioDefinido) {
+                        await verificarEObrigarUsuario();
+                    }
+                }
+            }, 1000);
 
             // ADICIONAR INDICADOR DE CONEXÃO (MODO OFFLINE)
             criarIndicadorConexao();
@@ -13046,11 +13050,15 @@ async function verificarEObrigarUsuario() {
                     resetarParaHoje();
                     showToast('Login realizado!', 'success');
                     
-                    // 🔴 VERIFICAR USUÁRIO APÓS LOGIN
-                    const usuarioDefinido = await verificarEObrigarUsuario();
-                    if (!usuarioDefinido) {
-                        await verificarEObrigarUsuario();
-                    }
+                    // 🔴 VERIFICAR USUÁRIO EM SEGUNDO PLANO
+                    setTimeout(async () => {
+                        if (!App.usuarioAtual) {
+                            const usuarioDefinido = await verificarEObrigarUsuario();
+                            if (!usuarioDefinido) {
+                                await verificarEObrigarUsuario();
+                            }
+                        }
+                    }, 1000);
                     
                     criarIndicadorConexao();
                     atualizarIndicadorConexao();
