@@ -6243,6 +6243,7 @@ function abrirEdicaoContaIndividual(id, isRecorrente, dia, mes, ano) {
 
 // Função para editar todas as ocorrências (mantém recorrência)
 function abrirEdicaoContaRecorrente(regraId, descricaoAtual, valorAtual, frequencia) {
+    // Fechar o modal atual (o de opções)
     fecharModal();
     
     let valorExibicao = (valorAtual || 0).toFixed(2).replace('.', ',');
@@ -6470,6 +6471,17 @@ function atualizarCamposContaEdit() {
 
 
 function confirmarEdicaoRecorrente(regraId) {
+    // Pegar os valores do modal atual
+    let novaDescricao = document.getElementById('contaDescricaoRecorrente')?.value.trim();
+    let novoValor = parseCurrency(document.getElementById('contaValorRecorrente')?.value);
+    let novoDia = parseInt(document.getElementById('contaDiaRecorrente')?.value);
+    
+    if (!novaDescricao || !novoValor || !novoDia) {
+        showToast('Preencha todos os campos', 'warning');
+        return;
+    }
+    
+    // Fechar o modal atual
     fecharModal();
     
     // Buscar a regra
@@ -6479,10 +6491,8 @@ function confirmarEdicaoRecorrente(regraId) {
         return;
     }
     
-    // Buscar todas as contas desta regra
+    // Buscar todas as contas futuras desta regra
     let todasContas = App.dataCache.contas.filter(c => c.regra_id == regraId);
-    
-    // Separar entre passado e futuro
     let hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     
@@ -6491,24 +6501,14 @@ function confirmarEdicaoRecorrente(regraId) {
         return dataConta >= hoje;
     });
     
-    // Guardar no App temporariamente
-    App.edicaoRecorrente = {
-        regraId: regraId,
-        descricao: regra.descricao_base,
-        valor: regra.valor,
-        frequencia: regra.frequencia,
-        dataInicio: regra.data_inicio
-    };
-    
     // Mostrar loading
-    showToast('Preparando edição...', 'info');
+    showToast('Atualizando contas...', 'info');
     
     // Deletar as contas FUTURAS
     (async () => {
         try {
             if (contasFuturo.length > 0) {
                 console.log(`🗑️ Deletando ${contasFuturo.length} contas futuras`);
-                
                 for (let conta of contasFuturo) {
                     await App.supabase
                         .from('contas')
@@ -6523,28 +6523,63 @@ function confirmarEdicaoRecorrente(regraId) {
                 .delete()
                 .eq('id', regraId);
             
-            showToast('Contas futuras removidas. Recrie com as novas configurações.', 'success');
+            // Criar nova regra com os dados atualizados
+            let dataInicio = new Date();
+            dataInicio.setDate(novoDia);
+            dataInicio.setHours(12, 0, 0);
             
-            // Abrir modal de NOVA CONTA com dados pré-preenchidos
-            setTimeout(() => {
-                abrirNovaContaComDados(
-                    App.edicaoRecorrente.descricao,
-                    App.edicaoRecorrente.valor,
-                    App.edicaoRecorrente.frequencia,
-                    App.edicaoRecorrente.dataInicio
-                );
-                
-                // Limpar dados temporários
-                delete App.edicaoRecorrente;
-            }, 500);
+            // Se a data de início já passou, usar o próximo mês
+            if (dataInicio < hoje) {
+                dataInicio.setMonth(dataInicio.getMonth() + 1);
+            }
+            
+            let dataInicioStr = dataParaString(
+                dataInicio.getFullYear(),
+                dataInicio.getMonth() + 1,
+                dataInicio.getDate()
+            );
+            
+            const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+            
+            let novaRegraData = {
+                user_id: App.currentUser.id,
+                descricao_base: novaDescricao,
+                valor: novoValor,
+                dia_vencimento: novoDia,
+                frequencia: regra.frequencia,
+                data_inicio: dataInicioStr,
+                ativo: true,
+                added_by: nomeUsuario
+            };
+            
+            // Se tinha data_fim, manter
+            if (regra.data_fim) {
+                novaRegraData.data_fim = regra.data_fim;
+            }
+            
+            const { data: novaRegra, error: regraError } = await App.supabase
+                .from('regras_contas')
+                .insert(novaRegraData)
+                .select();
+            
+            if (regraError) throw regraError;
+            
+            showToast('✅ Contas atualizadas com sucesso!', 'success');
+            
+            // Sincronizar com Google
+            await sincronizarGoogleAutomatico();
+            
+            // Recarregar dados
+            await carregarDados(true);
+            await atualizarCalendario();
+            await mostrarConteudo();
             
         } catch (error) {
-            console.error('Erro ao deletar contas futuras:', error);
-            showToast('Erro ao preparar edição', 'error');
+            console.error('Erro ao atualizar contas:', error);
+            showToast('Erro: ' + error.message, 'error');
         }
     })();
 }
-
 
 
 function abrirNovaContaComDados(descricao, valor, frequencia, dataInicioStr) {
