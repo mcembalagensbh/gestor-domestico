@@ -12830,6 +12830,7 @@ async function deletarTarefa(id) {
 
                 await atualizarCalendario();
                 await mostrarConteudo();
+                iniciarPollingGoogle();
             }
 
             // ADICIONAR INDICADOR DE CONEXÃO (MODO OFFLINE)
@@ -13616,6 +13617,228 @@ async function sincronizarGoogleAutomatico() {
     }, 100); // Pequeno delay para garantir que o modal feche primeiro
 }
 
+
+
+
+// ============================================
+// SINCRONIZAÇÃO AUTOMÁTICA POR POLLING (APENAS SE GOOGLE CONECTADO)
+// ============================================
+
+let intervaloPollingGoogle = null;
+
+async function sincronizarGoogleParaMyLife() {
+    // Verificar se o Google está conectado antes de qualquer coisa
+    const supabaseClient = App.supabase;
+    const userId = App.currentUser?.id;
+    
+    if (!userId) {
+        console.log('⚠️ Usuário não logado, polling desativado');
+        return;
+    }
+    
+    // Verificar se tem token do Google
+    const { data: googleToken } = await supabaseClient
+        .from('google_tokens')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+    
+    if (!googleToken) {
+        console.log('⏸️ Google não conectado, polling pausado');
+        return;
+    }
+    
+    // Verificar se o token ainda é válido
+    const expiresAt = new Date(googleToken.expires_at);
+    if (expiresAt < new Date()) {
+        console.log('⚠️ Token expirado, renovando...');
+        const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                client_id: '70912301309-4ectmj6cr08k6kgg2cgdqagkistov2ug.apps.googleusercontent.com',
+                client_secret: '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',
+                refresh_token: googleToken.refresh_token,
+                grant_type: 'refresh_token'
+            })
+        });
+        
+        const refreshData = await refreshResponse.json();
+        if (!refreshResponse.ok) {
+            console.log('❌ Token expirado e não foi possível renovar, polling desativado');
+            return;
+        }
+    }
+    
+    console.log('🔄 [Polling] Verificando eventos do Google Calendar...');
+    
+    let accessToken = googleToken.access_token;
+    
+    const calendarId = 'eba3f147fda4c623cdad70d8953b0e37f1c12bfd81f6c59e3ec80248df77b053@group.calendar.google.com';
+    
+    const hoje = new Date();
+    const umaSemanaAtras = new Date();
+    umaSemanaAtras.setDate(hoje.getDate() - 7);
+    
+    const timeMin = umaSemanaAtras.toISOString();
+    const timeMax = hoje.toISOString();
+    
+    try {
+        const eventsResponse = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=50&orderBy=updated&singleEvents=true`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Cache-Control': 'no-cache'
+                }
+            }
+        );
+        
+        if (!eventsResponse.ok) {
+            console.log('⚠️ Erro ao buscar eventos do Google');
+            return;
+        }
+        
+        const eventsData = await eventsResponse.json();
+        const items = eventsData.items || [];
+        
+        console.log(`📊 Eventos encontrados no Google (últimos 7 dias): ${items.length}`);
+        
+        let criados = 0;
+        
+        for (const item of items) {
+            const description = item.description || '';
+            const myLifeIdMatch = description.match(/ID My Life: (\d+)/);
+            
+            if (myLifeIdMatch) {
+                continue;
+            }
+            
+            let titulo = item.summary || 'Sem título';
+            titulo = titulo.replace(/^📅 /, '').replace(/^💰 /, '').replace(/^.*\[TAREFA\] /, '');
+            const descricao = item.description?.split('\n\nID My Life:')[0] || '';
+            const local = item.location || '';
+            
+            let dataInicio;
+            if (item.start?.dateTime) {
+                dataInicio = new Date(item.start.dateTime);
+            } else if (item.start?.date) {
+                dataInicio = new Date(item.start.date + 'T12:00:00');
+            } else {
+                dataInicio = new Date();
+            }
+            
+            const hora = String(dataInicio.getHours()).padStart(2, '0') + ':' + String(dataInicio.getMinutes()).padStart(2, '0');
+            const ano = dataInicio.getFullYear();
+            const mes = dataInicio.getMonth() + 1;
+            const dia = dataInicio.getDate();
+            
+            const { data: existente } = await supabaseClient
+                .from('eventos')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('titulo', titulo)
+                .eq('dia', dia)
+                .eq('mes', mes)
+                .eq('ano', ano)
+                .maybeSingle();
+            
+            if (existente) {
+                continue;
+            }
+            
+            console.log(`➕ Criando evento: "${titulo}" - ${dia}/${mes}/${ano} ${hora}`);
+            
+            const { data: insertData, error: insertError } = await supabaseClient
+                .from('eventos')
+                .insert({
+                    user_id: userId,
+                    titulo: titulo,
+                    descricao: descricao,
+                    local: local,
+                    hora: hora,
+                    ano: ano,
+                    mes: mes,
+                    dia: dia,
+                    is_recorrente: false,
+                    added_by: 'Google Calendar (polling)'
+                })
+                .select();
+            
+            if (insertError) {
+                console.error(`❌ Erro:`, insertError);
+            } else {
+                console.log(`✅ Evento criado ID: ${insertData[0].id}`);
+                criados++;
+                
+                await fetch(
+                    `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${item.id}`,
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            description: `${descricao}\n\nID My Life: ${insertData[0].id}\nTipo: evento`
+                        })
+                    }
+                );
+            }
+        }
+        
+        if (criados > 0) {
+            console.log(`✅ Polling: ${criados} novos eventos importados do Google`);
+            await carregarDados(true);
+            await mostrarConteudo();
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro no polling:', error);
+    }
+}
+
+function iniciarPollingGoogle() {
+    if (intervaloPollingGoogle) {
+        clearInterval(intervaloPollingGoogle);
+        intervaloPollingGoogle = null;
+    }
+    
+    (async () => {
+        if (!App.currentUser) {
+            console.log('⏸️ Polling aguardando login...');
+            return;
+        }
+        
+        const { data: googleToken } = await App.supabase
+            .from('google_tokens')
+            .select('*')
+            .eq('user_id', App.currentUser.id)
+            .maybeSingle();
+        
+        if (!googleToken) {
+            console.log('⏸️ Polling desativado - Google não conectado');
+            return;
+        }
+        
+        console.log('✅ Google conectado - iniciando polling (a cada 30 segundos)');
+        
+        setTimeout(() => sincronizarGoogleParaMyLife(), 2000);
+        
+        intervaloPollingGoogle = setInterval(() => {
+            sincronizarGoogleParaMyLife();
+        }, 30000);
+        
+    })();
+}
+
+function pararPollingGoogle() {
+    if (intervaloPollingGoogle) {
+        clearInterval(intervaloPollingGoogle);
+        intervaloPollingGoogle = null;
+        console.log('⏹️ Polling do Google Calendar parado');
+    }
+}
 
 
 // ============================================
