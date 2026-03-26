@@ -8638,15 +8638,63 @@ function abrirModalGoogleAgenda() {
 // FUNÇÃO DE SINCRONIZAÇÃO COM CORES PERSONALIZADAS
 // ============================================
 
+// ============================================
+// FUNÇÃO DE SINCRONIZAÇÃO COM CORES PERSONALIZADAS - COM TRATAMENTO DE ERRO
+// ============================================
+
 async function sincronizarGoogleComCores(cores) {
     if (!App.currentUser) {
         showToast('Você precisa estar logado', 'warning');
         return;
     }
     
+    const syncEventos = document.getElementById('syncEventosModal')?.checked ?? true;
+    const syncTarefas = document.getElementById('syncTarefasModal')?.checked ?? true;
+    const syncContas = document.getElementById('syncContasModal')?.checked ?? true;
+    
     try {
-        showToast('🔄 Sincronizando com Google Calendar...', 'info');
+        showToast('🔄 Salvando configurações e sincronizando...', 'info');
         
+        // 🔴 SALVAR CONFIGURAÇÕES PRIMEIRO
+        try {
+            // Verificar se a tabela existe, se não existir, criar
+            const { error: upsertError } = await App.supabase
+                .from('configuracoes_sync')
+                .upsert({
+                    user_id: App.currentUser.id,
+                    sincronizar_eventos: syncEventos,
+                    sincronizar_tarefas: syncTarefas,
+                    sincronizar_contas: syncContas,
+                    cor_eventos: cores.cor_eventos,
+                    cor_tarefas: cores.cor_tarefas,
+                    cor_contas: cores.cor_contas,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
+            
+            if (upsertError) {
+                console.error('Erro ao salvar configurações:', upsertError);
+                showToast('Erro ao salvar configurações: ' + upsertError.message, 'warning');
+                // Continuar mesmo com erro, tentar sincronizar
+            } else {
+                console.log('✅ Configurações salvas com sucesso');
+            }
+            
+            // Atualizar cache local
+            App.dataCache.configuracoesSync = {
+                sincronizar_eventos: syncEventos,
+                sincronizar_tarefas: syncTarefas,
+                sincronizar_contas: syncContas,
+                cor_eventos: cores.cor_eventos,
+                cor_tarefas: cores.cor_tarefas,
+                cor_contas: cores.cor_contas
+            };
+            
+        } catch (saveError) {
+            console.error('Erro ao salvar localmente:', saveError);
+            // Continua mesmo com erro local
+        }
+        
+        // 🔴 AGORA SINCRONIZAR COM O GOOGLE
         const { data: { session } } = await App.supabase.auth.getSession();
         if (!session) {
             showToast('Faça login novamente', 'error');
@@ -8661,14 +8709,25 @@ async function sincronizarGoogleComCores(cores) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                cores_personalizadas: cores
+                cores_personalizadas: {
+                    cor_eventos: cores.cor_eventos,
+                    cor_tarefas: cores.cor_tarefas,
+                    cor_contas: cores.cor_contas
+                }
             })
         });
         
         const data = await response.json();
         
         if (response.ok && data.success) {
-            showToast(`✅ Sincronizado! ${data.criados} criados, ${data.atualizados} atualizados`, 'success');
+            let mensagem = `✅ Sincronizado! `;
+            if (data.criados > 0) mensagem += `${data.criados} criados, `;
+            if (data.atualizados > 0) mensagem += `${data.atualizados} atualizados, `;
+            if (data.deletados > 0) mensagem += `${data.deletados} removidos`;
+            if (mensagem.endsWith(', ')) mensagem = mensagem.slice(0, -2);
+            if (mensagem === '✅ Sincronizado! ') mensagem = '✅ Sincronizado com sucesso!';
+            
+            showToast(mensagem, 'success');
             fecharModal();
             
             // Atualizar dados localmente
@@ -8676,12 +8735,12 @@ async function sincronizarGoogleComCores(cores) {
             await mostrarConteudo();
             
         } else {
-            showToast('Erro: ' + (data.error || 'Erro desconhecido'), 'error');
+            showToast('Erro na sincronização: ' + (data.error || 'Erro desconhecido'), 'error');
         }
         
     } catch (error) {
-        console.error('Erro:', error);
-        showToast('Erro ao sincronizar', 'error');
+        console.error('Erro completo:', error);
+        showToast('Erro: ' + error.message, 'error');
     }
 }
 
@@ -13652,4 +13711,4 @@ function irParaGiros() {
 </html>
 
 
-Edição 002
+Edição 003
