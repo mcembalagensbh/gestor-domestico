@@ -125,6 +125,11 @@
             font-size: 13px
         }
 
+
+        .banner-indicadores {
+    display: none !important;
+}
+
         .form-input, .form-select, .form-textarea {
             width: 100%;
             padding: 10px;
@@ -692,76 +697,73 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
-        .filter-header {
-            font-size: 11px;
-            color: var(--gray);
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
-
-        .filter-header i {
-            font-size: 10px;
-            color: var(--purple);
-        }
-
         .filter-buttons {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         .filter-btn {
             flex: 1;
-            padding: 8px 0;
+            padding: 8px 12px;
             border: 1px solid #e0e0e0;
             background: #fafafa;
-            border-radius: 30px;
+            border-radius: 40px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
             font-weight: 500;
-            font-size: 12px;
+            font-size: 13px;
             transition: all 0.2s ease;
-            min-height: 36px;
+            min-height: 40px;
             color: var(--dark);
+            position: relative;
         }
 
         @media (max-width: 768px) {
             .filter-btn {
-                flex: 1;
+                padding: 6px 10px;
+                font-size: 12px;
             }
         }
 
         .filter-btn i {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--gray);
             transition: color 0.2s;
         }
 
+        /* Indicador de status (bolinha) */
+        .filter-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+            transition: all 0.2s ease;
+            margin-left: 4px;
+        }
+
         .filter-btn.active {
-            background: linear-gradient(135deg, var(--purple), var(--purple-dark));
-            border-color: transparent;
-            color: #fff;
-            box-shadow: 0 2px 6px rgba(155, 89, 182, 0.25);
+            background: #f5f0fa;
+            border-color: var(--purple);
+            box-shadow: 0 1px 3px rgba(155, 89, 182, 0.2);
         }
 
         .filter-btn.active i {
-            color: #fff;
+            color: var(--purple);
+        }
+
+        .filter-btn.active .filter-indicator {
+            background: var(--success);
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2);
+            width: 12px;
+            height: 12px;
         }
 
         .filter-btn:hover:not(.active) {
-            background: #f0f0f0;
-            border-color: var(--purple-light);
-        }
-
-        /* REMOVER O ESTILO ANTIGO DO FILTER-CHECK */
-        .filter-check {
-            display: none;
+            background: #f5f5f5;
+            border-color: #ccc;
         }
 
         .content-area {
@@ -2243,13 +2245,7 @@
 
 
 
-        <!-- Indicadores -->
-        <div class="banner-indicadores">
-            <span class="banner-dot active" data-index="0"></span>
-            <span class="banner-dot" data-index="1"></span>
-            <span class="banner-dot" data-index="2"></span>
-            <span class="banner-dot" data-index="3"></span>
-        </div>
+        
     </div>
     
    
@@ -2285,21 +2281,20 @@
             <div class="calendar-grid" id="calendarGrid" onclick="event.stopPropagation()"></div>
         </div>
 
-        <div class="filters">
-    <div class="filter-header">
-        <i class="fas fa-eye"></i> Visualizar no calendário
-    </div>
-    <div class="filter-buttons" id="filterButtons">
-        <button class="filter-btn" data-filter="contas">
-            <i class="fas fa-file-invoice-dollar"></i>
-            <span>Contas</span>
-        </button>
-        <button class="filter-btn" data-filter="eventos">
-            <i class="fas fa-calendar-alt"></i>
-            <span>Eventos</span>
-        </button>
-    </div>
-</div>
+                <div class="filters">
+            <div class="filter-buttons" id="filterButtons">
+                <button class="filter-btn" data-filter="contas">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Contas</span>
+                    <span class="filter-indicator"></span>
+                </button>
+                <button class="filter-btn" data-filter="eventos">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Eventos</span>
+                    <span class="filter-indicator"></span>
+                </button>
+            </div>
+        </div>
 
         <div class="content-area">
             <div class="filter-info" id="filterInfo" onclick="voltarParaCalendario()"></div>
@@ -13812,7 +13807,7 @@ async function sincronizarGoogleParaMyLife() {
                     mes: mes,
                     dia: dia,
                     is_recorrente: false,
-                    added_by: 'Google Calendar (polling)'
+                    added_by: 'Google Calendar'
                 })
                 .select();
             
