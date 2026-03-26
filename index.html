@@ -5844,6 +5844,7 @@ async function salvarNovaConta() {
         codigoBarras = document.getElementById('contaCodigo')?.value.trim() || null;
     }
 
+    // 🔴 CORRIGIDO: Garantir que seja string
     const nomeUsuario = getNomeUsuario();
 
     try {
@@ -6173,33 +6174,61 @@ function abrirEdicaoContaIndividual(id, isRecorrente, dia, mes, ano) {
     
     console.log('🔍 Buscando conta para edição individual - ID:', id, 'Data:', dia, mes, ano);
     
-    let conta = App.dataCache.contas?.find(c => c.id == id);
+    let conta = null;
     
+    // Se o ID é numérico, buscar na tabela contas
+    if (typeof id === 'number' || !isNaN(parseInt(id))) {
+        const idNum = parseInt(id);
+        conta = App.dataCache.contas?.find(c => c.id === idNum);
+    }
+    
+    // Se não encontrou e é recorrente, buscar pela regra
     if (!conta && isRecorrente) {
-        let regra = App.dataCache.regrasContas?.find(r => r.id == id);
-        if (regra) {
-            console.log('✅ Regra encontrada, criando conta temporária');
-            conta = {
-                id: `regra_${regra.id}_${Date.now()}`,
-                descricao: regra.descricao_base,
-                valor: regra.valor,
-                dia: dia,
-                mes: mes,
-                ano: ano,
-                regra_id: regra.id,
-                codigo_pagamento: null,
-                is_temporaria: true
-            };
+        // Extrair o regraId do ID (ex: regra_108_xxx -> 108)
+        let regraId = null;
+        if (typeof id === 'string' && id.startsWith('regra_')) {
+            const parts = id.split('_');
+            regraId = parseInt(parts[1]);
+        } else if (typeof id === 'number') {
+            regraId = id;
+        }
+        
+        if (regraId) {
+            // Buscar a regra
+            let regra = App.dataCache.regrasContas?.find(r => r.id === regraId);
+            if (regra) {
+                console.log('✅ Regra encontrada, criando conta temporária');
+                conta = {
+                    id: `regra_${regra.id}_${Date.now()}`,
+                    descricao: regra.descricao_base,
+                    valor: regra.valor,
+                    dia: dia,
+                    mes: mes,
+                    ano: ano,
+                    regra_id: regra.id,
+                    codigo_pagamento: null,
+                    is_temporaria: true
+                };
+            }
         }
     }
     
+    // Se ainda não encontrou, buscar pelo regra_id na tabela contas
     if (!conta && isRecorrente) {
-        conta = App.dataCache.contas?.find(c => 
-            c.regra_id == id && 
-            c.dia == dia && 
-            c.mes == mes && 
-            c.ano == ano
-        );
+        let regraId = null;
+        if (typeof id === 'string' && id.startsWith('regra_')) {
+            const parts = id.split('_');
+            regraId = parseInt(parts[1]);
+        }
+        
+        if (regraId) {
+            conta = App.dataCache.contas?.find(c => 
+                c.regra_id === regraId && 
+                c.dia === dia && 
+                c.mes === mes && 
+                c.ano === ano
+            );
+        }
     }
     
     if (!conta) {
