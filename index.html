@@ -8228,7 +8228,6 @@ function abrirModalGoogleAgenda() {
                                 <ol style="margin: 0 0 8px 0; padding-left: 20px; font-size: 12px;">
                                     <li>Clique em <strong>"Conectar com Google"</strong></li>
                                     <li>Autorize o acesso ao seu calendário</li>
-                                    <li>Após autorizar, você será redirecionado para uma página de confirmação</li>
                                     <li>Escolha quais itens sincronizar (Eventos, Tarefas, Contas)</li>
                                     <li>Escolha uma cor para cada tipo de item</li>
                                     <li>Clique em <strong>"Salvar e Sincronizar"</strong></li>
@@ -8385,10 +8384,7 @@ function abrirModalGoogleAgenda() {
     setTimeout(() => {
         const selects = document.querySelectorAll('.cor-select');
         selects.forEach(select => {
-            // Aplicar cor inicial
             atualizarCorSelect(select);
-            
-            // Adicionar evento de mudança
             select.addEventListener('change', function() {
                 atualizarCorSelect(this);
             });
@@ -8452,7 +8448,7 @@ function abrirModalGoogleAgenda() {
         }
     }, 100);
     
-    // 🔴 EVENTO: CONECTAR (CORRIGIDO COM REDIRECIONAMENTO)
+    // 🔴 EVENTO: CONECTAR (COM STATE)
     document.getElementById('btnConectarGoogleModal').onclick = async () => {
         try {
             showToast('Abrindo Google...', 'info');
@@ -8463,20 +8459,32 @@ function abrirModalGoogleAgenda() {
                 return;
             }
             
-            // Chamar a Edge Function que agora tem o redirect_uri configurado
+            // 🔴 GERAR STATE COM O ID DO USUÁRIO
+            const state = session.user.id;
+            
+            // Salvar o state no banco
+            const { error: stateError } = await App.supabase
+                .from('google_oauth_states')
+                .insert({ state: state, user_id: session.user.id });
+            
+            if (stateError) {
+                console.error('Erro ao salvar state:', stateError);
+                showToast('Erro ao iniciar conexão', 'error');
+                return;
+            }
+            
             const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/google-calendar-auth', {
-                method: 'GET',
+                method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ state: state })
             });
             
             const data = await response.json();
             
             if (data.url) {
-                // Abrir janela de autenticação do Google
-                // Após autorizar, o usuário será redirecionado para a página de confirmação
                 window.open(data.url, '_blank', 'width=600,height=700');
             } else {
                 showToast('Erro ao iniciar conexão', 'error');
@@ -8522,7 +8530,6 @@ function abrirModalGoogleAgenda() {
         try {
             showToast('Salvando configurações...', 'info');
             
-            // Salvar configurações com cores personalizadas
             const { error } = await App.supabase
                 .from('configuracoes_sync')
                 .upsert({
@@ -8538,7 +8545,6 @@ function abrirModalGoogleAgenda() {
             
             if (error) throw error;
             
-            // Atualizar cache local
             App.dataCache.configuracoesSync = {
                 sincronizar_eventos: syncEventos,
                 sincronizar_tarefas: syncTarefas,
@@ -8550,7 +8556,6 @@ function abrirModalGoogleAgenda() {
             
             showToast('Configurações salvas! Sincronizando...', 'success');
             
-            // Chamar sincronização com as cores
             await sincronizarGoogleComCores({
                 cor_eventos: corEventos,
                 cor_tarefas: corTarefas,
