@@ -745,7 +745,7 @@
         }
 
         .filter-btn.active {
-            background: #f5f0fa;
+            background: #764ba2;
             border-color: var(--purple);
             box-shadow: 0 1px 3px rgba(155, 89, 182, 0.2);
         }
@@ -8228,6 +8228,7 @@ function abrirModalGoogleAgenda() {
                                 <ol style="margin: 0 0 8px 0; padding-left: 20px; font-size: 12px;">
                                     <li>Clique em <strong>"Conectar com Google"</strong></li>
                                     <li>Autorize o acesso ao seu calendário</li>
+                                    <li>Após autorizar, você será redirecionado para uma página de confirmação</li>
                                     <li>Escolha quais itens sincronizar (Eventos, Tarefas, Contas)</li>
                                     <li>Escolha uma cor para cada tipo de item</li>
                                     <li>Clique em <strong>"Salvar e Sincronizar"</strong></li>
@@ -8451,7 +8452,7 @@ function abrirModalGoogleAgenda() {
         }
     }, 100);
     
-    // Evento: Conectar
+    // 🔴 EVENTO: CONECTAR (CORRIGIDO COM REDIRECIONAMENTO)
     document.getElementById('btnConectarGoogleModal').onclick = async () => {
         try {
             showToast('Abrindo Google...', 'info');
@@ -8462,6 +8463,7 @@ function abrirModalGoogleAgenda() {
                 return;
             }
             
+            // Chamar a Edge Function que agora tem o redirect_uri configurado
             const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/google-calendar-auth', {
                 method: 'GET',
                 headers: {
@@ -8473,6 +8475,8 @@ function abrirModalGoogleAgenda() {
             const data = await response.json();
             
             if (data.url) {
+                // Abrir janela de autenticação do Google
+                // Após autorizar, o usuário será redirecionado para a página de confirmação
                 window.open(data.url, '_blank', 'width=600,height=700');
             } else {
                 showToast('Erro ao iniciar conexão', 'error');
@@ -8559,7 +8563,6 @@ function abrirModalGoogleAgenda() {
         }
     };
 }
-
 
 // ============================================
 // FUNÇÃO DE SINCRONIZAÇÃO COM CORES PERSONALIZADAS
