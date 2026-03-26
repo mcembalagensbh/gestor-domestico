@@ -13699,16 +13699,22 @@ async function sincronizarGoogleParaMyLife() {
     
     const calendarId = 'eba3f147fda4c623cdad70d8953b0e37f1c12bfd81f6c59e3ec80248df77b053@group.calendar.google.com';
     
+    // 🔴 BUSCAR 30 DIAS ATRÁS E 12 MESES À FRENTE
     const hoje = new Date();
-    const umaSemanaAtras = new Date();
-    umaSemanaAtras.setDate(hoje.getDate() - 7);
+    const trintaDiasAtras = new Date();
+    trintaDiasAtras.setDate(hoje.getDate() - 30);
     
-    const timeMin = umaSemanaAtras.toISOString();
-    const timeMax = hoje.toISOString();
+    const dozeMesesFrente = new Date();
+    dozeMesesFrente.setMonth(hoje.getMonth() + 12);
+    
+    const timeMin = trintaDiasAtras.toISOString();
+    const timeMax = dozeMesesFrente.toISOString();
+    
+    console.log(`📅 Buscando eventos de ${trintaDiasAtras.toLocaleDateString()} até ${dozeMesesFrente.toLocaleDateString()}`);
     
     try {
         const eventsResponse = await fetch(
-            `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=50&orderBy=updated&singleEvents=true`,
+            `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=200&orderBy=updated&singleEvents=true`,
             {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -13720,7 +13726,6 @@ async function sincronizarGoogleParaMyLife() {
         // Se receber 401, token ainda está inválido
         if (eventsResponse.status === 401) {
             console.log('⚠️ Token inválido, tentando renovar novamente...');
-            // Forçar uma nova tentativa na próxima execução
             return;
         }
         
@@ -13732,7 +13737,15 @@ async function sincronizarGoogleParaMyLife() {
         const eventsData = await eventsResponse.json();
         const items = eventsData.items || [];
         
-        console.log(`📊 Eventos encontrados no Google (últimos 7 dias): ${items.length}`);
+        console.log(`📊 Eventos encontrados no Google: ${items.length}`);
+        
+        // Log detalhado dos eventos
+        console.log('📋 Lista de eventos no Google:');
+        items.forEach((item, idx) => {
+            const hasMyLifeId = item.description?.includes('ID My Life:');
+            const dataEvento = item.start?.dateTime || item.start?.date;
+            console.log(`  ${idx + 1}. "${item.summary}" - Data: ${dataEvento} - ID My Life: ${hasMyLifeId ? 'SIM' : 'NÃO'}`);
+        });
         
         let criados = 0;
         
