@@ -8211,6 +8211,10 @@ function toggleSubmenuCalendarios() {
 // MODAL GOOGLE AGENDA - VERSÃO MODERNA
 // ============================================
 
+// ============================================
+// MODAL GOOGLE AGENDA - VERSÃO COMPLETA COM CORES NOS BOTÕES
+// ============================================
+
 function abrirModalGoogleAgenda() {
     // Buscar configurações atuais do usuário
     let configAtual = App.dataCache.configuracoesSync || {
@@ -8222,28 +8226,46 @@ function abrirModalGoogleAgenda() {
         cor_contas: '2'       // Verde padrão
     };
     
-    // Opções de cores disponíveis
+    // Opções de cores disponíveis com seus códigos de cor
     const opcoesCores = [
-        { id: '1', nome: 'Azul', cor: '#4285f4' },
-        { id: '2', nome: 'Verde', cor: '#34a853' },
-        { id: '3', nome: 'Roxo', cor: '#9b59b6' },
-        { id: '4', nome: 'Vermelho', cor: '#ea4335' },
-        { id: '5', nome: 'Amarelo', cor: '#fbbc04' },
-        { id: '6', nome: 'Laranja', cor: '#f39c12' },
-        { id: '7', nome: 'Ciano', cor: '#00acc1' },
-        { id: '8', nome: 'Cinza', cor: '#5f6368' },
-        { id: '9', nome: 'Azul Escuro', cor: '#1e3a8a' },
-        { id: '10', nome: 'Verde Escuro', cor: '#0b5e2e' },
-        { id: '11', nome: 'Tomate', cor: '#d93025' }
+        { id: '1', nome: 'Azul', cor: '#4285f4', corBg: '#4285f4' },
+        { id: '2', nome: 'Verde', cor: '#34a853', corBg: '#34a853' },
+        { id: '3', nome: 'Roxo', cor: '#9b59b6', corBg: '#9b59b6' },
+        { id: '4', nome: 'Vermelho', cor: '#ea4335', corBg: '#ea4335' },
+        { id: '5', nome: 'Amarelo', cor: '#fbbc04', corBg: '#fbbc04', textoEscuro: true },
+        { id: '6', nome: 'Laranja', cor: '#f39c12', corBg: '#f39c12' },
+        { id: '7', nome: 'Ciano', cor: '#00acc1', corBg: '#00acc1' },
+        { id: '8', nome: 'Cinza', cor: '#5f6368', corBg: '#5f6368' },
+        { id: '9', nome: 'Azul Escuro', cor: '#1e3a8a', corBg: '#1e3a8a' },
+        { id: '10', nome: 'Verde Escuro', cor: '#0b5e2e', corBg: '#0b5e2e' },
+        { id: '11', nome: 'Tomate', cor: '#d93025', corBg: '#d93025' }
     ];
     
-    // Gerar HTML dos selects de cores
-    function gerarSelectCores(valorSelecionado) {
-        return opcoesCores.map(cor => 
-            `<option value="${cor.id}" style="background-color: ${cor.cor}; color: white; font-weight: bold;" ${valorSelecionado == cor.id ? 'selected' : ''}>
-                ${cor.nome}
-            </option>`
-        ).join('');
+    // Função para obter a cor de um ID
+    function getCorById(id) {
+        const cor = opcoesCores.find(c => c.id == id);
+        return cor ? cor.corBg : '#5f6368';
+    }
+    
+    // Gerar HTML dos selects com estilo de botão colorido
+    function gerarSelectCores(valorSelecionado, tipo) {
+        return `
+            <select id="cor${tipo}Modal" class="cor-select" data-tipo="${tipo}" style="padding: 6px 12px; border-radius: 30px; border: none; background: ${getCorById(valorSelecionado)}; color: white; font-weight: 500; font-size: 12px; cursor: pointer; outline: none;">
+                ${opcoesCores.map(cor => `
+                    <option value="${cor.id}" style="background: ${cor.corBg}; color: ${cor.textoEscuro ? '#333' : 'white'}; padding: 8px;" ${valorSelecionado == cor.id ? 'selected' : ''}>
+                        ${cor.nome}
+                    </option>
+                `).join('')}
+            </select>
+        `;
+    }
+    
+    // Função para atualizar a cor do select quando mudar
+    function atualizarCorSelect(selectElement) {
+        const valor = selectElement.value;
+        const cor = getCorById(valor);
+        selectElement.style.backgroundColor = cor;
+        selectElement.style.color = 'white';
     }
     
     // Verificar status da conexão com Google
@@ -8268,19 +8290,44 @@ function abrirModalGoogleAgenda() {
                         <i class="fas fa-chevron-down" id="iconeDicas" style="font-size: 10px; transition: transform 0.2s;"></i>
                     </button>
                     
-                    <!-- DICAS SUSPENSAS -->
-                    <div id="dicasGoogle" style="display: none; position: absolute; top: 100%; right: 0; width: 280px; background: #fff; border: 1px solid #e9ecef; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; margin-top: 5px; padding: 12px;">
-                        <div style="font-size: 12px;">
-                            <p style="margin: 0 0 8px 0;"><strong>📌 Como sincronizar:</strong></p>
-                            <ol style="margin: 0 0 8px 0; padding-left: 20px;">
-                                <li>Clique em "Conectar com Google"</li>
-                                <li>Autorize o acesso ao seu calendário</li>
-                                <li>Escolha as cores que preferir</li>
-                                <li>Clique em "Salvar e Sincronizar"</li>
-                            </ol>
-                            <p style="margin: 0; font-size: 10px; color: #5f6368;">
-                                <i class="fas fa-sync-alt"></i> Os eventos aparecem automaticamente no seu Google Calendar
-                            </p>
+                    <!-- DICAS SUSPENSAS MELHORADAS -->
+                    <div id="dicasGoogle" style="display: none; position: absolute; top: 100%; right: 0; width: 320px; background: #fff; border: 1px solid #e9ecef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; margin-top: 5px; padding: 0; overflow: hidden;">
+                        <div style="background: #f8f9fa; padding: 12px 16px; border-bottom: 1px solid #e9ecef;">
+                            <strong style="color: #1a73e8;"><i class="fab fa-google"></i> Como funciona a sincronização</strong>
+                        </div>
+                        <div style="padding: 16px;">
+                            <div style="margin-bottom: 16px;">
+                                <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600;">📌 Passo a passo:</p>
+                                <ol style="margin: 0 0 8px 0; padding-left: 20px; font-size: 12px;">
+                                    <li>Clique em <strong>"Conectar com Google"</strong></li>
+                                    <li>Autorize o acesso ao seu calendário</li>
+                                    <li>Escolha quais itens sincronizar (Eventos, Tarefas, Contas)</li>
+                                    <li>Escolha uma cor para cada tipo de item</li>
+                                    <li>Clique em <strong>"Salvar e Sincronizar"</strong></li>
+                                </ol>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600;">🔄 O que acontece quando você:</p>
+                                <ul style="margin: 0; padding-left: 20px; font-size: 12px;">
+                                    <li><strong>Marcar/Desmarcar um item</strong> → Os eventos são criados ou removidos automaticamente do Google Calendar</li>
+                                    <li><strong>Mudar a cor</strong> → Todos os eventos daquele tipo serão atualizados com a nova cor</li>
+                                    <li><strong>Desmarcar "Contas" e sincronizar</strong> → TODAS as contas são removidas do Google Calendar</li>
+                                    <li><strong>Marcar "Contas" novamente</strong> → Todas as contas voltam para o Google Calendar</li>
+                                </ul>
+                            </div>
+                            
+                            <div style="background: #e8f5e9; border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+                                <p style="margin: 0; font-size: 11px; color: #2e7d32;">
+                                    <i class="fas fa-check-circle"></i> <strong>Importante:</strong> Quando você desmarca uma opção e sincroniza, os eventos são <strong>removidos permanentemente</strong> do Google Calendar. Quando marcar novamente, eles serão <strong>recriados</strong> com as configurações atuais.
+                                </p>
+                            </div>
+                            
+                            <div style="background: #fff3e0; border-radius: 8px; padding: 10px;">
+                                <p style="margin: 0; font-size: 11px; color: #ed6c02;">
+                                    <i class="fas fa-sync-alt"></i> <strong>Dica:</strong> Após qualquer alteração, clique em "Salvar e Sincronizar" para aplicar as mudanças imediatamente.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -8304,39 +8351,49 @@ function abrirModalGoogleAgenda() {
                     </div>
                     
                     <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px 12px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e9ecef;">
+                        <!-- Eventos -->
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 10px 12px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e9ecef; transition: all 0.2s;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='#f8f9fa'">
                             <input type="checkbox" id="syncEventosModal" ${configAtual.sincronizar_eventos ? 'checked' : ''} style="width: 18px; height: 18px;">
                             <div style="flex: 1;">
                                 <div style="font-weight: 500; font-size: 14px;">📅 Eventos</div>
                                 <div style="font-size: 11px; color: #5f6368;">Compromissos, aniversários, reuniões</div>
                             </div>
-                            <select id="corEventosModal" style="padding: 4px 8px; border-radius: 20px; border: 1px solid #ddd; background: white; font-size: 12px; font-weight: 500;" onchange="this.style.backgroundColor = this.options[this.selectedIndex].style.backgroundColor">
-                                ${gerarSelectCores(configAtual.cor_eventos || '6')}
-                            </select>
+                            ${gerarSelectCores(configAtual.cor_eventos || '6', 'Eventos')}
                         </label>
                         
-                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px 12px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e9ecef;">
+                        <!-- Tarefas -->
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 10px 12px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e9ecef; transition: all 0.2s;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='#f8f9fa'">
                             <input type="checkbox" id="syncTarefasModal" ${configAtual.sincronizar_tarefas ? 'checked' : ''} style="width: 18px; height: 18px;">
                             <div style="flex: 1;">
                                 <div style="font-weight: 500; font-size: 14px;">✅ Tarefas</div>
                                 <div style="font-size: 11px; color: #5f6368;">Tarefas com data limite</div>
                             </div>
-                            <select id="corTarefasModal" style="padding: 4px 8px; border-radius: 20px; border: 1px solid #ddd; background: white; font-size: 12px; font-weight: 500;">
-                                ${gerarSelectCores(configAtual.cor_tarefas || '7')}
-                            </select>
+                            ${gerarSelectCores(configAtual.cor_tarefas || '7', 'Tarefas')}
                         </label>
                         
-                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px 12px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e9ecef;">
+                        <!-- Contas -->
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 10px 12px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e9ecef; transition: all 0.2s;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='#f8f9fa'">
                             <input type="checkbox" id="syncContasModal" ${configAtual.sincronizar_contas ? 'checked' : ''} style="width: 18px; height: 18px;">
                             <div style="flex: 1;">
                                 <div style="font-weight: 500; font-size: 14px;">💰 Contas</div>
                                 <div style="font-size: 11px; color: #5f6368;">Contas a pagar (vencimentos)</div>
                             </div>
-                            <select id="corContasModal" style="padding: 4px 8px; border-radius: 20px; border: 1px solid #ddd; background: white; font-size: 12px; font-weight: 500;">
-                                ${gerarSelectCores(configAtual.cor_contas || '2')}
-                            </select>
+                            ${gerarSelectCores(configAtual.cor_contas || '2', 'Contas')}
                         </label>
                     </div>
+                </div>
+                
+                <!-- INFORMAÇÃO SOBRE EXCLUSÃO AUTOMÁTICA -->
+                <div style="margin-bottom: 20px; padding: 12px; background: #e3f2fd; border-radius: 10px; border-left: 3px solid #1a73e8;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <i class="fas fa-trash-alt" style="color: #1a73e8; font-size: 12px;"></i>
+                        <span style="font-weight: 600; font-size: 12px; color: #1a73e8;">Sincronização automática</span>
+                    </div>
+                    <p style="margin: 0; font-size: 11px; color: #1e3a8a;">
+                        ✓ Quando você <strong>desmarcar</strong> uma opção e sincronizar, os eventos serão <strong>removidos</strong> do Google Calendar.<br>
+                        ✓ Quando <strong>marcar novamente</strong>, os eventos serão <strong>recriados</strong> com as cores escolhidas.<br>
+                        ✓ Você pode alterar as cores a qualquer momento - todos os eventos daquele tipo serão atualizados.
+                    </p>
                 </div>
                 
                 <!-- BOTÕES -->
@@ -8362,8 +8419,17 @@ function abrirModalGoogleAgenda() {
         </div>
         
         <style>
-            select option {
-                padding: 4px 8px;
+            .cor-select {
+                transition: all 0.2s ease;
+                cursor: pointer;
+            }
+            .cor-select:hover {
+                opacity: 0.9;
+                transform: scale(1.02);
+            }
+            .cor-select option {
+                background: white;
+                color: #333;
             }
         </style>
     `;
@@ -8386,6 +8452,30 @@ function abrirModalGoogleAgenda() {
             btnTexto.innerHTML = 'Saiba mais';
         }
     };
+    
+    // 🔴 APLICAR CORES NOS SELECTS APÓS CARREGAR
+    setTimeout(() => {
+        const selects = document.querySelectorAll('.cor-select');
+        selects.forEach(select => {
+            // Aplicar cor inicial
+            atualizarCorSelect(select);
+            
+            // Adicionar evento de mudança
+            select.addEventListener('change', function() {
+                atualizarCorSelect(this);
+            });
+        });
+    }, 100);
+    
+    // Função para atualizar a cor do select
+    function atualizarCorSelect(selectElement) {
+        const valor = selectElement.value;
+        const opcao = opcoesCores.find(c => c.id == valor);
+        if (opcao) {
+            selectElement.style.backgroundColor = opcao.corBg;
+            selectElement.style.color = opcao.textoEscuro ? '#333' : 'white';
+        }
+    }
     
     // Verificar status da conexão
     setTimeout(async () => {
@@ -13562,4 +13652,4 @@ function irParaGiros() {
 </html>
 
 
-Edição 001
+Edição 002
