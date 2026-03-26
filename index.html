@@ -2407,7 +2407,7 @@
             mesesParaLimpar: 3
         };
 
-        const App = {
+               const App = {
             supabase: null,
             currentUser: null,
             currentMonthOffset: 0,
@@ -2433,12 +2433,12 @@
                 }
             },
             currentFilter: 'all',
-         dadataCache: {
-    contas: [], regrasContas: [], eventos: [], eventosIndividuais: [], regrasEventos: [],
-    gastos: [], lista: [], saldos: [], historico: [], excecoesRecorrencia: [],
-    giros: [], movimentacoesGiro: [], notas: [], usuariosFamilia: [], tarefas: [], configuracoesSync: {},
-    calendariosAssinados: [], eventosImportados: []  // 🔴 ADICIONAR
-},
+            dataCache: {  // 🔴 INICIALIZAR dataCache COMO OBJETO VAZIO
+                contas: [], regrasContas: [], eventos: [], eventosIndividuais: [], regrasEventos: [],
+                gastos: [], lista: [], saldos: [], historico: [], excecoesRecorrencia: [],
+                giros: [], movimentacoesGiro: [], notas: [], usuariosFamilia: [], tarefas: [], configuracoesSync: {},
+                calendariosAssinados: [], eventosImportados: []
+            },
             notificacoesAgendadas: [],
             serviceWorkerRegistration: null,
             processandoPagamento: false,
@@ -5425,8 +5425,7 @@ async function confirmarAdicionarGiro(id, desc) {
     }
 }
 
-
-        function carregarUsuarioLocal() {
+function carregarUsuarioLocal() {
     if (!App.currentUser) return;
     
     // Tentar carregar do localStorage
@@ -5439,8 +5438,8 @@ async function confirmarAdicionarGiro(id, desc) {
         } catch(e) {}
     }
     
-    // Se não tiver, tentar buscar no cache
-    if (App.dataCache.usuariosFamilia && App.dataCache.usuariosFamilia.length > 0) {
+    // Se não tiver, tentar buscar no cache (verificar se existe)
+    if (App.dataCache && App.dataCache.usuariosFamilia && App.dataCache.usuariosFamilia.length > 0) {
         const primeiro = App.dataCache.usuariosFamilia[0];
         App.usuarioAtual = {
             id: primeiro.id,
