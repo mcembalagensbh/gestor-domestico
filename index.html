@@ -12812,6 +12812,7 @@ async function deletarTarefa(id) {
                 await mostrarConteudo();
                 
                 carregarDados(true);
+                iniciarPollingGoogle(); // 🔴 POLLING ADICIONADO
             } else {
                 await carregarDados(true);
 
@@ -12830,7 +12831,7 @@ async function deletarTarefa(id) {
 
                 await atualizarCalendario();
                 await mostrarConteudo();
-                iniciarPollingGoogle();
+                iniciarPollingGoogle(); // 🔴 POLLING JÁ EXISTIA
             }
 
             // ADICIONAR INDICADOR DE CONEXÃO (MODO OFFLINE)
@@ -12866,6 +12867,7 @@ async function deletarTarefa(id) {
                     
                     criarIndicadorConexao();
                     atualizarIndicadorConexao();
+                    iniciarPollingGoogle(); // 🔴 POLLING ADICIONADO APÓS LOGIN
                 }
             } catch (e) {
                 showToast('Erro no login', 'error');
@@ -13077,7 +13079,6 @@ async function deletarTarefa(id) {
         showToast('Erro ao iniciar: ' + error.message, 'error');
     }
 }
-
 
 
 
