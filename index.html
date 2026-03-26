@@ -13549,62 +13549,168 @@ function irParaGiros() {
 // FUNÇÃO DE SINCRONIZAÇÃO AUTOMÁTICA
 // ============================================
 
+// ============================================
+// FUNÇÃO DE SINCRONIZAÇÃO AUTOMÁTICA (EM SEGUNDO PLANO)
+// ============================================
+
 async function sincronizarGoogleAutomatico() {
-    // Verificar se tem token do Google
-    const { data: googleToken } = await App.supabase
-        .from('google_tokens')
-        .select('*')
-        .eq('user_id', App.currentUser.id)
-        .maybeSingle();
+    // Executar em segundo plano sem bloquear a UI
+    setTimeout(async () => {
+        try {
+            // Verificar se tem token do Google
+            const { data: googleToken } = await App.supabase
+                .from('google_tokens')
+                .select('*')
+                .eq('user_id', App.currentUser.id)
+                .maybeSingle();
+            
+            if (!googleToken) {
+                console.log('Google não conectado, pulando sincronização automática');
+                return;
+            }
+            
+            // Buscar configurações atuais
+            const configAtual = App.dataCache.configuracoesSync || {
+                sincronizar_eventos: true,
+                sincronizar_tarefas: true,
+                sincronizar_contas: true,
+                cor_eventos: '6',
+                cor_tarefas: '7',
+                cor_contas: '2'
+            };
+            
+            console.log('🔄 Sincronização automática em segundo plano iniciada...');
+            
+            const { data: { session } } = await App.supabase.auth.getSession();
+            if (!session) return;
+            
+            const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/sincronizar-google', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cores_personalizadas: {
+                        cor_eventos: configAtual.cor_eventos,
+                        cor_tarefas: configAtual.cor_tarefas,
+                        cor_contas: configAtual.cor_contas
+                    }
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                console.log(`✅ Sincronização automática: ${data.criados} criados, ${data.atualizados} atualizados, ${data.deletados} removidos`);
+                
+                // 🔴 FORÇAR ATUALIZAÇÃO VISUAL DO GOOGLE CALENDAR
+                forcarAtualizacaoGoogleCalendar();
+            } else {
+                console.warn('Erro na sincronização automática:', data.error);
+            }
+            
+        } catch (error) {
+            console.error('Erro na sincronização automática:', error);
+        }
+    }, 100); // Pequeno delay para garantir que o modal feche primeiro
+}
+
+
+
+// ============================================
+// FORÇAR ATUALIZAÇÃO VISUAL DO GOOGLE CALENDAR
+// ============================================
+
+// ============================================
+// FORÇAR ATUALIZAÇÃO VISUAL DO GOOGLE CALENDAR (WEB E MOBILE)
+// ============================================
+
+function forcarAtualizacaoGoogleCalendar() {
+    console.log('🔄 Forçando atualização do Google Calendar...');
     
-    if (!googleToken) {
-        console.log('Google não conectado, pulando sincronização automática');
-        return;
+    // 1. Para WEB: Criar iframe invisível com parâmetro de cache busting
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.src = 'https://calendar.google.com/calendar/embed?src=primary&ctz=America/Sao_Paulo&_=' + Date.now();
+    iframe.onload = () => {
+        console.log('✅ Cache do Google Calendar forçado via iframe');
+        setTimeout(() => {
+            iframe.remove();
+        }, 3000);
+    };
+    document.body.appendChild(iframe);
+    
+    // 2. Para MOBILE: Usar link com parâmetro para forçar refresh
+    if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        // Criar um link invisível para o app do Google Calendar com parâmetro de refresh
+        const mobileLink = document.createElement('a');
+        mobileLink.style.display = 'none';
+        mobileLink.href = 'https://calendar.google.com/calendar/r?refresh=true&_=' + Date.now();
+        mobileLink.target = '_blank';
+        document.body.appendChild(mobileLink);
+        
+        // Tentar abrir no app se estiver instalado (deep link)
+        setTimeout(() => {
+            // Deep link para o app do Google Calendar
+            window.location.href = 'comgooglecalendar://?refresh=true';
+        }, 500);
+        
+        setTimeout(() => {
+            mobileLink.remove();
+        }, 2000);
+        
+        console.log('📱 Tentando forçar refresh no app Google Calendar');
     }
     
-    // Buscar configurações atuais
-    const configAtual = App.dataCache.configuracoesSync || {
-        sincronizar_eventos: true,
-        sincronizar_tarefas: true,
-        sincronizar_contas: true,
-        cor_eventos: '6',
-        cor_tarefas: '7',
-        cor_contas: '2'
-    };
+    // 3. Usar Web Push para notificar o Google (via API)
+    forcarPushNotificationGoogle();
     
+    // 4. Notificar o usuário que pode fechar e reabrir o app
+    setTimeout(() => {
+        if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            showToast('📱 Atualize o Google Calendar arrastando para baixo ou reabra o app', 'info');
+        }
+    }, 1500);
+}
+
+// ============================================
+// ENVIAR PUSH NOTIFICATION PARA GOOGLE CALENDAR
+// ============================================
+
+async function forcarPushNotificationGoogle() {
     try {
-        console.log('🔄 Sincronização automática iniciada...');
+        const { data: googleToken } = await App.supabase
+            .from('google_tokens')
+            .select('*')
+            .eq('user_id', App.currentUser.id)
+            .maybeSingle();
+        
+        if (!googleToken) return;
         
         const { data: { session } } = await App.supabase.auth.getSession();
         if (!session) return;
         
-        const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/sincronizar-google', {
+        // Chamar Edge Function para enviar push notification
+        const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/google-push-notify', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${session.access_token}`,
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                cores_personalizadas: {
-                    cor_eventos: configAtual.cor_eventos,
-                    cor_tarefas: configAtual.cor_tarefas,
-                    cor_contas: configAtual.cor_contas
-                }
-            })
+            }
         });
         
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-            console.log(`✅ Sincronização automática: ${data.criados} criados, ${data.atualizados} atualizados, ${data.deletados} removidos`);
-        } else {
-            console.warn('Erro na sincronização automática:', data.error);
+        if (response.ok) {
+            console.log('✅ Push notification enviada para Google Calendar');
         }
-        
     } catch (error) {
-        console.error('Erro na sincronização automática:', error);
+        console.error('Erro ao enviar push notification:', error);
     }
 }
+
 
 
 </script>
