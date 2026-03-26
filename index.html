@@ -689,12 +689,12 @@
             background: var(--medico)
         }
 
-                 .filters {
+              .filters {
             background: linear-gradient(135deg, #667eea, #764ba2);
-            padding: 12px 16px;
+            padding: 8px 12px;
             margin: 6px;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
         .filter-buttons {
@@ -705,9 +705,8 @@
         .filter-btn {
             flex: 1;
             padding: 8px 12px;
-            border: none;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(4px);
+            border: 1px solid #e0e0e0;
+            background: #fafafa;
             border-radius: 40px;
             cursor: pointer;
             display: flex;
@@ -718,7 +717,7 @@
             font-size: 13px;
             transition: all 0.2s ease;
             min-height: 40px;
-            color: #fff;
+            color: var(--dark);
             position: relative;
         }
 
@@ -731,7 +730,7 @@
 
         .filter-btn i {
             font-size: 13px;
-            color: rgba(255, 255, 255, 0.8);
+            color: var(--gray);
             transition: color 0.2s;
         }
 
@@ -740,31 +739,31 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
+            background: #ccc;
             transition: all 0.2s ease;
             margin-left: 4px;
         }
 
         .filter-btn.active {
-            background: #fff;
-            color: #667eea;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            background: #f5f0fa;
+            border-color: var(--purple);
+            box-shadow: 0 1px 3px rgba(155, 89, 182, 0.2);
         }
 
         .filter-btn.active i {
-            color: #667eea;
+            color: var(--purple);
         }
 
         .filter-btn.active .filter-indicator {
-            background: #2ecc71;
-            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.3);
+            background: var(--success);
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2);
             width: 12px;
             height: 12px;
         }
 
         .filter-btn:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.02);
+            background: #f5f5f5;
+            border-color: #ccc;
         }
 
         .content-area {
