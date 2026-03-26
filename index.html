@@ -5819,17 +5819,14 @@ async function salvarNovaConta() {
         return;
     }
 
-    // Se for conta única, pegar o código (se houver)
     if (frequencia === 'unico') {
         codigoBarras = document.getElementById('contaCodigo')?.value.trim() || null;
     }
 
-    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
     try {
         if (frequencia === 'unico') {
-            // ========== CONTA ÚNICA ==========
             let dia = parseInt(document.getElementById('contaDia')?.value);
             let mes = parseInt(document.getElementById('contaMes')?.value);
             let ano = parseInt(document.getElementById('contaAno')?.value);
@@ -5856,7 +5853,7 @@ async function salvarNovaConta() {
                 ano: ano,
                 data: dataInicio,
                 status: 'pendente',
-                added_by: nomeUsuario,  // 🔴 CORRIGIDO
+                added_by: nomeUsuario,
                 codigo_pagamento: codigoBarras
             }).select();
 
@@ -5865,7 +5862,6 @@ async function salvarNovaConta() {
             showToast('Conta salva com sucesso!', 'success');
             
         } else {
-            // ========== CONTA RECORRENTE ==========
             let dataInicioStr = document.getElementById('contaDataInicio')?.value;
             
             if (!dataInicioStr) {
@@ -5924,9 +5920,6 @@ async function salvarNovaConta() {
                     dataUltimaParcela.getMonth() + 1, 
                     dataUltimaParcela.getDate()
                 );
-                
-            } else if (indeterminado) {
-                console.log('Conta indeterminada - sem data fim');
             }
             
             let dataInicio = new Date(dataInicioStr + 'T12:00:00');
@@ -5940,7 +5933,7 @@ async function salvarNovaConta() {
                 frequencia: frequencia,
                 data_inicio: dataInicioStr,
                 ativo: true,
-                added_by: nomeUsuario  // 🔴 CORRIGIDO
+                added_by: nomeUsuario
             };
             
             if (dataFimStr) {
@@ -5961,6 +5954,9 @@ async function salvarNovaConta() {
         verificarNotificacoes({ descricao, valor }, 'contas');
         await registrarHistorico('criacao_conta', `Conta criada: ${descricao}`, { descricao, valor, frequencia, usuario: nomeUsuario });
         
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
+        
         fecharModal();
         await carregarDados(true);
         await atualizarCalendario();
@@ -5973,7 +5969,7 @@ async function salvarNovaConta() {
 }
 
 
-  function editarConta(id, isRecorrente, regraId, dia, mes, ano) {
+ function editarConta(id, isRecorrente, regraId, dia, mes, ano) {
     console.log('🔵 Editando conta - ID:', id, 'isRecorrente:', isRecorrente, 'regraId:', regraId);
     
     if (!App.dataCache || (!App.dataCache.contas && !App.dataCache.regrasContas)) {
@@ -5981,13 +5977,10 @@ async function salvarNovaConta() {
         return;
     }
     
-    // ===== BUSCAR A CONTA INDIVIDUAL =====
     let conta = null;
     
-    // Tenta encontrar pelo ID direto
     conta = App.dataCache.contas?.find(c => c.id == id);
     
-    // Se não encontrou, tenta encontrar pela regra + data
     if (!conta && regraId && dia && mes && ano) {
         conta = App.dataCache.contas?.find(c => 
             c.regra_id == regraId && 
@@ -5997,7 +5990,6 @@ async function salvarNovaConta() {
         );
     }
     
-    // Se ainda não encontrou, criar uma conta temporária para exibição
     if (!conta && regraId) {
         let regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
         if (regra) {
@@ -6033,19 +6025,16 @@ async function salvarNovaConta() {
 
     console.log('✅ Editando CONTA:', conta);
     
-    // ===== VERIFICAR SE É CONTA RECORRENTE =====
     const isRecorrenteConta = conta.regra_id ? true : false;
     
     let valorExibicao = (conta.valor_original || conta.valor || 0).toFixed(2).replace('.', ',');
     let codigoAtual = conta.codigo_pagamento || '';
     let descricaoAtual = conta.descricao || '';
     
-    // ===== MONTAR MODAL CONFORME O TIPO =====
     let avisoHtml = '';
     let camposHtml = '';
     
     if (isRecorrenteConta) {
-        // CONTA RECORRENTE - só edita VALOR e CÓDIGO
         avisoHtml = `
             <div style="background: #e8f4fd; border-left: 4px solid #3498db; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
                 <i class="fas fa-info-circle" style="color: #3498db;"></i>
@@ -6077,7 +6066,6 @@ async function salvarNovaConta() {
         `;
         
     } else {
-        // CONTA ÚNICA - edita tudo (com textarea)
         avisoHtml = ``;
         
         camposHtml = `
@@ -6134,11 +6122,9 @@ async function salvarNovaConta() {
 async function salvarEdicaoContaIndividual(id, isRecorrente) {
     console.log('🔵 Salvando edição individual - ID:', id, 'isRecorrente:', isRecorrente);
     
-    // Pegar valores do formulário
     let valor = parseCurrency(document.getElementById('contaValorEdit')?.value);
     let codigo = document.getElementById('contaCodigoEdit')?.value.trim() || null;
     
-    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
     
     if (!valor) {
@@ -6147,22 +6133,16 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
     }
     
     try {
-        // Verificar se o ID é numérico ou se é um ID temporário (começa com "regra_")
         const isTemporaryId = typeof id === 'string' && id.startsWith('regra_');
         
         let contaId = id;
         
-        // Se for ID temporário, precisamos criar a conta primeiro
         if (isTemporaryId) {
             console.log('🔵 ID temporário detectado. Criando conta individual primeiro...');
             
-            // Extrair dados do ID temporário: regra_89_1777302000000
             const parts = id.split('_');
             const regraId = parseInt(parts[1]);
             
-            console.log('🔵 Regra ID extraído:', regraId);
-            
-            // Buscar a regra
             const regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
             if (!regra) {
                 console.error('❌ Regra não encontrada');
@@ -6170,27 +6150,19 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
                 return;
             }
             
-            console.log('✅ Regra encontrada:', regra);
-            
-            // Buscar a data da conta
             let diaConta = parseInt(document.getElementById('contaDiaEdit')?.value);
             let mesConta = parseInt(document.getElementById('contaMesEdit')?.value);
             let anoConta = parseInt(document.getElementById('contaAnoEdit')?.value);
             
-            console.log('📅 Data do formulário:', { diaConta, mesConta, anoConta });
-            
-            // Se não tiver data no formulário, usar a data da regra
             if (!diaConta || !mesConta || !anoConta) {
                 const dataInicio = new Date(regra.data_inicio + 'T12:00:00');
                 diaConta = dataInicio.getDate();
                 mesConta = dataInicio.getMonth() + 1;
                 anoConta = dataInicio.getFullYear();
-                console.log('📅 Usando data da regra:', { diaConta, mesConta, anoConta });
             }
             
             let dataPrimeiraConta = dataParaString(anoConta, mesConta, diaConta);
             
-            // Verificar se a conta já existe
             const { data: contaExistente } = await App.supabase
                 .from('contas')
                 .select('id')
@@ -6204,9 +6176,6 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
                 console.log('✅ Conta já existe, usando ID:', contaExistente.id);
                 contaId = contaExistente.id;
             } else {
-                // Criar a conta individual
-                console.log('🔵 Criando nova conta...');
-                
                 const { data: novaConta, error: insertError } = await App.supabase.rpc('inserir_conta', {
                     p_user_id: App.currentUser.id,
                     p_descricao: regra.descricao_base,
@@ -6215,7 +6184,7 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
                     p_mes: mesConta,
                     p_ano: anoConta,
                     p_data: dataPrimeiraConta,
-                    p_added_by: nomeUsuario,  // 🔴 CORRIGIDO
+                    p_added_by: nomeUsuario,
                     p_valor_pago: 0,
                     p_status: 'pendente',
                     p_codigo_pagamento: null,
@@ -6237,24 +6206,21 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
                 contaId = novaConta.id;
                 console.log('✅ Conta criada com ID:', contaId);
                 
-                // Criar exceção para não duplicar
                 await App.supabase.from('excecoes_recorrencia').insert({
                     user_id: App.currentUser.id,
                     regra_id: regra.id,
                     data_excecao: dataPrimeiraConta,
                     acao: 'excluir',
-                    added_by: nomeUsuario  // 🔴 CORRIGIDO
+                    added_by: nomeUsuario
                 });
             }
         }
         
-        // Agora atualizar a conta com os novos valores
         let updateData = {
             valor: valor,
             codigo_pagamento: codigo
         };
         
-        // Se for conta NÃO recorrente (única), também atualiza descrição e data
         if (!isRecorrente) {
             let descricao = document.getElementById('contaDescricaoEdit')?.value.trim();
             let diaNovo = parseInt(document.getElementById('contaDiaEdit')?.value);
@@ -6283,8 +6249,6 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
             updateData.data = dataParaString(anoNovo, mesNovo, diaNovo);
         }
         
-        console.log('📝 Atualizando conta ID:', contaId, updateData);
-        
         const { error } = await App.supabase
             .from('contas')
             .update(updateData)
@@ -6292,7 +6256,6 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
         
         if (error) throw error;
         
-        // Registrar no histórico
         await registrarHistorico(
             'edicao_conta_individual', 
             `Conta ID ${contaId} editada`, 
@@ -6300,9 +6263,11 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
         );
         
         showToast(isRecorrente ? '✅ Valor e código salvos nesta conta!' : '✅ Conta atualizada!', 'success');
-        fecharModal();
         
-        // Recarregar dados
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
+        
+        fecharModal();
         await carregarDados(true);
         await atualizarCalendario();
         await mostrarConteudo();
@@ -6638,7 +6603,6 @@ async function salvarEdicaoConta(id, isRecorrente, regraId, dia, mes, ano) {
 
     try {
         if (!isRecorrente || frequencia === 'unico') {
-            // ========== CONTA ÚNICA ==========
             let codigo = document.getElementById('contaCodigoEdit')?.value.trim() || null;
             let diaNovo = parseInt(document.getElementById('contaDiaEdit')?.value);
             let mesNovo = parseInt(document.getElementById('contaMesEdit')?.value);
@@ -6654,7 +6618,6 @@ async function salvarEdicaoConta(id, isRecorrente, regraId, dia, mes, ano) {
                 return;
             }
             
-            // Deletar a antiga e criar nova
             await App.supabase.from('contas').delete().eq('id', id);
             
             let dataInicio = dataParaString(anoNovo, mesNovo, diaNovo);
@@ -6673,7 +6636,6 @@ async function salvarEdicaoConta(id, isRecorrente, regraId, dia, mes, ano) {
             });
             
         } else {
-            // ========== CONTA RECORRENTE ==========
             let dataInicioStr = document.getElementById('contaDataInicioEdit')?.value;
             
             if (!dataInicioStr) {
@@ -6688,21 +6650,18 @@ async function salvarEdicaoConta(id, isRecorrente, regraId, dia, mes, ano) {
             let numParcelas = null;
             
             if (dataRadio) {
-                // Data específica - USA O CAMPO DATA FIM PRINCIPAL
                 dataFimStr = document.getElementById('contaDataFimEdit')?.value;
                 if (!dataFimStr) {
                     showToast('Selecione a data de fim', 'warning');
                     return;
                 }
             } else if (parcelasRadio) {
-                // Número de parcelas
                 numParcelas = parseInt(document.getElementById('contaNumParcelasEdit')?.value);
                 if (!numParcelas || numParcelas < 2) {
                     showToast('Número de parcelas deve ser pelo menos 2', 'warning');
                     return;
                 }
                 
-                // Calcular a data fim baseada no número de parcelas
                 let dataInicio = new Date(dataInicioStr + 'T12:00:00');
                 let dataUltimaParcela = new Date(dataInicio);
                 
@@ -6739,25 +6698,17 @@ async function salvarEdicaoConta(id, isRecorrente, regraId, dia, mes, ano) {
                 );
             }
             
-            // ===== PASSO 1: DELETAR TODAS AS CONTAS INDIVIDUAIS DESTA REGRA =====
-            console.log('🗑️ Removendo contas individuais da regra:', regraId);
-            
-            // Deletar contas fixas que foram geradas por esta regra
             await App.supabase
                 .from('contas')
                 .delete()
                 .eq('user_id', App.currentUser.id)
                 .eq('regra_id', regraId);
             
-            // Deletar exceções de recorrência (pagamentos/exclusões anteriores)
             await App.supabase
                 .from('excecoes_recorrencia')
                 .delete()
                 .eq('user_id', App.currentUser.id)
                 .eq('regra_id', regraId);
-            
-            // ===== PASSO 2: ATUALIZAR A REGRA =====
-            console.log('📝 Atualizando regra:', regraId);
             
             let updateData = {
                 descricao_base: descricao,
@@ -6781,15 +6732,15 @@ async function salvarEdicaoConta(id, isRecorrente, regraId, dia, mes, ano) {
             }
             
             await App.supabase.from('regras_contas').update(updateData).eq('id', regraId);
-            
-            console.log('✅ Regra atualizada com sucesso');
         }
 
         await registrarHistorico('edicao_conta', `Conta editada: ${descricao}`, { id, usuario: App.usuarioAtual });
         showToast('Conta atualizada!', 'success');
-        fecharModal();
         
-        // ===== PASSO 3: FORÇAR RECARREGAMENTO COMPLETO =====
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
+        
+        fecharModal();
         await carregarDados(true);
         await atualizarCalendario();
         await mostrarConteudo();
@@ -7173,7 +7124,7 @@ function atualizarTipoFimEvento() {
             fecharSeletorIcones();
         }
 
-     async function salvarNovoEvento() {
+    async function salvarNovoEvento() {
     let titulo = document.getElementById('eventoTitulo')?.value.trim();
     let desc = document.getElementById('eventoDescricao')?.value.trim();
     let hora = document.getElementById('eventoHora')?.value;
@@ -7187,12 +7138,10 @@ function atualizarTipoFimEvento() {
         return;
     }
 
-    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
     try {
         if (frequencia === 'unico') {
-            // ===== EVENTO ÚNICO =====
             let dataInicioStr = document.getElementById('eventoDataInicioUnico')?.value;
             let dataFimStr = document.getElementById('eventoDataFimUnico')?.value;
             
@@ -7209,7 +7158,6 @@ function atualizarTipoFimEvento() {
                 return;
             }
             
-            // Criar eventos para cada dia do período
             let dataAtual = new Date(dataInicio);
             while (dataAtual <= dataFim) {
                 let ano = dataAtual.getFullYear();
@@ -7235,9 +7183,7 @@ function atualizarTipoFimEvento() {
                 
                 dataAtual.setDate(dataAtual.getDate() + 1);
             }
-            
         } else {
-            // ===== EVENTO RECORRENTE =====
             let dataInicioStr = document.getElementById('eventoDataInicio')?.value;
             let dataFimStr = null;
             
@@ -7246,28 +7192,15 @@ function atualizarTipoFimEvento() {
                 return;
             }
             
-            // Verificar tipo de fim
             let dataRadio = document.getElementById('fimDataEvento')?.checked;
             let indeterminado = document.getElementById('fimIndeterminadoEvento')?.checked;
             
             if (dataRadio) {
-                // Data específica
                 dataFimStr = document.getElementById('eventoDataFim')?.value;
                 if (!dataFimStr) {
                     showToast('Selecione a data de fim', 'warning');
                     return;
                 }
-                
-                let dataInicio = new Date(dataInicioStr + 'T12:00:00');
-                let dataFim = new Date(dataFimStr + 'T12:00:00');
-                
-                if (dataFim < dataInicio) {
-                    showToast('Data de fim deve ser após data de início', 'warning');
-                    return;
-                }
-            } else if (indeterminado) {
-                // Indeterminado - dataFim continua null
-                console.log('Evento indeterminado - sem data fim');
             }
             
             let dataInicio = new Date(dataInicioStr + 'T12:00:00');
@@ -7300,16 +7233,8 @@ function atualizarTipoFimEvento() {
         
         showToast('Evento salvo com sucesso!', 'success');
         
-        // 🔴 SINCRONIZAR COM GOOGLE (SE CONECTADO)
-        const { data: googleToken } = await App.supabase
-            .from('google_tokens')
-            .select('*')
-            .eq('user_id', App.currentUser.id)
-            .maybeSingle();
-        
-        if (googleToken) {
-            sincronizarGoogle();
-        }
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
         
         fecharModal();
         await carregarDados(true);
@@ -9155,7 +9080,7 @@ async function sincronizarGoogle() {
             fecharSeletorIconesEdit();
         }
 
-       async function salvarEdicaoEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
+    async function salvarEdicaoEvento(id, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
     let titulo = document.getElementById('eventoTituloEdit')?.value.trim();
     let desc = document.getElementById('eventoDescricaoEdit')?.value.trim();
     let dataInicioStr = document.getElementById('eventoDataInicioEdit')?.value;
@@ -9165,7 +9090,6 @@ async function sincronizarGoogle() {
     let icone = document.getElementById('eventoIconeEdit')?.value || 'fa-star';
     let corIcone = document.getElementById('eventoCorIconeEdit')?.value || '#ffd700';
 
-    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
     if (!titulo || !dataInicioStr) {
@@ -9207,14 +9131,11 @@ async function sincronizarGoogle() {
                 added_by: nomeUsuario
             });
         } else {
-            // PASSO 1: Encontrar o evento original ANTIGO para saber o período antigo
             let eventoAntigo = null;
             
             if (App.dataCache && App.dataCache.eventos) {
                 eventoAntigo = App.dataCache.eventos.find(e => e.id == id);
             }
-            
-            console.log('Evento antigo encontrado:', eventoAntigo);
             
             if (eventoAntigo && eventoAntigo.data_inicio) {
                 if (eventoAntigo.data_fim) {
@@ -9292,16 +9213,8 @@ async function sincronizarGoogle() {
         await registrarHistorico('edicao_evento', `Evento editado: ${titulo}`, { id, usuario: nomeUsuario });
         showToast('Evento atualizado!', 'success');
         
-        // 🔴 SINCRONIZAR COM GOOGLE (SE CONECTADO)
-        const { data: googleToken } = await App.supabase
-            .from('google_tokens')
-            .select('*')
-            .eq('user_id', App.currentUser.id)
-            .maybeSingle();
-        
-        if (googleToken) {
-            sincronizarGoogle();
-        }
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
         
         fecharModal();
         await carregarDados(true);
@@ -9417,10 +9330,8 @@ function fecharModalInfoEConfirmar() {
     
     let valorPago = parseCurrency(document.getElementById('pagamentoValorConta')?.value);
     
-    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
     
-    // VERIFICAR SE O VALOR É ZERO
     if (valorPago === 0) {
         const confirmar = confirm(
             '⚠️ ATENÇÃO: Você está pagando R$ 0,00.\n\n' +
@@ -9432,7 +9343,6 @@ function fecharModalInfoEConfirmar() {
             return;
         }
         
-        // Se confirmou, prosseguir sem alterar saldo
         try {
             if (isRecorrente && regraId) {
                 await App.supabase.from('excecoes_recorrencia').insert({
@@ -9440,7 +9350,7 @@ function fecharModalInfoEConfirmar() {
                     regra_id: regraId,
                     data_excecao: dataParaString(ano, mes, dia),
                     acao: 'pagar',
-                    added_by: nomeUsuario  // 🔴 CORRIGIDO
+                    added_by: nomeUsuario
                 });
             } else {
                 await App.supabase.from('contas').update({
@@ -9452,6 +9362,10 @@ function fecharModalInfoEConfirmar() {
             
             await registrarHistorico('pagamento_conta_zero', `Conta marcada como paga (R$ 0,00): ${desc}`, { id, usuario: nomeUsuario });
             showToast('✅ Conta marcada como paga! (Saldo não alterado)', 'success');
+            
+            // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+            await sincronizarGoogleAutomatico();
+            
             fecharModal();
             await carregarDados(true);
             await atualizarCalendario();
@@ -9465,7 +9379,6 @@ function fecharModalInfoEConfirmar() {
         }
     }
     
-    // CONTINUAÇÃO DO CÓDIGO ORIGINAL PARA VALOR NÃO ZERO
     App.processandoPagamento = true;
     
     try {
@@ -9475,7 +9388,7 @@ function fecharModalInfoEConfirmar() {
                 regra_id: regraId,
                 data_excecao: dataParaString(ano, mes, dia),
                 acao: 'pagar',
-                added_by: nomeUsuario  // 🔴 CORRIGIDO
+                added_by: nomeUsuario
             });
         } else {
             await App.supabase.from('contas').update({
@@ -9500,6 +9413,10 @@ function fecharModalInfoEConfirmar() {
         verificarNotificacoes({ descricao: 'Pagamento confirmado', valor: valorPago }, 'contas');
         
         showToast('Pagamento confirmado!', 'success');
+        
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
+        
         fecharModal();
         await carregarDados(true);
         await atualizarCalendario();
@@ -9527,42 +9444,46 @@ function fecharModalInfoEConfirmar() {
         }
 
         async function desfazerPagamento(id, valor, regraId, dia, mes, ano, isRecorrente) {
-            try {
-                if (isRecorrente && regraId) {
-                    await App.supabase
-                        .from('excecoes_recorrencia')
-                        .delete()
-                        .eq('regra_id', regraId)
-                        .eq('data_excecao', dataParaString(ano, mes, dia));
-                } else {
-                    await App.supabase.from('contas').update({
-                        valor_pago: 0,
-                        status: 'pendente',
-                        data_pagamento: null
-                    }).eq('id', id);
-                }
+    try {
+        if (isRecorrente && regraId) {
+            await App.supabase
+                .from('excecoes_recorrencia')
+                .delete()
+                .eq('regra_id', regraId)
+                .eq('data_excecao', dataParaString(ano, mes, dia));
+        } else {
+            await App.supabase.from('contas').update({
+                valor_pago: 0,
+                status: 'pendente',
+                data_pagamento: null
+            }).eq('id', id);
+        }
 
-                if (App.saldoCentral.id) {
-                    let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
-                    if (saldoAtual) {
-                        let novoValor = saldoAtual.valor + valor;
-                        await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
-                        App.saldoCentral.valor = novoValor;
-                        atualizarSaldoHeader();
-                    }
-                }
-
-                await registrarHistorico('desfazer_pagamento', `Pagamento desfeito: ${id}`, { id, valor, usuario: App.usuarioAtual });
-                showToast('Pagamento desfeito!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await atualizarCalendario();
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao desfazer pagamento:', error);
-                showToast('Erro: ' + error.message, 'error');
+        if (App.saldoCentral.id) {
+            let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
+            if (saldoAtual) {
+                let novoValor = saldoAtual.valor + valor;
+                await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
+                App.saldoCentral.valor = novoValor;
+                atualizarSaldoHeader();
             }
         }
+
+        await registrarHistorico('desfazer_pagamento', `Pagamento desfeito: ${id}`, { id, valor, usuario: App.usuarioAtual });
+        showToast('Pagamento desfeito!', 'success');
+        
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
+        
+        fecharModal();
+        await carregarDados(true);
+        await atualizarCalendario();
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao desfazer pagamento:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
         function editarItem(id, tipo, isRecorrente, regraId, isIndividual, individualId, dia, mes, ano) {
             if (tipo === 'gasto') {
@@ -9595,47 +9516,47 @@ function fecharModalInfoEConfirmar() {
             abrirModal('Excluir Gasto', 'fa-trash', conteudo);
         }
 
-        async function excluirGastoComSaldo(id, valor) {
-            try {
-                await App.supabase.from('gastos').delete().eq('id', id);
+       async function excluirGastoComSaldo(id, valor) {
+    try {
+        await App.supabase.from('gastos').delete().eq('id', id);
 
-                if (App.saldoCentral.id) {
-                    let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
-                    if (saldoAtual) {
-                        let novoValor = saldoAtual.valor + valor;
-                        await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
-                        App.saldoCentral.valor = novoValor;
-                        atualizarSaldoHeader();
-                    }
-                }
-
-                await registrarHistorico('exclusao_gasto', `Gasto excluído com devolução`, { id, valor, usuario: App.usuarioAtual });
-                showToast('Gasto excluído e saldo devolvido!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao excluir gasto:', error);
-                showToast('Erro: ' + error.message, 'error');
+        if (App.saldoCentral.id) {
+            let { data: saldoAtual } = await App.supabase.from('saldos').select('valor').eq('id', App.saldoCentral.id).single();
+            if (saldoAtual) {
+                let novoValor = saldoAtual.valor + valor;
+                await App.supabase.from('saldos').update({ valor: novoValor }).eq('id', App.saldoCentral.id);
+                App.saldoCentral.valor = novoValor;
+                atualizarSaldoHeader();
             }
         }
 
-        async function excluirGastoSemSaldo(id) {
-            try {
-                await App.supabase.from('gastos').delete().eq('id', id);
+        await registrarHistorico('exclusao_gasto', `Gasto excluído com devolução`, { id, valor, usuario: App.usuarioAtual });
+        showToast('Gasto excluído e saldo devolvido!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao excluir gasto:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
-                await registrarHistorico('exclusao_gasto', `Gasto excluído sem devolução`, { id, usuario: App.usuarioAtual });
-                showToast('Gasto excluído!', 'success');
-                fecharModal();
-                await carregarDados(true);
-                await mostrarConteudo();
-            } catch (error) {
-                console.error('Erro ao excluir gasto:', error);
-                showToast('Erro: ' + error.message, 'error');
-            }
-        }
+async function excluirGastoSemSaldo(id) {
+    try {
+        await App.supabase.from('gastos').delete().eq('id', id);
 
-      function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId) {
+        await registrarHistorico('exclusao_gasto', `Gasto excluído sem devolução`, { id, usuario: App.usuarioAtual });
+        showToast('Gasto excluído!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+    } catch (error) {
+        console.error('Erro ao excluir gasto:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+    function confirmarExclusao(id, tipo, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId) {
     if (tipo === 'gasto') {
         confirmarExclusaoGasto(id, '', 0);
         return;
@@ -9645,16 +9566,9 @@ function fecharModalInfoEConfirmar() {
     if (tipo === 'conta') {
         console.log('🔵 Verificando conta para exclusão - ID:', id);
         
-        // Buscar a conta na tabela contas
         let conta = App.dataCache.contas?.find(c => c.id == id);
         
-        console.log('🔵 Conta encontrada:', conta);
-        
-        // Se a conta existe e tem regra_id, significa que ela foi editada individualmente
         if (conta && conta.regra_id && conta.regra_id > 0) {
-            console.log('🔵 Conta editada detectada! regra_id:', conta.regra_id);
-            
-            // Buscar a regra para mostrar informações
             let regra = App.dataCache.regrasContas?.find(r => r.id == conta.regra_id);
             let frequenciaTexto = regra ? regra.frequencia : 'recorrente';
             
@@ -9669,10 +9583,6 @@ function fecharModalInfoEConfirmar() {
                         <p style="margin-top: 8px; font-size: 13px; color: #856404;">
                             <strong>Você só pode excluir APENAS esta conta específica.</strong><br>
                             As demais contas da série (próximos meses) continuarão existindo normalmente.
-                        </p>
-                        <p style="margin-top: 8px; font-size: 12px; color: #856404;">
-                            💡 <strong>Dica:</strong> Se você quiser excluir TODAS as contas desta série, 
-                            escolha uma conta que NUNCA foi editada e use a opção "Todas as ocorrências".
                         </p>
                     </div>
                     
@@ -9689,11 +9599,9 @@ function fecharModalInfoEConfirmar() {
             abrirModal('Excluir Conta Editada', 'fa-trash', conteudo);
             return;
         }
-        
-        console.log('🔵 Conta NÃO editada ou não encontrada - prosseguindo com menu normal');
     }
 
-    // ===== CONTINUAÇÃO DO CÓDIGO ORIGINAL PARA CONTAS NÃO EDITADAS =====
+    // ===== EVENTOS =====
     if (tipo === 'evento' && (isRecorrente || regraId || (!isRecorrente && dia && mes && ano))) {
         let evento = isRecorrente ? App.dataCache.regrasEventos.find(r => r.id === regraId) : 
                     isIndividual ? App.dataCache.eventosIndividuais.find(e => e.id === individualId) :
@@ -9731,7 +9639,11 @@ function fecharModalInfoEConfirmar() {
             </div>
         `;
         abrirModal('Excluir Evento', 'fa-trash', conteudo);
-    } else if (tipo === 'conta' && (isRecorrente || regraId)) {
+        return;
+    }
+    
+    // ===== CONTAS RECORRENTES =====
+    if (tipo === 'conta' && (isRecorrente || regraId)) {
         let conteudo = `
             <div style="padding:16px">
                 <h3 style="margin-bottom:16px">Excluir Conta</h3>
@@ -9757,30 +9669,36 @@ function fecharModalInfoEConfirmar() {
             </div>
         `;
         abrirModal('Excluir Conta', 'fa-trash', conteudo);
-    } else {
-        if (confirm(`Tem certeza que deseja excluir este ${tipo}?`)) {
-            (async () => {
-                try {
-                    if (tipo === 'gasto') {
-                        await App.supabase.from('gastos').delete().eq('id', id);
-                    } else if (tipo === 'evento') {
-                        await App.supabase.from('eventos').delete().eq('id', id);
-                    } else if (tipo === 'conta') {
-                        await App.supabase.from('contas').delete().eq('id', id);
-                    }
-
-                    await registrarHistorico('exclusao_item', `${tipo} excluído`, { id, tipo, usuario: App.usuarioAtual });
-                    showToast('Item excluído!', 'success');
-                    fecharModal();
-                    await carregarDados(true);
-                    await atualizarCalendario();
-                    await mostrarConteudo();
-                } catch (error) {
-                    console.error('Erro ao excluir:', error);
-                    showToast('Erro: ' + error.message, 'error');
+        return;
+    }
+    
+    // ===== OUTROS ITENS (conta única, gasto, etc) =====
+    if (confirm(`Tem certeza que deseja excluir este ${tipo}?`)) {
+        (async () => {
+            try {
+                if (tipo === 'gasto') {
+                    await App.supabase.from('gastos').delete().eq('id', id);
+                } else if (tipo === 'evento') {
+                    await App.supabase.from('eventos').delete().eq('id', id);
+                } else if (tipo === 'conta') {
+                    await App.supabase.from('contas').delete().eq('id', id);
                 }
-            })();
-        }
+
+                await registrarHistorico('exclusao_item', `${tipo} excluído`, { id, tipo, usuario: App.usuarioAtual });
+                showToast('Item excluído!', 'success');
+                
+                // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+                await sincronizarGoogleAutomatico();
+                
+                fecharModal();
+                await carregarDados(true);
+                await atualizarCalendario();
+                await mostrarConteudo();
+            } catch (error) {
+                console.error('Erro ao excluir:', error);
+                showToast('Erro: ' + error.message, 'error');
+            }
+        })();
     }
 }
 
@@ -9790,20 +9708,18 @@ async function excluirContaIndividual(id) {
     try {
         console.log('🔵 Excluindo conta individual ID:', id);
         
-        // Deletar a conta
-        const { error } = await App.supabase
+        await App.supabase
             .from('contas')
             .delete()
             .eq('id', id);
         
-        if (error) throw error;
-        
         await registrarHistorico('exclusao_conta_individual', `Conta individual excluída`, { id, usuario: App.usuarioAtual });
-        
         showToast('✅ Conta excluída com sucesso!', 'success');
-        fecharModal();
         
-        // Recarregar dados
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
+        
+        fecharModal();
         await carregarDados(true);
         await atualizarCalendario();
         await mostrarConteudo();
@@ -9824,80 +9740,84 @@ function atualizarEmailMenu() {
     }
 }
 
-        function selecionarExclusao(tipo, id, tipoItem, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId) {
-            (async () => {
-                try {
-                    if (tipo === 'unica') {
-                        if (isRecorrente && regraId) {
-                            let dataExcecao = dataParaString(ano, mes, dia);
-                            await App.supabase.from('excecoes_recorrencia').insert({
-                                user_id: App.currentUser.id,
-                                regra_id: regraId,
-                                data_excecao: dataExcecao,
-                                acao: 'excluir',
-                                added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
-                            });
-                        } else if (isIndividual && individualId) {
-                            await App.supabase.from('eventos_individuais').delete().eq('id', individualId);
-                        } else {
-                            await App.supabase.from('eventos').delete().eq('id', id);
-                        }
-                    } else if (tipo === 'futuras') {
-                        let dataFim = dataParaString(ano, mes, dia - 1);
-                        await App.supabase
-                            .from('regras_eventos')
-                            .update({ data_fim: dataFim })
-                            .eq('id', regraId);
-                        
-                        await App.supabase
-                            .from('eventos_individuais')
-                            .delete()
-                            .eq('regra_id', regraId)
-                            .gte('data_original', dataParaString(ano, mes, dia));
-                    } else if (tipo === 'todas') {
-                        if (isRecorrente && regraId) {
-                            await App.supabase.from('regras_eventos').delete().eq('id', regraId);
-                            await App.supabase.from('eventos_individuais').delete().eq('regra_id', regraId);
-                            await App.supabase.from('excecoes_recorrencia').delete().eq('regra_id', regraId);
-                        } else if (isIndividual && individualId) {
-                            await App.supabase.from('eventos_individuais').delete().eq('id', individualId);
-                            
-                            const { count } = await App.supabase
-                                .from('eventos_individuais')
-                                .select('*', { count: 'exact', head: true })
-                                .eq('regra_id', regraId);
-                            
-                            if (count === 0) {
-                                await App.supabase.from('regras_eventos').delete().eq('id', regraId);
-                            }
-                        } else {
-                            const evento = App.dataCache.eventos.find(e => e.id == id);
-                            
-                            if (evento && evento.data_inicio && evento.data_fim) {
-                                await App.supabase
-                                    .from('eventos')
-                                    .delete()
-                                    .eq('user_id', App.currentUser.id)
-                                    .eq('data_inicio', evento.data_inicio)
-                                    .eq('data_fim', evento.data_fim);
-                            } else {
-                                await App.supabase.from('eventos').delete().eq('id', id);
-                            }
-                        }
-                    }
-
-                    await registrarHistorico('exclusao_evento', `Evento excluído (${tipo})`, { id, usuario: App.usuarioAtual });
-                    showToast('Evento excluído!', 'success');
-                    fecharModal();
-                    await carregarDados(true);
-                    await atualizarCalendario();
-                    await mostrarConteudo();
-                } catch (error) {
-                    console.error('Erro ao excluir evento:', error);
-                    showToast('Erro: ' + error.message, 'error');
+       function selecionarExclusao(tipo, id, tipoItem, isRecorrente, regraId, dia, mes, ano, isIndividual, individualId) {
+    (async () => {
+        try {
+            if (tipo === 'unica') {
+                if (isRecorrente && regraId) {
+                    let dataExcecao = dataParaString(ano, mes, dia);
+                    await App.supabase.from('excecoes_recorrencia').insert({
+                        user_id: App.currentUser.id,
+                        regra_id: regraId,
+                        data_excecao: dataExcecao,
+                        acao: 'excluir',
+                        added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
+                    });
+                } else if (isIndividual && individualId) {
+                    await App.supabase.from('eventos_individuais').delete().eq('id', individualId);
+                } else {
+                    await App.supabase.from('eventos').delete().eq('id', id);
                 }
-            })();
+            } else if (tipo === 'futuras') {
+                let dataFim = dataParaString(ano, mes, dia - 1);
+                await App.supabase
+                    .from('regras_eventos')
+                    .update({ data_fim: dataFim })
+                    .eq('id', regraId);
+                
+                await App.supabase
+                    .from('eventos_individuais')
+                    .delete()
+                    .eq('regra_id', regraId)
+                    .gte('data_original', dataParaString(ano, mes, dia));
+            } else if (tipo === 'todas') {
+                if (isRecorrente && regraId) {
+                    await App.supabase.from('regras_eventos').delete().eq('id', regraId);
+                    await App.supabase.from('eventos_individuais').delete().eq('regra_id', regraId);
+                    await App.supabase.from('excecoes_recorrencia').delete().eq('regra_id', regraId);
+                } else if (isIndividual && individualId) {
+                    await App.supabase.from('eventos_individuais').delete().eq('id', individualId);
+                    
+                    const { count } = await App.supabase
+                        .from('eventos_individuais')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('regra_id', regraId);
+                    
+                    if (count === 0) {
+                        await App.supabase.from('regras_eventos').delete().eq('id', regraId);
+                    }
+                } else {
+                    const evento = App.dataCache.eventos.find(e => e.id == id);
+                    
+                    if (evento && evento.data_inicio && evento.data_fim) {
+                        await App.supabase
+                            .from('eventos')
+                            .delete()
+                            .eq('user_id', App.currentUser.id)
+                            .eq('data_inicio', evento.data_inicio)
+                            .eq('data_fim', evento.data_fim);
+                    } else {
+                        await App.supabase.from('eventos').delete().eq('id', id);
+                    }
+                }
+            }
+
+            await registrarHistorico('exclusao_evento', `Evento excluído (${tipo})`, { id, usuario: App.usuarioAtual });
+            showToast('Evento excluído!', 'success');
+            
+            // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+            await sincronizarGoogleAutomatico();
+            
+            fecharModal();
+            await carregarDados(true);
+            await atualizarCalendario();
+            await mostrarConteudo();
+        } catch (error) {
+            console.error('Erro ao excluir evento:', error);
+            showToast('Erro: ' + error.message, 'error');
         }
+    })();
+}
 
 
         // ============================================
@@ -9959,44 +9879,48 @@ function abrirModalAssinaturaBloqueio() {
 }
 
         function selecionarExclusaoConta(tipo, id, tipoItem, isRecorrente, regraId, dia, mes, ano) {
-            (async () => {
-                try {
-                    if (tipo === 'unica') {
-                        if (isRecorrente && regraId) {
-                            let dataExcecao = dataParaString(ano, mes, dia);
-                            await App.supabase.from('excecoes_recorrencia').insert({
-                                user_id: App.currentUser.id,
-                                regra_id: regraId,
-                                data_excecao: dataExcecao,
-                                acao: 'excluir',
-                                added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
-                            });
-                        } else {
-                            await App.supabase.from('contas').delete().eq('id', id);
-                        }
-                    } else if (tipo === 'futuras') {
-                        let dataFim = dataParaString(ano, mes, dia - 1);
-                        await App.supabase
-                            .from('regras_contas')
-                            .update({ data_fim: dataFim })
-                            .eq('id', regraId);
-                    } else if (tipo === 'todas') {
-                        await App.supabase.from('regras_contas').delete().eq('id', regraId);
-                        await App.supabase.from('excecoes_recorrencia').delete().eq('regra_id', regraId);
-                    }
-
-                    await registrarHistorico('exclusao_conta', `Conta excluída (${tipo})`, { id, usuario: App.usuarioAtual });
-                    showToast('Conta excluída!', 'success');
-                    fecharModal();
-                    await carregarDados(true);
-                    await atualizarCalendario();
-                    await mostrarConteudo();
-                } catch (error) {
-                    console.error('Erro ao excluir conta:', error);
-                    showToast('Erro: ' + error.message, 'error');
+    (async () => {
+        try {
+            if (tipo === 'unica') {
+                if (isRecorrente && regraId) {
+                    let dataExcecao = dataParaString(ano, mes, dia);
+                    await App.supabase.from('excecoes_recorrencia').insert({
+                        user_id: App.currentUser.id,
+                        regra_id: regraId,
+                        data_excecao: dataExcecao,
+                        acao: 'excluir',
+                        added_by: App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido'
+                    });
+                } else {
+                    await App.supabase.from('contas').delete().eq('id', id);
                 }
-            })();
+            } else if (tipo === 'futuras') {
+                let dataFim = dataParaString(ano, mes, dia - 1);
+                await App.supabase
+                    .from('regras_contas')
+                    .update({ data_fim: dataFim })
+                    .eq('id', regraId);
+            } else if (tipo === 'todas') {
+                await App.supabase.from('regras_contas').delete().eq('id', regraId);
+                await App.supabase.from('excecoes_recorrencia').delete().eq('regra_id', regraId);
+            }
+
+            await registrarHistorico('exclusao_conta', `Conta excluída (${tipo})`, { id, usuario: App.usuarioAtual });
+            showToast('Conta excluída!', 'success');
+            
+            // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+            await sincronizarGoogleAutomatico();
+            
+            fecharModal();
+            await carregarDados(true);
+            await atualizarCalendario();
+            await mostrarConteudo();
+        } catch (error) {
+            console.error('Erro ao excluir conta:', error);
+            showToast('Erro: ' + error.message, 'error');
         }
+    })();
+}
 
         function abrirMenuRelatorio() {
     let { mes, ano } = getMesAnoAtual();
@@ -12591,7 +12515,6 @@ async function salvarNovaTarefa() {
     let dataLimite = document.getElementById('tarefaDataLimite')?.value;
     let prioridade = document.getElementById('tarefaPrioridade')?.value;
     
-    // PEGAR RESPONSÁVEIS SELECIONADOS
     const checkboxes = document.querySelectorAll('.responsavel-checkbox:checked');
     const responsaveisIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
     const responsaveisNomes = Array.from(checkboxes).map(cb => cb.getAttribute('data-nome'));
@@ -12603,7 +12526,6 @@ async function salvarNovaTarefa() {
         return;
     }
     
-    // VERIFICAR SE TEM PELO MENOS UM RESPONSÁVEL
     if (responsaveisIds.length === 0) {
         showToast('Selecione pelo menos um responsável', 'warning');
         return;
@@ -12623,7 +12545,7 @@ async function salvarNovaTarefa() {
             user_id: App.currentUser.id,
             titulo: titulo,
             descricao: descricao || null,
-            responsavel_ids: responsaveisIds,  // 🔴 ARRAY DIRETO (JSONB aceita)
+            responsavel_ids: responsaveisIds,
             responsavel_nome: responsaveisNomes.join(', '),
             data_limite: dataLimite || null,
             prioridade: prioridade || 'normal',
@@ -12640,11 +12562,14 @@ async function salvarNovaTarefa() {
         });
         
         showToast('Tarefa criada!', 'success');
+        
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
+        
         fecharModal();
         await carregarDados(true);
         await mostrarConteudo();
         
-        // Notificar se o responsável não é o criador
         const criadorId = App.usuarioAtual?.id;
         const outros = responsaveisIds.filter(id => id !== criadorId);
         if (outros.length > 0) {
@@ -12743,7 +12668,6 @@ async function salvarEdicaoTarefa(id) {
     let dataLimite = document.getElementById('tarefaDataLimiteEdit')?.value;
     let prioridade = document.getElementById('tarefaPrioridadeEdit')?.value;
     
-    // Pegar responsáveis selecionados
     const checkboxes = document.querySelectorAll('.responsavel-checkbox-edit:checked');
     const responsaveisIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
     const responsaveisNomes = Array.from(checkboxes).map(cb => cb.getAttribute('data-nome'));
@@ -12757,7 +12681,6 @@ async function salvarEdicaoTarefa(id) {
         return;
     }
     
-    // Verificar se tem responsáveis selecionados e não é geral
     if (!tarefaGeral && responsaveisIds.length === 0) {
         showToast('Selecione pelo menos um responsável ou marque "Tarefa geral"', 'warning');
         return;
@@ -12791,6 +12714,10 @@ async function salvarEdicaoTarefa(id) {
         });
         
         showToast('Tarefa atualizada!', 'success');
+        
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
+        
         fecharModal();
         await carregarDados(true);
         await mostrarConteudo();
@@ -12813,6 +12740,10 @@ async function alternarConcluidoTarefa(id) {
         
         await registrarHistorico('alternar_tarefa', `Tarefa ${!tarefa.concluido ? 'concluída' : 'reaberta'}: ${tarefa.titulo}`, { id, usuario: App.usuarioAtual?.apelido });
         showToast(tarefa.concluido ? '✅ Tarefa reaberta!' : '✅ Tarefa concluída!', 'success');
+        
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
+        
         await carregarDados(true);
         await mostrarConteudo();
     } catch (error) {
@@ -12831,6 +12762,10 @@ async function deletarTarefa(id) {
         await App.supabase.from('tarefas').delete().eq('id', id);
         await registrarHistorico('exclusao_tarefa', `Tarefa excluída: ${tarefa.titulo}`, { id, usuario: App.usuarioAtual?.apelido });
         showToast('Tarefa excluída!', 'success');
+        
+        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
+        await sincronizarGoogleAutomatico();
+        
         await carregarDados(true);
         await mostrarConteudo();
     } catch (error) {
@@ -13610,6 +13545,68 @@ function irParaGiros() {
 }
 
 
+// ============================================
+// FUNÇÃO DE SINCRONIZAÇÃO AUTOMÁTICA
+// ============================================
+
+async function sincronizarGoogleAutomatico() {
+    // Verificar se tem token do Google
+    const { data: googleToken } = await App.supabase
+        .from('google_tokens')
+        .select('*')
+        .eq('user_id', App.currentUser.id)
+        .maybeSingle();
+    
+    if (!googleToken) {
+        console.log('Google não conectado, pulando sincronização automática');
+        return;
+    }
+    
+    // Buscar configurações atuais
+    const configAtual = App.dataCache.configuracoesSync || {
+        sincronizar_eventos: true,
+        sincronizar_tarefas: true,
+        sincronizar_contas: true,
+        cor_eventos: '6',
+        cor_tarefas: '7',
+        cor_contas: '2'
+    };
+    
+    try {
+        console.log('🔄 Sincronização automática iniciada...');
+        
+        const { data: { session } } = await App.supabase.auth.getSession();
+        if (!session) return;
+        
+        const response = await fetch('https://rirvrrlgjetsgwhqqfvq.supabase.co/functions/v1/sincronizar-google', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cores_personalizadas: {
+                    cor_eventos: configAtual.cor_eventos,
+                    cor_tarefas: configAtual.cor_tarefas,
+                    cor_contas: configAtual.cor_contas
+                }
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            console.log(`✅ Sincronização automática: ${data.criados} criados, ${data.atualizados} atualizados, ${data.deletados} removidos`);
+        } else {
+            console.warn('Erro na sincronização automática:', data.error);
+        }
+        
+    } catch (error) {
+        console.error('Erro na sincronização automática:', error);
+    }
+}
+
+
 </script>
 
 <!-- Modal Iphone -->
@@ -13711,4 +13708,4 @@ function irParaGiros() {
 </html>
 
 
-Edição 003
+Edição 004
