@@ -3006,7 +3006,6 @@ function verificarEAcao(acao) {
         return;
     }
     
-    // 🔴 VERIFICAR SE ESTÁ ONLINE
     if (!App.isOnline) {
         showToast('📡 Você está offline. Conecte-se à internet para adicionar ou editar itens.', 'warning');
         return;
@@ -12785,6 +12784,172 @@ async function deletarTarefa(id) {
 }
 
 
+// ============================================
+// MODAL OBRIGATÓRIO PARA DEFINIR USUÁRIO
+// ============================================
+
+async function verificarEObrigarUsuario() {
+    // Verificar se já tem usuário definido
+    if (App.usuarioAtual) {
+        return true;
+    }
+    
+    // Buscar usuários existentes
+    const { data: usuarios, error } = await App.supabase
+        .from('usuarios_familia')
+        .select('*')
+        .eq('user_id', App.currentUser.id);
+    
+    if (error) {
+        console.error('Erro ao buscar usuários:', error);
+    }
+    
+    const usuariosExistentes = usuarios || [];
+    
+    return new Promise((resolve) => {
+        let modalResolvido = false;
+        
+        // HTML do modal
+        const modalHtml = `
+            <div style="padding: 0;">
+                <!-- CABEÇALHO -->
+                <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; text-align: center; color: #fff;">
+                    <i class="fas fa-user-circle" style="font-size: 48px; margin-bottom: 10px;"></i>
+                    <h2 style="margin: 0; font-size: 1.3rem;">Identifique-se</h2>
+                    <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">Para personalizar sua experiência</p>
+                </div>
+                
+                <div style="padding: 20px;">
+                    <div style="background: #e8f4fd; border-radius: 12px; padding: 12px; margin-bottom: 20px;">
+                        <i class="fas fa-info-circle" style="color: #3498db;"></i>
+                        <span style="font-size: 12px; margin-left: 8px; color: #2c3e50;">
+                            <strong>Por que preciso me identificar?</strong><br>
+                            Seu nome será usado para marcar quem criou cada item (contas, eventos, gastos, tarefas). 
+                            Assim toda a família sabe quem fez o quê!
+                        </span>
+                    </div>
+                    
+                    ${usuariosExistentes.length > 0 ? `
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-size: 13px; font-weight: 600; color: var(--purple); margin-bottom: 8px; display: block;">
+                                <i class="fas fa-users"></i> Selecione um usuário existente
+                            </label>
+                            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 12px;">
+                                ${usuariosExistentes.map(u => `
+                                    <div onclick="selecionarUsuarioModal(${u.id}, '${u.apelido}')" 
+                                         style="padding: 12px; border-bottom: 1px solid #e9ecef; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 12px;"
+                                         onmouseover="this.style.background='#f8f9fa'"
+                                         onmouseout="this.style.background='white'">
+                                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 600;">${u.apelido}</div>
+                                            <div style="font-size: 11px; color: var(--gray);">${u.nome}</div>
+                                            <div style="font-size: 10px; color: var(--gray);">📱 ${formatarTelefone(u.telefone)}</div>
+                                        </div>
+                                        <i class="fas fa-chevron-right" style="color: var(--gray);"></i>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 12px 0; position: relative;">
+                            <hr style="border: none; border-top: 1px solid #e9ecef;">
+                            <span style="position: relative; top: -12px; background: #fff; padding: 0 12px; font-size: 12px; color: var(--gray);">ou</span>
+                        </div>
+                    ` : ''}
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--purple); margin-bottom: 8px; display: block;">
+                            <i class="fas fa-user-plus"></i> Criar novo usuário
+                        </label>
+                        <input type="text" id="novoUsuarioNome" class="form-input" placeholder="Nome completo" style="margin-bottom: 8px;">
+                        <input type="tel" id="novoUsuarioTelefone" class="form-input" placeholder="Celular (ex: 11999999999)" maxlength="11" inputmode="numeric" style="margin-bottom: 8px;">
+                        <input type="text" id="novoUsuarioApelido" class="form-input" placeholder="Apelido (como vai aparecer)">
+                        <small style="color: var(--gray); font-size: 11px;">* O apelido será usado para identificar suas ações no app</small>
+                    </div>
+                    
+                    <button id="btnSalvarUsuarioModal" class="btn btn-primary" style="width: 100%; padding: 12px; border-radius: 30px;">
+                        <i class="fas fa-check"></i> Confirmar e Continuar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Abrir modal
+        abrirModal('Bem-vindo ao My Life', 'fa-user', modalHtml);
+        
+        // Função para selecionar usuário existente (global)
+        window.selecionarUsuarioModal = (id, apelido) => {
+            const usuario = usuariosExistentes.find(u => u.id == id);
+            if (usuario) {
+                salvarUsuarioAtualNoApp(usuario);
+                fecharModal();
+                if (!modalResolvido) {
+                    modalResolvido = true;
+                    resolve(true);
+                }
+                showToast(`Olá, ${apelido}!`, 'success');
+            }
+        };
+        
+        // Evento do botão salvar
+        const btnSalvar = document.getElementById('btnSalvarUsuarioModal');
+        if (btnSalvar) {
+            btnSalvar.onclick = async () => {
+                const nome = document.getElementById('novoUsuarioNome')?.value.trim();
+                const telefone = document.getElementById('novoUsuarioTelefone')?.value.trim();
+                const apelido = document.getElementById('novoUsuarioApelido')?.value.trim();
+                
+                if (!nome || !telefone || !apelido) {
+                    showToast('Preencha todos os campos', 'warning');
+                    return;
+                }
+                
+                const telefoneRegex = /^\d{10,11}$/;
+                if (!telefoneRegex.test(telefone)) {
+                    showToast('Telefone inválido. Use 10 ou 11 dígitos', 'warning');
+                    return;
+                }
+                
+                try {
+                    const codigoAcesso = telefone.slice(-6);
+                    
+                    const { data, error } = await App.supabase
+                        .from('usuarios_familia')
+                        .insert({
+                            user_id: App.currentUser.id,
+                            nome: nome,
+                            telefone: telefone,
+                            apelido: apelido,
+                            codigo_acesso: codigoAcesso,
+                            ultimo_acesso: new Date().toISOString(),
+                            added_by: 'sistema'
+                        })
+                        .select();
+                    
+                    if (error) throw error;
+                    
+                    if (data && data[0]) {
+                        salvarUsuarioAtualNoApp(data[0]);
+                        fecharModal();
+                        if (!modalResolvido) {
+                            modalResolvido = true;
+                            resolve(true);
+                        }
+                        showToast(`✅ Olá, ${apelido}! Seu código de acesso é: ${codigoAcesso}`, 'success');
+                    }
+                } catch (error) {
+                    console.error('Erro ao criar usuário:', error);
+                    showToast('Erro: ' + error.message, 'error');
+                }
+            };
+        }
+    });
+}
+
+
 
        async function init() {
     try {
@@ -12801,6 +12966,19 @@ async function deletarTarefa(id) {
 
             carregarUsuarioLocal();
             carregarConfigLocal();
+
+
+                        carregarUsuarioLocal();
+            carregarConfigLocal();
+
+            // 🔴 VERIFICAR SE PRECISA DEFINIR USUÁRIO
+            const usuarioDefinido = await verificarEObrigarUsuario();
+            if (!usuarioDefinido) {
+                // Se por algum motivo não definiu, tentar novamente
+                await verificarEObrigarUsuario();
+            }
+
+            const cacheLoaded = await carregarDadosDoCache();
 
             const cacheLoaded = await carregarDadosDoCache();
             
