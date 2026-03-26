@@ -14019,10 +14019,11 @@ async function sincronizarGoogleParaMyLife() {
             }
         }
         
-        if (criados > 0) {
+                if (criados > 0) {
             console.log(`✅ Polling: ${criados} novos eventos importados do Google`);
             await carregarDados(true);
-            await mostrarConteudo();
+            await atualizarCalendario();  // 🔴 FORÇAR ATUALIZAÇÃO DO CALENDÁRIO
+            await mostrarConteudo();       // 🔴 FORÇAR ATUALIZAÇÃO DA LISTA
         }
         
     } catch (error) {
