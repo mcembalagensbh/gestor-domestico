@@ -684,78 +684,84 @@
             background: var(--medico)
         }
 
-        .filters {
+              .filters {
             background: #fff;
-            padding: 10px;
+            padding: 8px 12px;
             margin: 6px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, .08)
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-header {
+            font-size: 11px;
+            color: var(--gray);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .filter-header i {
+            font-size: 10px;
+            color: var(--purple);
         }
 
         .filter-buttons {
             display: flex;
-            gap: 20px;
-            justify-content: center;
-            position: relative
+            gap: 10px;
         }
 
         .filter-btn {
-            padding: 12px 8px;
-            border: 2px solid #e8e8e8;
+            flex: 1;
+            padding: 8px 0;
+            border: 1px solid #e0e0e0;
             background: #fafafa;
-            border-radius: 8px;
+            border-radius: 30px;
             cursor: pointer;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 4px;
-            font-weight: 600;
-            font-size: 13px;
-            min-height: 60px;
-            transition: all 0.2s;
-            position: relative;
-            width: 120px
+            justify-content: center;
+            gap: 6px;
+            font-weight: 500;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            min-height: 36px;
+            color: var(--dark);
         }
 
         @media (max-width: 768px) {
             .filter-btn {
-                width: 100%;
+                flex: 1;
             }
+        }
+
+        .filter-btn i {
+            font-size: 12px;
+            color: var(--gray);
+            transition: color 0.2s;
         }
 
         .filter-btn.active {
             background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+            border-color: transparent;
             color: #fff;
-            border-color: var(--purple-dark);
-            transform: scale(1.02);
-            box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3)
+            box-shadow: 0 2px 6px rgba(155, 89, 182, 0.25);
         }
 
-        .filter-btn i {
-            font-size: 18px
+        .filter-btn.active i {
+            color: #fff;
         }
 
+        .filter-btn:hover:not(.active) {
+            background: #f0f0f0;
+            border-color: var(--purple-light);
+        }
+
+        /* REMOVER O ESTILO ANTIGO DO FILTER-CHECK */
         .filter-check {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            width: 20px;
-            height: 20px;
-            background: var(--success);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 12px;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            opacity: 0;
-            transition: opacity 0.2s
-        }
-
-        .filter-btn.active .filter-check {
-            opacity: 1
+            display: none;
         }
 
         .content-area {
@@ -2280,19 +2286,20 @@
         </div>
 
         <div class="filters">
-            <div class="filter-buttons" id="filterButtons">
-                <button class="filter-btn" data-filter="contas">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Contas</span>
-                    <span class="filter-check"><i class="fas fa-check"></i></span>
-                </button>
-                <button class="filter-btn" data-filter="eventos">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Eventos</span>
-                    <span class="filter-check"><i class="fas fa-check"></i></span>
-                </button>
-            </div>
-        </div>
+    <div class="filter-header">
+        <i class="fas fa-eye"></i> Visualizar no calendário
+    </div>
+    <div class="filter-buttons" id="filterButtons">
+        <button class="filter-btn" data-filter="contas">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span>Contas</span>
+        </button>
+        <button class="filter-btn" data-filter="eventos">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Eventos</span>
+        </button>
+    </div>
+</div>
 
         <div class="content-area">
             <div class="filter-info" id="filterInfo" onclick="voltarParaCalendario()"></div>
