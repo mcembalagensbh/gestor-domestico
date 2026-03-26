@@ -12951,7 +12951,7 @@ async function verificarEObrigarUsuario() {
 
 
 
-       async function init() {
+    async function init() {
     try {
         App.supabase = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
         let { data: { session } } = await App.supabase.auth.getSession();
@@ -12966,19 +12966,6 @@ async function verificarEObrigarUsuario() {
 
             carregarUsuarioLocal();
             carregarConfigLocal();
-
-
-                        carregarUsuarioLocal();
-            carregarConfigLocal();
-
-            // 🔴 VERIFICAR SE PRECISA DEFINIR USUÁRIO
-            const usuarioDefinido = await verificarEObrigarUsuario();
-            if (!usuarioDefinido) {
-                // Se por algum motivo não definiu, tentar novamente
-                await verificarEObrigarUsuario();
-            }
-
-            const cacheLoaded = await carregarDadosDoCache();
 
             const cacheLoaded = await carregarDadosDoCache();
             
@@ -13000,7 +12987,7 @@ async function verificarEObrigarUsuario() {
                 await mostrarConteudo();
                 
                 carregarDados(true);
-                iniciarPollingGoogle(); // 🔴 POLLING ADICIONADO
+                iniciarPollingGoogle();
             } else {
                 await carregarDados(true);
 
@@ -13019,7 +13006,13 @@ async function verificarEObrigarUsuario() {
 
                 await atualizarCalendario();
                 await mostrarConteudo();
-                iniciarPollingGoogle(); // 🔴 POLLING JÁ EXISTIA
+                iniciarPollingGoogle();
+            }
+
+            // 🔴 VERIFICAR SE PRECISA DEFINIR USUÁRIO (depois dos dados carregados)
+            const usuarioDefinido = await verificarEObrigarUsuario();
+            if (!usuarioDefinido) {
+                await verificarEObrigarUsuario();
             }
 
             // ADICIONAR INDICADOR DE CONEXÃO (MODO OFFLINE)
@@ -13053,9 +13046,15 @@ async function verificarEObrigarUsuario() {
                     resetarParaHoje();
                     showToast('Login realizado!', 'success');
                     
+                    // 🔴 VERIFICAR USUÁRIO APÓS LOGIN
+                    const usuarioDefinido = await verificarEObrigarUsuario();
+                    if (!usuarioDefinido) {
+                        await verificarEObrigarUsuario();
+                    }
+                    
                     criarIndicadorConexao();
                     atualizarIndicadorConexao();
-                    iniciarPollingGoogle(); // 🔴 POLLING ADICIONADO APÓS LOGIN
+                    iniciarPollingGoogle();
                 }
             } catch (e) {
                 showToast('Erro no login', 'error');
@@ -13188,55 +13187,45 @@ async function verificarEObrigarUsuario() {
         });
 
         document.addEventListener('click', (e) => {
-            // Fechar menu Gestor ao clicar fora
             const gestorBtn = document.getElementById('navGestor');
             const gestorMenu = document.getElementById('gestorMenu');
             if (gestorMenu && gestorBtn && !gestorBtn.contains(e.target) && !gestorMenu.contains(e.target)) {
                 gestorMenu.style.display = 'none';
             }
             
-            // Fechar menu add
             if (!document.getElementById('navAdd').contains(e.target) && !document.getElementById('addOptionsMenu').contains(e.target)) {
                 fecharAddMenu();
             }
         });
 
-        // 🔴 BOTÃO LISTA
         document.getElementById('navLista').addEventListener('click', () => {
             App.currentFilter = 'lista';
             mostrarConteudo();
             fecharAddMenu();
         });
 
-        // 🔴 BOTÃO NOTAS
         document.getElementById('navNotas').addEventListener('click', () => {
             App.currentFilter = 'notas';
             mostrarConteudo();
             fecharAddMenu();
         });
 
-       // 🔴 BOTÃO TAREFAS
         document.getElementById('navTarefas').addEventListener('click', () => {
-            console.log('🔵 Botão Tarefas clicado - TESTE DIRETO');
+            console.log('🔵 Botão Tarefas clicado');
             App.currentFilter = 'tarefas';
-            console.log('🔵 App.currentFilter alterado para:', App.currentFilter);
             mostrarConteudo();
-            console.log('🔵 mostrarConteudo chamado');
             fecharAddMenu();
         });
 
-        // 🔴 BOTÃO GESTOR (abre menu flutuante)
         document.getElementById('navGestor').addEventListener('click', (e) => {
             e.stopPropagation();
             const menu = document.getElementById('gestorMenu');
             if (menu.style.display === 'flex') {
                 menu.style.display = 'none';
             } else {
-                // Fechar outros menus
                 document.getElementById('addOptionsMenu').classList.remove('show');
                 menu.style.display = 'flex';
                 
-                // Posicionar o menu acima do botão Gestor
                 const gestorBtn = document.getElementById('navGestor');
                 const rect = gestorBtn.getBoundingClientRect();
                 menu.style.position = 'fixed';
@@ -13246,7 +13235,6 @@ async function verificarEObrigarUsuario() {
             }
         });
 
-        // 🔴 FILTROS
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 let filter = this.dataset.filter;
