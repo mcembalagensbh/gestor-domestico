@@ -5833,10 +5833,12 @@ async function salvarNovaConta() {
         codigoBarras = document.getElementById('contaCodigo')?.value.trim() || null;
     }
 
-    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    // 🔴 CORRIGIDO: Garantir que seja string
+    const nomeUsuario = String(App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido');
 
     try {
         if (frequencia === 'unico') {
+            // ========== CONTA ÚNICA ==========
             let dia = parseInt(document.getElementById('contaDia')?.value);
             let mes = parseInt(document.getElementById('contaMes')?.value);
             let ano = parseInt(document.getElementById('contaAno')?.value);
@@ -5872,6 +5874,7 @@ async function salvarNovaConta() {
             showToast('Conta salva com sucesso!', 'success');
             
         } else {
+            // ========== CONTA RECORRENTE ==========
             let dataInicioStr = document.getElementById('contaDataInicio')?.value;
             
             if (!dataInicioStr) {
@@ -5964,7 +5967,6 @@ async function salvarNovaConta() {
         verificarNotificacoes({ descricao, valor }, 'contas');
         await registrarHistorico('criacao_conta', `Conta criada: ${descricao}`, { descricao, valor, frequencia, usuario: nomeUsuario });
         
-        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
         await sincronizarGoogleAutomatico();
         
         fecharModal();
@@ -6161,29 +6163,48 @@ async function salvarNovaConta() {
 function abrirEdicaoContaIndividual(id, isRecorrente, dia, mes, ano) {
     fecharModal();
     
-    // Buscar a conta para pegar os dados
+    console.log('🔍 Buscando conta para edição individual - ID:', id, 'Data:', dia, mes, ano);
+    
+    // Buscar a conta na tabela contas
     let conta = App.dataCache.contas?.find(c => c.id == id);
-    if (!conta) {
-        // Se não encontrou, criar objeto temporário
-        const regra = App.dataCache.regrasContas?.find(r => r.id == id);
+    
+    // Se não encontrou, buscar pela regra
+    if (!conta && isRecorrente) {
+        // Buscar a regra
+        let regra = App.dataCache.regrasContas?.find(r => r.id == id);
         if (regra) {
+            console.log('✅ Regra encontrada, criando conta temporária');
             conta = {
-                id: id,
+                id: `regra_${regra.id}_${Date.now()}`,
                 descricao: regra.descricao_base,
                 valor: regra.valor,
                 dia: dia,
                 mes: mes,
                 ano: ano,
                 regra_id: regra.id,
-                codigo_pagamento: null
+                codigo_pagamento: null,
+                is_temporaria: true
             };
         }
     }
     
+    // Se ainda não encontrou, buscar pelo regra_id na tabela contas
+    if (!conta && isRecorrente) {
+        conta = App.dataCache.contas?.find(c => 
+            c.regra_id == id && 
+            c.dia == dia && 
+            c.mes == mes && 
+            c.ano == ano
+        );
+    }
+    
     if (!conta) {
+        console.error('❌ Conta não encontrada para ID:', id);
         showToast('Conta não encontrada', 'error');
         return;
     }
+    
+    console.log('✅ Conta encontrada:', conta);
     
     let valorExibicao = (conta.valor_original || conta.valor || 0).toFixed(2).replace('.', ',');
     let codigoAtual = conta.codigo_pagamento || '';
