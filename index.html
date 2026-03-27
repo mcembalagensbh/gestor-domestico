@@ -2179,10 +2179,7 @@
         </div>
     </div>
     
-    <!-- 4. RECLAMAÇÕES/SUGESTÕES (botão simples, será movido para dentro do Ajuda depois) -->
-    <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'">
-        <i class="fas fa-comment-dots"></i> Reclamações/Sugestões
-    </div>
+    
     
     <!-- 5. PREMIUM -->
     <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()">
@@ -2229,18 +2226,18 @@
     </div>
     
     <!-- 9. AJUDA (com submenu) -->
-    <div class="side-menu-item" onclick="toggleSubmenuAjuda()">
-        <i class="fas fa-question-circle"></i> Ajuda
-        <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
+<div class="side-menu-item" onclick="toggleSubmenuAjuda()">
+    <i class="fas fa-question-circle"></i> Ajuda
+    <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
+</div>
+<div id="submenuAjuda" style="display: none; padding-left: 35px;">
+    <div class="side-menu-item" onclick="abrirModalContato();fecharSideMenu()">
+        <i class="fas fa-envelope"></i> Entre em contato
     </div>
-    <div id="submenuAjuda" style="display: none; padding-left: 35px;">
-        <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'">
-            <i class="fas fa-comment-dots"></i> Reclamações/Sugestões
-        </div>
-        <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()">
-            <i class="fas fa-book"></i> Manual Rápido
-        </div>
+    <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()">
+        <i class="fas fa-book"></i> Manual Rápido
     </div>
+</div>
 </div>
 
 
@@ -4330,6 +4327,13 @@ function atualizarTarefaBadge() {
     configurarBotoesBalanco();
 }
 
+
+
+
+
+
+
+
         async function renderizarTudo(content, mes, ano) {
             let todasContas = combinarContasDoMes(mes, ano);
             let todosEventos = combinarEventosDoMes(mes, ano);
@@ -5128,6 +5132,151 @@ window.abrirExtratoCompleto = function(id) {
 
     abrirModal(`Extrato - ${saldo.nome || 'Saldo'}`, 'fa-history', html);
 };
+
+
+
+
+
+
+
+// ============================================
+// MODAL DE CONTATO (RECLAMAÇÕES, SUGESTÕES, DÚVIDAS)
+// ============================================
+
+function abrirModalContato() {
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; text-align: center;">
+                <i class="fas fa-envelope" style="font-size: 40px; color: #fff;"></i>
+                <h3 style="margin: 10px 0 0 0; color: #fff;">Fale Conosco</h3>
+            </div>
+            <div style="padding: 20px;">
+                <p style="margin-bottom: 15px; text-align: center;">
+                    Envie sua dúvida, reclamação, sugestão ou qualquer outra solicitação.
+                </p>
+                
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-user"></i> Seu nome</label>
+                    <input type="text" id="contatoNome" class="form-input" placeholder="Digite seu nome" value="${App.usuarioAtual?.nome || ''}">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-envelope"></i> Seu e-mail</label>
+                    <input type="email" id="contatoEmail" class="form-input" placeholder="Digite seu e-mail" value="${App.currentUser?.email || ''}">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-tag"></i> Assunto</label>
+                    <select id="contatoAssunto" class="form-select">
+                        <option value="Dúvida">❓ Dúvida</option>
+                        <option value="Reclamação">⚠️ Reclamação</option>
+                        <option value="Sugestão">💡 Sugestão</option>
+                        <option value="Elogio">👍 Elogio</option>
+                        <option value="Suporte">🛠️ Suporte técnico</option>
+                        <option value="Cancelamento">🚫 Cancelamento</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-align-left"></i> Mensagem</label>
+                    <textarea id="contatoMensagem" class="form-textarea" rows="5" placeholder="Descreva detalhadamente sua solicitação..."></textarea>
+                </div>
+                
+                <div style="background: #e8f4fd; border-radius: 8px; padding: 12px; margin: 15px 0; font-size: 12px;">
+                    <i class="fas fa-info-circle" style="color: #3498db;"></i>
+                    <strong>Prazo de resposta:</strong> Todas as solicitações serão respondidas em até <strong>72 horas úteis</strong>.
+                </div>
+                
+                <div class="btn-group" style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn btn-primary" onclick="enviarContato()" style="flex: 2;">
+                        <i class="fas fa-paper-plane"></i> Enviar mensagem
+                    </button>
+                    <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    abrirModal('Entre em contato', 'fa-envelope', conteudo);
+}
+
+
+
+// ============================================
+// ENVIAR MENSAGEM DE CONTATO
+// ============================================
+
+async function enviarContato() {
+    let nome = document.getElementById('contatoNome')?.value.trim();
+    let email = document.getElementById('contatoEmail')?.value.trim();
+    let assunto = document.getElementById('contatoAssunto')?.value;
+    let mensagem = document.getElementById('contatoMensagem')?.value.trim();
+    
+    if (!nome) {
+        showToast('Digite seu nome', 'warning');
+        return;
+    }
+    
+    if (!email) {
+        showToast('Digite seu e-mail', 'warning');
+        return;
+    }
+    
+    if (!mensagem) {
+        showToast('Digite sua mensagem', 'warning');
+        return;
+    }
+    
+    // Validar e-mail
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showToast('Digite um e-mail válido', 'warning');
+        return;
+    }
+    
+    // Mostrar loading
+    showToast('Enviando mensagem...', 'info');
+    
+    try {
+        // Criar o corpo do e-mail
+        const corpoEmail = `
+Nome: ${nome}
+E-mail: ${email}
+Assunto: ${assunto}
+Data: ${new Date().toLocaleString('pt-BR')}
+ID do Usuário: ${App.currentUser?.id || 'Não logado'}
+
+MENSAGEM:
+${mensagem}
+        `;
+        
+        // Codificar para URL
+        const assuntoCodificado = encodeURIComponent(`[My Life] ${assunto}`);
+        const corpoCodificado = encodeURIComponent(corpoEmail);
+        
+        // Abrir o cliente de e-mail do usuário
+        window.location.href = `mailto:hcdtec.mylife@gmail.com?subject=${assuntoCodificado}&body=${corpoCodificado}`;
+        
+        showToast('✅ E-mail aberto! Envie a mensagem para concluir.', 'success');
+        
+        // Registrar no histórico
+        await registrarHistorico('contato', `Mensagem enviada: ${assunto}`, { 
+            nome, 
+            email, 
+            assunto, 
+            mensagem: mensagem.substring(0, 100),
+            usuario: App.usuarioAtual?.apelido || 'desconhecido'
+        });
+        
+        fecharModal();
+        
+    } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
 
 
 // ============================================
