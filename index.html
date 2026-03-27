@@ -12096,6 +12096,31 @@ async function confirmarPagamentoGiro(id, desc) {
     }
     
     try {
+        // Buscar o giro atual para calcular o novo valor
+        const { data: giroAtual, error: buscaError } = await App.supabase
+            .from('giros')
+            .select('*')
+            .eq('id', id)
+            .single();
+        
+        if (buscaError) throw buscaError;
+        
+        // Calcular novo valor_inicial baseado no tipo
+        let novoValorInicial;
+        if (giroAtual.tipo_giro === 'pegando') {
+            // Pegando: pagamento reduz a dívida (diminui o valor_inicial)
+            novoValorInicial = giroAtual.valor_inicial - valor;
+        } else {
+            // Emprestando: pagamento (recebimento) reduz o valor a receber (torna menos negativo)
+            novoValorInicial = giroAtual.valor_inicial + valor;
+        }
+        
+        // Atualizar o valor_inicial do giro
+        await App.supabase
+            .from('giros')
+            .update({ valor_inicial: novoValorInicial })
+            .eq('id', id);
+        
         // Registrar a movimentação
         await App.supabase.from('movimentacoes_giro').insert({
             user_id: App.currentUser.id,
@@ -12108,7 +12133,7 @@ async function confirmarPagamentoGiro(id, desc) {
         });
         
         await registrarHistorico('pagamento_giro', `Pagamento de ${formatCurrency(valor)} para ${desc}`, { id, valor, usuario: nomeUsuario });
-        showToast('Pagamento registrado!', 'success');
+        showToast('✅ Pagamento registrado!', 'success');
         fecharModal();
         await carregarDados(true);
         await mostrarConteudo();
@@ -12511,26 +12536,32 @@ async function deletarMovimentacaoGiro(movId, valor, tipo, giroId) {
         
         if (buscaError) throw buscaError;
         
-        // 🔴 Reverter o efeito da movimentação no valor_inicial
-        let novoValorInicial;
+        // 🔴 CORREÇÃO: Reverter corretamente o efeito da movimentação
+        // O valor_inicial é o valor base original
+        // As movimentações são aplicadas sobre ele
+        
+        let novoValorInicial = giroAtual.valor_inicial;
+        
         if (giroAtual.tipo_giro === 'pegando') {
-            // Pegando: valor_inicial positivo
+            // Pegando: valor_inicial positivo (você pegou)
             if (tipo === 'pagamento') {
-                // Pagamento reduz a dívida, então deletar aumenta a dívida
+                // Pagamento: você pagou, então reduziu a dívida
+                // Deletar o pagamento: a dívida volta a aumentar
                 novoValorInicial = giroAtual.valor_inicial + valor;
             } else {
-                // Recebimento aumenta a dívida, então deletar reduz a dívida
+                // Recebimento: você pegou mais, então aumentou a dívida
+                // Deletar o recebimento: a dívida diminui
                 novoValorInicial = giroAtual.valor_inicial - valor;
             }
         } else {
-            // Emprestando: valor_inicial negativo
+            // Emprestando: valor_inicial negativo (você emprestou)
             if (tipo === 'pagamento') {
-                // Pagamento (recebeu) reduz o valor a receber (torna menos negativo)
-                // Deletar aumenta o valor a receber (torna mais negativo)
+                // Pagamento: você recebeu, então reduziu o valor a receber (torna menos negativo)
+                // Deletar o pagamento: o valor a receber aumenta (torna mais negativo)
                 novoValorInicial = giroAtual.valor_inicial - valor;
             } else {
-                // Recebimento (emprestou mais) aumenta o valor a receber (torna mais negativo)
-                // Deletar reduz o valor a receber (torna menos negativo)
+                // Recebimento: você emprestou mais, então aumentou o valor a receber (torna mais negativo)
+                // Deletar o recebimento: o valor a receber diminui (torna menos negativo)
                 novoValorInicial = giroAtual.valor_inicial + valor;
             }
         }
@@ -12635,7 +12666,6 @@ async function confirmarAdicionarGiro(id, desc) {
     }
     
     try {
-        // Buscar o giro atual
         const { data: giroAtual, error: buscaError } = await App.supabase
             .from('giros')
             .select('*')
@@ -12644,11 +12674,12 @@ async function confirmarAdicionarGiro(id, desc) {
         
         if (buscaError) throw buscaError;
         
-        // Atualizar o valor_inicial do giro (aumentar a dívida)
         let novoValorInicial;
         if (giroAtual.tipo_giro === 'pegando') {
+            // Pegando: pegou mais, aumenta a dívida
             novoValorInicial = giroAtual.valor_inicial + valor;
         } else {
+            // Emprestando: emprestou mais, aumenta o valor a receber (torna mais negativo)
             novoValorInicial = giroAtual.valor_inicial - valor;
         }
         
@@ -12657,7 +12688,6 @@ async function confirmarAdicionarGiro(id, desc) {
             .update({ valor_inicial: novoValorInicial })
             .eq('id', id);
         
-        // Registrar a movimentação
         await App.supabase.from('movimentacoes_giro').insert({
             user_id: App.currentUser.id,
             giro_id: id,
@@ -12679,6 +12709,8 @@ async function confirmarAdicionarGiro(id, desc) {
         showToast('Erro: ' + error.message, 'error');
     }
 }
+
+
 
 // ============================================
 // ABRIR MODAL PARA EMPRESTAR MAIS VALOR
@@ -15736,4 +15768,4 @@ function validarValorRecebimentoGiro(valorMaximo) {
 </html>
 
 
-Edição 123
+Edição 124
