@@ -10472,13 +10472,46 @@ function abrirModalAssinaturaBloqueio() {
     abrirModal('Relatório Financeiro', 'fa-file-alt', conteudo);
 }
 
-        function abrirMenuSeguranca() {
+     function abrirMenuSeguranca() {
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
+                <h3 style="margin: 0; color: #fff;"><i class="fas fa-lock"></i> Alterar Senha de Acesso</h3>
+            </div>
+            <div style="padding: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Senha Atual (acesso)</label>
+                    <input type="password" id="senhaAtualAcesso" class="form-input" placeholder="Digite a senha atual" maxlength="6" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nova Senha de Acesso</label>
+                    <input type="password" id="novaSenhaAcesso" class="form-input" placeholder="6 dígitos" maxlength="6" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirmar Nova Senha de Acesso</label>
+                    <input type="password" id="confirmaSenhaAcesso" class="form-input" placeholder="Repita a nova senha" maxlength="6" inputmode="numeric">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="alterarSenhas()"><i class="fas fa-save"></i> Salvar Alterações</button>
+                </div>
+            </div>
+            <div style="padding: 16px; border-top: 1px solid #eee;">
+                <button class="btn" onclick="fecharModal()" style="background: var(--gray); color: #fff; width: 100%;">Fechar</button>
+            </div>
+        </div>
+    `;
+    
+    abrirModal('Segurança', 'fa-lock', conteudo);
+}
+
+
+function abrirUsuariosFamilia() {
     let usuarios = App.dataCache.usuariosFamilia || [];
     
     let listaUsuariosHtml = '';
     if (usuarios.length > 0) {
         listaUsuariosHtml = `
-            <div style="max-height: 300px; overflow-y: auto;">
+            <div style="max-height: 400px; overflow-y: auto;">
                 ${usuarios.map(u => `
                     <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
@@ -10501,38 +10534,10 @@ function abrirModalAssinaturaBloqueio() {
     
     let conteudo = `
         <div style="padding: 0;">
-            <!-- ABAS -->
-            <div style="display: flex; border-bottom: 1px solid #eee; background: #fff;">
-                <div id="abaSenha" class="aba-ativa-seg" style="flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--purple); border-bottom: 2px solid var(--purple);">
-                    <i class="fas fa-lock"></i> Senha de Acesso
-                </div>
-                <div id="abaUsuarios" style="flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--gray);">
-                    <i class="fas fa-users"></i> Usuários (${usuarios.length})
-                </div>
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
+                <h3 style="margin: 0; color: #fff;"><i class="fas fa-users"></i> Membros da Família</h3>
             </div>
-            
-            <!-- CONTEÚDO ABA SENHA -->
-            <div id="conteudoSenha" style="padding: 16px;">
-                <div class="form-group">
-                    <label class="form-label">Senha Atual (acesso)</label>
-                    <input type="password" id="senhaAtualAcesso" class="form-input" placeholder="Digite a senha atual" maxlength="6" inputmode="numeric">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Nova Senha de Acesso</label>
-                    <input type="password" id="novaSenhaAcesso" class="form-input" placeholder="6 dígitos" maxlength="6" inputmode="numeric">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Confirmar Nova Senha de Acesso</label>
-                    <input type="password" id="confirmaSenhaAcesso" class="form-input" placeholder="Repita a nova senha" maxlength="6" inputmode="numeric">
-                </div>
-                <div class="btn-group">
-                    <button class="btn btn-primary" onclick="alterarSenhas()"><i class="fas fa-save"></i> Salvar Alterações</button>
-                </div>
-            </div>
-            
-            <!-- CONTEÚDO ABA USUÁRIOS -->
-            <div id="conteudoUsuarios" style="padding: 16px; display: none;">
-                <h4 style="margin: 0 0 12px 0;"><i class="fas fa-users"></i> Membros da Família</h4>
+            <div style="padding: 16px;">
                 ${listaUsuariosHtml}
                 <div style="margin-top: 16px;">
                     <button class="btn btn-primary" onclick="abrirCadastroUsuarioRapido()" style="width: 100%;">
@@ -10543,41 +10548,16 @@ function abrirModalAssinaturaBloqueio() {
                     <small><i class="fas fa-info-circle"></i> Cada usuário terá um código de acesso único. Use o código para identificar quem está usando o app em cada dispositivo.</small>
                 </div>
             </div>
-            
-            <div class="btn-group" style="padding: 16px; border-top: 1px solid #eee;">
-                <button class="btn" onclick="fecharModal()" style="background: var(--gray); color: #fff;">Fechar</button>
+            <div style="padding: 16px; border-top: 1px solid #eee;">
+                <button class="btn" onclick="fecharModal()" style="background: var(--gray); color: #fff; width: 100%;">Fechar</button>
             </div>
         </div>
-        
-        <style>
-            .aba-ativa-seg { color: var(--purple) !important; border-bottom: 2px solid var(--purple) !important; }
-        </style>
     `;
     
-    abrirModal('Segurança', 'fa-lock', conteudo);
-    
-    setTimeout(() => {
-        const abaSenha = document.getElementById('abaSenha');
-        const abaUsuarios = document.getElementById('abaUsuarios');
-        const conteudoSenha = document.getElementById('conteudoSenha');
-        const conteudoUsuarios = document.getElementById('conteudoUsuarios');
-        
-        if (abaSenha && abaUsuarios) {
-            abaSenha.onclick = () => {
-                abaSenha.classList.add('aba-ativa-seg');
-                abaUsuarios.classList.remove('aba-ativa-seg');
-                conteudoSenha.style.display = 'block';
-                conteudoUsuarios.style.display = 'none';
-            };
-            abaUsuarios.onclick = () => {
-                abaUsuarios.classList.add('aba-ativa-seg');
-                abaSenha.classList.remove('aba-ativa-seg');
-                conteudoSenha.style.display = 'none';
-                conteudoUsuarios.style.display = 'block';
-            };
-        }
-    }, 100);
+    abrirModal('Usuários da Família', 'fa-users', conteudo);
 }
+
+
 
         function alterarSenhas() {
             let senhaAtualAcesso = document.getElementById('senhaAtualAcesso')?.value;
