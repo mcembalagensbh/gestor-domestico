@@ -5314,21 +5314,37 @@ function abrirExtratoCompleto(id) {
             mostrarConteudo();
         }
 
-       async function renderizarGiros(content) {
+       // ============================================
+// RENDERIZAR GIROS (COM NOVO LAYOUT E BOTÕES)
+// ============================================
+
+async function renderizarGiros(content) {
     let giros = App.dataCache.giros || [];
     let podeEditar = App.assinaturaAtiva;
     
     if (giros.length === 0) {
-        content.innerHTML = `<div class="empty-state"><i class="fas fa-hand-holding-usd"></i><p>Nenhum giro cadastrado</p>${podeEditar ? '<button class="btn btn-primary" onclick="verificarEAcao(\'giro\')" style="margin-top:16px"><i class="fas fa-plus"></i> Novo Giro</button>' : ''}</div>`;
+        content.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-hand-holding-usd"></i>
+                <p>Nenhum giro cadastrado</p>
+                <p style="font-size: 12px; color: var(--gray);">Use para controlar empréstimos informais com amigos e familiares</p>
+                ${podeEditar ? '<button class="btn btn-primary" onclick="verificarEAcao(\'giro\')" style="margin-top:16px"><i class="fas fa-plus"></i> Novo Giro</button>' : ''}
+            </div>
+        `;
         return;
     }
 
-    // CABEÇALHO COM BOTÃO NO CANTO SUPERIOR DIREITO
+    // CABEÇALHO COM BOTÃO "SAIBA MAIS"
     let html = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 0 5px;">
-            <h3 style="margin:0; color:var(--purple); font-size:1.2em;">
-                <i class="fas fa-hand-holding-usd"></i> Meus Giros
-            </h3>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 style="margin:0; color:var(--purple); font-size:1.2em;">
+                    <i class="fas fa-hand-holding-usd"></i> Meus Giros
+                </h3>
+                <button onclick="abrirModalExplicacaoGiros()" style="background: none; border: none; color: var(--gray); cursor: pointer; font-size: 12px;">
+                    <i class="fas fa-question-circle"></i> <span style="font-size: 11px;">Saiba mais</span>
+                </button>
+            </div>
             ${podeEditar ? `
                 <button class="btn btn-primary btn-sm" onclick="verificarEAcao('giro')" style="border-radius:30px; padding:8px 15px;">
                     <i class="fas fa-plus"></i> Novo Giro
@@ -5339,59 +5355,125 @@ function abrirExtratoCompleto(id) {
     
     html += '<div class="items-list">';
     
-    giros.forEach(g => {
+    for (const g of giros) {
+        // Buscar movimentações
         let movimentacoes = App.dataCache.movimentacoesGiro?.filter(m => m.giro_id === g.id) || [];
         let totalPago = movimentacoes.reduce((acc, m) => acc + (m.tipo === 'pagamento' ? m.valor : 0), 0);
         let totalRecebido = movimentacoes.reduce((acc, m) => acc + (m.tipo === 'recebimento' ? m.valor : 0), 0);
-        let saldoAtual = g.valor_inicial + totalRecebido - totalPago;
-
-        html += `<div class="giro-card">
-            <div class="giro-header">
-                <div class="giro-titulo"><i class="fas fa-hand-holding-usd"></i> ${g.descricao} <span class="usuario-badge">${g.added_by || 'desconhecido'}</span></div>
-                <div class="giro-saldo">${formatCurrency(saldoAtual)}</div>
-            </div>
-            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                <span class="item-badge">Inicial: ${formatCurrency(g.valor_inicial)}</span>
-                <span class="item-badge">Pago: ${formatCurrency(totalPago)}</span>
-                <span class="item-badge">Recebido: ${formatCurrency(totalRecebido)}</span>
-                <span class="item-badge">Pessoa: ${g.pessoa || 'Não informado'}</span>
-            </div>
-            ${podeEditar ? `
-            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                <!-- 🔴 BOTÃO PAGAR (abate do saldo) -->
-                <button class="btn btn-sm btn-danger" onclick="abrirPagamentoGiro('${g.id}','${g.descricao}')" title="Pagar (diminuir saldo)">
-                    <i class="fas fa-arrow-down"></i> Pagar
-                </button>
-                
-                <!-- 🔴 BOTÃO ADICIONAR (aumenta saldo) -->
-                <button class="btn btn-sm btn-success" onclick="abrirAdicionarGiro('${g.id}','${g.descricao}')" title="Adicionar valor (aumentar saldo)">
-                    <i class="fas fa-arrow-up"></i> Adicionar
-                </button>
-                
-                <!-- 🔴 BOTÃO DELETAR (remove giro) -->
-                <button class="btn btn-sm btn-danger" onclick="deletarGiro('${g.id}')" title="Excluir giro">
-                    <i class="fas fa-trash"></i> Deletar
-                </button>
-            </div>
-            ` : ''}`;
-
-        if (movimentacoes.length > 0) {
-            html += '<div class="giro-historico">';
-            movimentacoes.slice(0, 10).forEach(m => {
-                let data = new Date(m.data).toLocaleDateString('pt-BR');
-                let tipoIcon = m.tipo === 'pagamento' ? 'fa-arrow-down' : 'fa-arrow-up';
-                let corIcone = m.tipo === 'pagamento' ? 'var(--danger)' : 'var(--success)';
-                html += `<div class="giro-linha">
-                    <span><i class="fas ${tipoIcon}" style="color:${corIcone}"></i> ${data} - ${m.descricao || ''}</span>
-                    <span>${formatCurrency(m.valor)}</span>
-                </div>`;
-            });
-            html += '</div>';
+        
+        // Calcular saldo atual baseado no tipo
+        let saldoAtual;
+        let saldoClass;
+        let saldoIcon;
+        let saldoTexto;
+        
+        if (g.tipo_giro === 'pegando') {
+            // PEGANDO: valor_inicial positivo, pagamentos reduzem, recebimentos aumentam
+            saldoAtual = g.valor_inicial - totalPago + totalRecebido;
+            if (saldoAtual > 0) {
+                saldoClass = 'var(--danger)';
+                saldoIcon = 'fa-arrow-down';
+                saldoTexto = `Você deve R$ ${Math.abs(saldoAtual).toFixed(2).replace('.', ',')} para ${g.pessoa}`;
+            } else if (saldoAtual < 0) {
+                saldoClass = 'var(--success)';
+                saldoIcon = 'fa-arrow-up';
+                saldoTexto = `${g.pessoa} te deve R$ ${Math.abs(saldoAtual).toFixed(2).replace('.', ',')}`;
+            } else {
+                saldoClass = 'var(--gray)';
+                saldoIcon = 'fa-check-circle';
+                saldoTexto = 'Giro quitado!';
+            }
+        } else {
+            // EMPRESTANDO: valor_inicial negativo, pagamentos aumentam (recebendo), recebimentos reduzem
+            saldoAtual = Math.abs(g.valor_inicial) - totalRecebido + totalPago;
+            if (saldoAtual > 0) {
+                saldoClass = 'var(--success)';
+                saldoIcon = 'fa-arrow-up';
+                saldoTexto = `${g.pessoa} te deve R$ ${saldoAtual.toFixed(2).replace('.', ',')}`;
+            } else if (saldoAtual < 0) {
+                saldoClass = 'var(--danger)';
+                saldoIcon = 'fa-arrow-down';
+                saldoTexto = `Você deve R$ ${Math.abs(saldoAtual).toFixed(2).replace('.', ',')} para ${g.pessoa}`;
+            } else {
+                saldoClass = 'var(--gray)';
+                saldoIcon = 'fa-check-circle';
+                saldoTexto = 'Giro quitado!';
+            }
         }
-
-        html += '</div>';
-    });
-
+        
+        // Definir ícone e cor do tipo
+        const tipoIcon = g.tipo_giro === 'pegando' ? 'fa-arrow-down' : 'fa-arrow-up';
+        const tipoCor = g.tipo_giro === 'pegando' ? '#dc3545' : '#28a745';
+        const tipoTexto = g.tipo_giro === 'pegando' ? 'Estou Pegando' : 'Estou Emprestando';
+        
+        // Definir botões conforme o tipo
+        let botoesAcao = '';
+        if (podeEditar) {
+            if (g.tipo_giro === 'pegando') {
+                botoesAcao = `
+                    <button class="action-btn pay" onclick="abrirPagamentoGiro('${g.id}', '${g.descricao}')" title="Paguei (diminuir dívida)">
+                        <i class="fas fa-dollar-sign"></i>
+                    </button>
+                    <button class="action-btn edit" onclick="abrirAdicionarGiro('${g.id}', '${g.descricao}')" title="Peguei Mais (aumentar dívida)">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                `;
+            } else {
+                botoesAcao = `
+                    <button class="action-btn pay" onclick="abrirRecebimentoGiro('${g.id}', '${g.descricao}')" title="Recebi (diminuir saldo a receber)">
+                        <i class="fas fa-dollar-sign"></i>
+                    </button>
+                    <button class="action-btn edit" onclick="abrirEmprestarMaisGiro('${g.id}', '${g.descricao}')" title="Emprestei Mais (aumentar saldo a receber)">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                `;
+            }
+            
+            botoesAcao += `
+                <button class="action-btn update" onclick="abrirResumoGiro('${g.id}')" title="Ver Resumo">
+                    <i class="fas fa-chart-line"></i>
+                </button>
+                <button class="action-btn delete" onclick="deletarGiro('${g.id}')" title="Excluir Giro">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+        }
+        
+        html += `
+            <div class="giro-card" style="margin-bottom: 12px; background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                            <i class="fas ${tipoIcon}" style="color: ${tipoCor}; font-size: 14px;"></i>
+                            <span style="font-size: 11px; background: ${tipoCor}20; color: ${tipoCor}; padding: 2px 8px; border-radius: 20px;">${tipoTexto}</span>
+                        </div>
+                        <div style="font-weight: 600; font-size: 1rem;">${g.descricao}</div>
+                        <div style="font-size: 12px; color: var(--gray); margin-top: 2px;">
+                            <i class="fas fa-user-friends"></i> ${g.pessoa}
+                            ${g.responsavel_nome ? `<span style="margin-left: 8px;"><i class="fas fa-user-check"></i> Resp: ${g.responsavel_nome}</span>` : ''}
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.9rem; color: var(--gray);">Saldo</div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: ${saldoClass};">
+                            <i class="fas ${saldoIcon}" style="font-size: 12px;"></i> ${formatCurrency(Math.abs(saldoAtual))}
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="font-size: 11px; color: ${saldoClass}; margin: 8px 0; padding: 6px 0; border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0;">
+                    ${saldoTexto}
+                </div>
+                
+                ${g.observacao ? `<div style="font-size: 11px; color: var(--gray); margin-bottom: 8px;"><i class="fas fa-pencil-alt"></i> ${g.observacao}</div>` : ''}
+                
+                <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end;">
+                    ${botoesAcao}
+                </div>
+            </div>
+        `;
+    }
+    
     html += '</div>';
     content.innerHTML = html;
 }
@@ -11694,55 +11776,231 @@ window.salvarNovoItemLista = salvarNovoItemLista;
 window.alternarComprado = alternarComprado;
 window.deletarItemLista = deletarItemLista;
 
-        function abrirNovoGiro() {
-            let conteudo = `
+        // ============================================
+// ABRIR MODAL PARA CRIAR NOVO GIRO
+// ============================================
+
+function abrirNovoGiro() {
+    // Buscar usuários da família
+    let usuarios = App.dataCache.usuariosFamilia || [];
+    let usuarioAtual = App.usuarioAtual;
+    
+    // Opções de tipo de giro
+    let tipoGiroHtml = `
+        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+            <div onclick="selecionarTipoGiro('pegando')" id="tipoPegando" style="flex: 1; text-align: center; padding: 12px; background: #f8f9fa; border-radius: 12px; cursor: pointer; border: 2px solid #e9ecef; transition: all 0.2s;">
+                <i class="fas fa-arrow-down" style="font-size: 24px; color: #dc3545;"></i>
+                <div style="font-weight: 600; margin-top: 5px;">Estou Pegando</div>
+                <div style="font-size: 10px; color: var(--gray);">Recebi dinheiro de alguém</div>
+            </div>
+            <div onclick="selecionarTipoGiro('emprestando')" id="tipoEmprestando" style="flex: 1; text-align: center; padding: 12px; background: #f8f9fa; border-radius: 12px; cursor: pointer; border: 2px solid #e9ecef; transition: all 0.2s;">
+                <i class="fas fa-arrow-up" style="font-size: 24px; color: #28a745;"></i>
+                <div style="font-weight: 600; margin-top: 5px;">Estou Emprestando</div>
+                <div style="font-size: 10px; color: var(--gray);">Dei dinheiro para alguém</div>
+            </div>
+        </div>
+    `;
+    
+    // Lista de usuários para selecionar responsável
+    let usuariosHtml = '';
+    if (usuarios.length > 0) {
+        usuariosHtml = `
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-user"></i> Responsável pelo pagamento</label>
+                <select id="giroResponsavel" class="form-select">
+                    <option value="">Selecione...</option>
+                    ${usuarios.map(u => `
+                        <option value="${u.id}" ${usuarioAtual && u.id == usuarioAtual.id ? 'selected' : ''}>${u.apelido} (${u.nome})</option>
+                    `).join('')}
+                </select>
+                <small style="color: var(--gray);">Quem é responsável por pagar ou receber este valor?</small>
+            </div>
+        `;
+    } else {
+        usuariosHtml = `
+            <div style="background: #fff3cd; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                <i class="fas fa-exclamation-triangle"></i> Nenhum usuário cadastrado. 
+                <a href="#" onclick="abrirCadastroUsuarioRapido(); return false;">Clique aqui para cadastrar</a>
+            </div>
+        `;
+    }
+    
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 12px; text-align: center;">
+                <h3 style="margin: 0; color: #fff;"><i class="fas fa-hand-holding-usd"></i> Novo Giro</h3>
+            </div>
+            <div style="padding: 20px;">
+                <!-- SELEÇÃO DO TIPO DE GIRO -->
+                <div style="margin-bottom: 20px;">
+                    <label class="form-label"><i class="fas fa-question-circle"></i> Qual o tipo?</label>
+                    ${tipoGiroHtml}
+                    <input type="hidden" id="giroTipo" value="">
+                </div>
+                
+                <!-- DESCRIÇÃO -->
                 <div class="form-group">
                     <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
-                    <input type="text" id="giroDescricao" class="form-input" placeholder="Ex: Empréstimo para João">
+                    <input type="text" id="giroDescricao" class="form-input" placeholder="Ex: Empréstimo para João, Dinheiro do tio...">
                 </div>
+                
+                <!-- VALOR -->
                 <div class="form-group">
-                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor Inicial</label>
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor</label>
                     <input type="text" id="giroValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
                 </div>
+                
+                <!-- PESSOA (COM QUEM) -->
                 <div class="form-group">
-                    <label class="form-label"><i class="fas fa-user"></i> Pessoa</label>
-                    <input type="text" id="giroPessoa" class="form-input" placeholder="Nome da pessoa">
+                    <label class="form-label"><i class="fas fa-user-friends"></i> Com quem?</label>
+                    <input type="text" id="giroPessoa" class="form-input" placeholder="Ex: João, Maria, Tio José...">
                 </div>
-                <div class="btn-group" style="margin-top:20px">
-                    <button class="btn btn-primary" onclick="salvarNovoGiro()" style="flex:2"><i class="fas fa-save"></i> Salvar</button>
-                    <button class="btn" onclick="fecharModal()" style="flex:1;background:var(--gray);color:#fff">Cancelar</button>
+                
+                <!-- RESPONSÁVEL -->
+                ${usuariosHtml}
+                
+                <!-- OBSERVAÇÃO -->
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-align-left"></i> Observação (opcional)</label>
+                    <textarea id="giroObservacao" class="form-textarea" rows="2" placeholder="Detalhes adicionais..."></textarea>
                 </div>
-            `;
-            abrirModal('Novo Giro', 'fa-hand-holding-usd', conteudo);
+                
+                <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="salvarNovoGiro()" style="flex: 2;" id="btnSalvarGiro" disabled>
+                        <i class="fas fa-save"></i> Salvar Giro
+                    </button>
+                    <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">Cancelar</button>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+            .tipo-selecionado {
+                background: var(--purple-light) !important;
+                border-color: var(--purple) !important;
+            }
+        </style>
+    `;
+    
+    abrirModal('Novo Giro', 'fa-hand-holding-usd', conteudo);
+    
+    // Função global para selecionar tipo
+    window.selecionarTipoGiro = function(tipo) {
+        const btnPegando = document.getElementById('tipoPegando');
+        const btnEmprestando = document.getElementById('tipoEmprestando');
+        const inputTipo = document.getElementById('giroTipo');
+        const btnSalvar = document.getElementById('btnSalvarGiro');
+        
+        if (tipo === 'pegando') {
+            btnPegando.classList.add('tipo-selecionado');
+            btnEmprestando.classList.remove('tipo-selecionado');
+            inputTipo.value = 'pegando';
+        } else {
+            btnEmprestando.classList.add('tipo-selecionado');
+            btnPegando.classList.remove('tipo-selecionado');
+            inputTipo.value = 'emprestando';
         }
+        
+        // Habilitar botão salvar
+        btnSalvar.disabled = false;
+    };
+}
 
-        async function salvarNovoGiro() {
-    let desc = document.getElementById('giroDescricao')?.value.trim();
+       // ============================================
+// SALVAR NOVO GIRO (COM TIPO E RESPONSÁVEL)
+// ============================================
+
+async function salvarNovoGiro() {
+    let tipo = document.getElementById('giroTipo')?.value;
+    let descricao = document.getElementById('giroDescricao')?.value.trim();
     let valor = parseCurrency(document.getElementById('giroValor')?.value);
     let pessoa = document.getElementById('giroPessoa')?.value.trim();
+    let responsavelId = document.getElementById('giroResponsavel')?.value;
+    let observacao = document.getElementById('giroObservacao')?.value.trim();
 
-    // 🔴 CORRIGIDO: Obter o nome do usuário corretamente
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
-    if (!desc || !valor || !pessoa) {
-        showToast('Preencha todos os campos', 'warning');
+    // Validações
+    if (!tipo) {
+        showToast('Selecione o tipo do giro (Pegando ou Emprestando)', 'warning');
+        return;
+    }
+
+    if (!descricao) {
+        showToast('Digite uma descrição', 'warning');
+        return;
+    }
+
+    if (!valor || valor <= 0) {
+        showToast('Digite um valor válido', 'warning');
+        return;
+    }
+
+    if (!pessoa) {
+        showToast('Digite com quem é o giro', 'warning');
+        return;
+    }
+
+    if (!responsavelId) {
+        showToast('Selecione o responsável pelo pagamento', 'warning');
         return;
     }
 
     try {
-        await App.supabase.from('giros').insert({
-            user_id: App.currentUser.id,
-            descricao: desc,
-            valor_inicial: valor,
-            pessoa: pessoa,
-            added_by: nomeUsuario  // 🔴 CORRIGIDO
-        });
+        // 🔴 AJUSTAR VALOR CONFORME O TIPO
+        // Se está pegando (recebeu dinheiro), valor_inicial é positivo
+        // Se está emprestando (deu dinheiro), valor_inicial é negativo
+        let valorInicial = tipo === 'pegando' ? valor : -valor;
+        
+        // Buscar nome do responsável
+        const usuarios = App.dataCache.usuariosFamilia || [];
+        const responsavel = usuarios.find(u => u.id == responsavelId);
+        const responsavelNome = responsavel?.apelido || responsavel?.nome || 'desconhecido';
 
-        await registrarHistorico('criacao_giro', `Giro criado: ${desc}`, { desc, valor, pessoa, usuario: nomeUsuario });
-        showToast('Giro salvo!', 'success');
+        const { data, error } = await App.supabase.from('giros').insert({
+            user_id: App.currentUser.id,
+            descricao: descricao,
+            valor_inicial: valorInicial,
+            pessoa: pessoa,
+            tipo_giro: tipo,  // 'pegando' ou 'emprestando'
+            responsavel_id: responsavelId,
+            responsavel_nome: responsavelNome,
+            observacao: observacao || null,
+            added_by: nomeUsuario
+        }).select();
+
+        if (error) throw error;
+
+        // Registrar a movimentação inicial
+        if (data && data[0]) {
+            const giroId = data[0].id;
+            
+            await App.supabase.from('movimentacoes_giro').insert({
+                user_id: App.currentUser.id,
+                giro_id: giroId,
+                tipo: tipo === 'pegando' ? 'recebimento' : 'pagamento',
+                valor: Math.abs(valor),
+                descricao: `Giro criado: ${descricao}`,
+                data: new Date().toISOString(),
+                added_by: nomeUsuario
+            });
+        }
+
+        await registrarHistorico('criacao_giro', `Giro criado: ${descricao}`, { 
+            descricao, 
+            valor, 
+            pessoa, 
+            tipo, 
+            responsavel: responsavelNome,
+            usuario: nomeUsuario 
+        });
+        
+        showToast(`✅ Giro criado! ${tipo === 'pegando' ? 'Você pegou' : 'Você emprestou'} R$ ${valor.toFixed(2).replace('.', ',')} com ${pessoa}`, 'success');
+        
         fecharModal();
         await carregarDados(true);
         await mostrarConteudo();
+        
     } catch (error) {
         console.error('Erro ao salvar giro:', error);
         showToast('Erro: ' + error.message, 'error');
@@ -11920,6 +12178,623 @@ window.deletarItemLista = deletarItemLista;
                 })();
             }
         }
+
+
+// ============================================
+// ABRIR MODAL DE RESUMO DO GIRO (HISTÓRICO COMPLETO)
+// ============================================
+
+function abrirResumoGiro(id) {
+    let giro = App.dataCache.giros?.find(g => g.id == id);
+    if (!giro) {
+        showToast('Giro não encontrado', 'error');
+        return;
+    }
+    
+    let movimentacoes = App.dataCache.movimentacoesGiro?.filter(m => m.giro_id == id) || [];
+    // Ordenar por data (mais recente primeiro)
+    movimentacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+    
+    // Calcular saldo atual
+    let totalPago = movimentacoes.reduce((acc, m) => acc + (m.tipo === 'pagamento' ? m.valor : 0), 0);
+    let totalRecebido = movimentacoes.reduce((acc, m) => acc + (m.tipo === 'recebimento' ? m.valor : 0), 0);
+    
+    let saldoAtual;
+    if (giro.tipo_giro === 'pegando') {
+        saldoAtual = giro.valor_inicial - totalPago + totalRecebido;
+    } else {
+        saldoAtual = Math.abs(giro.valor_inicial) - totalRecebido + totalPago;
+    }
+    
+    // Gerar HTML das movimentações
+    let movimentacoesHtml = '';
+    if (movimentacoes.length === 0) {
+        movimentacoesHtml = '<div style="text-align: center; padding: 30px; color: var(--gray);">Nenhuma movimentação registrada</div>';
+    } else {
+        movimentacoesHtml = '<div style="max-height: 300px; overflow-y: auto;">';
+        movimentacoes.forEach(m => {
+            const dataFormatada = formatarDataHora(m.data);
+            const valorFormatado = formatCurrency(m.valor);
+            const tipoIcon = m.tipo === 'pagamento' ? 'fa-arrow-down' : 'fa-arrow-up';
+            const tipoCor = m.tipo === 'pagamento' ? '#dc3545' : '#28a745';
+            const tipoTexto = m.tipo === 'pagamento' ? 'Pagamento' : 'Recebimento';
+            
+            movimentacoesHtml += `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f0f0f0;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: ${tipoCor}20; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas ${tipoIcon}" style="color: ${tipoCor};"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 500;">${m.descricao || tipoTexto}</div>
+                            <div style="font-size: 11px; color: var(--gray);">${dataFormatada}</div>
+                            <div style="font-size: 10px; color: var(--gray);">por: ${m.added_by || 'desconhecido'}</div>
+                        </div>
+                    </div>
+                    <div style="font-weight: 600; color: ${tipoCor};">
+                        ${m.tipo === 'pagamento' ? '- ' : '+ '}${valorFormatado}
+                    </div>
+                </div>
+            `;
+        });
+        movimentacoesHtml += '</div>';
+    }
+    
+    // Definir informações do tipo
+    const tipoIcon = giro.tipo_giro === 'pegando' ? 'fa-arrow-down' : 'fa-arrow-up';
+    const tipoCor = giro.tipo_giro === 'pegando' ? '#dc3545' : '#28a745';
+    const tipoTexto = giro.tipo_giro === 'pegando' ? 'Estou Pegando' : 'Estou Emprestando';
+    const valorInicial = giro.tipo_giro === 'pegando' ? giro.valor_inicial : Math.abs(giro.valor_inicial);
+    
+    let saldoClass;
+    let saldoIcon;
+    let saldoTexto;
+    if (saldoAtual > 0) {
+        saldoClass = giro.tipo_giro === 'pegando' ? 'var(--danger)' : 'var(--success)';
+        saldoIcon = giro.tipo_giro === 'pegando' ? 'fa-arrow-down' : 'fa-arrow-up';
+        saldoTexto = giro.tipo_giro === 'pegando' 
+            ? `Você ainda deve R$ ${formatCurrency(saldoAtual)} para ${giro.pessoa}`
+            : `${giro.pessoa} ainda te deve R$ ${formatCurrency(saldoAtual)}`;
+    } else if (saldoAtual < 0) {
+        saldoClass = giro.tipo_giro === 'pegando' ? 'var(--success)' : 'var(--danger)';
+        saldoIcon = giro.tipo_giro === 'pegando' ? 'fa-arrow-up' : 'fa-arrow-down';
+        saldoTexto = giro.tipo_giro === 'pegando'
+            ? `${giro.pessoa} te deve R$ ${formatCurrency(Math.abs(saldoAtual))}`
+            : `Você deve R$ ${formatCurrency(Math.abs(saldoAtual))} para ${giro.pessoa}`;
+    } else {
+        saldoClass = 'var(--success)';
+        saldoIcon = 'fa-check-circle';
+        saldoTexto = 'Giro totalmente quitado! ✅';
+    }
+    
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
+                <i class="fas ${tipoIcon}" style="font-size: 28px; color: #fff;"></i>
+                <h3 style="margin: 5px 0 0 0; color: #fff;">${giro.descricao}</h3>
+                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">${tipoTexto}</p>
+            </div>
+            
+            <div style="padding: 16px;">
+                <!-- INFORMAÇÕES DO GIRO -->
+                <div style="background: #f8f9fa; border-radius: 10px; padding: 12px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: var(--gray);"><i class="fas fa-user-friends"></i> Pessoa</span>
+                        <span style="font-weight: 500;">${giro.pessoa}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: var(--gray);"><i class="fas fa-dollar-sign"></i> Valor original</span>
+                        <span style="font-weight: 500;">${formatCurrency(valorInicial)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: var(--gray);"><i class="fas fa-user-check"></i> Responsável</span>
+                        <span style="font-weight: 500;">${giro.responsavel_nome || 'Não definido'}</span>
+                    </div>
+                    ${giro.observacao ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--gray);"><i class="fas fa-pencil-alt"></i> Observação</span>
+                        <span style="font-weight: 500; text-align: right;">${giro.observacao}</span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <!-- SALDO ATUAL -->
+                <div style="background: ${saldoClass}10; border-left: 3px solid ${saldoClass}; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fas ${saldoIcon}" style="color: ${saldoClass};"></i> Saldo atual</span>
+                        <span style="font-size: 1.2rem; font-weight: 700; color: ${saldoClass};">${formatCurrency(Math.abs(saldoAtual))}</span>
+                    </div>
+                    <div style="font-size: 12px; margin-top: 5px; color: ${saldoClass};">${saldoTexto}</div>
+                </div>
+                
+                <!-- HISTÓRICO DE MOVIMENTAÇÕES -->
+                <div style="margin-top: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                        <i class="fas fa-history"></i>
+                        <strong>Histórico de movimentações</strong>
+                    </div>
+                    ${movimentacoesHtml}
+                </div>
+                
+                <!-- BOTÕES DE AÇÃO NO RESUMO -->
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-danger" onclick="abrirDeletarMovimentacaoGiro('${giro.id}')" style="flex: 1; background: var(--danger); color: #fff;">
+                        <i class="fas fa-trash-alt"></i> Deletar movimentação
+                    </button>
+                    <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    abrirModal(`Resumo: ${giro.descricao}`, 'fa-chart-line', conteudo);
+}
+
+
+
+
+// ============================================
+// ABRIR MODAL PARA ADICIONAR MAIS VALOR (PEGUEI MAIS)
+// ============================================
+
+function abrirAdicionarGiro(id, desc) {
+    let giro = App.dataCache.giros?.find(g => g.id == id);
+    if (!giro) {
+        showToast('Giro não encontrado', 'error');
+        return;
+    }
+    
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #dc3545, #c82333); padding: 12px; text-align: center;">
+                <i class="fas fa-arrow-down" style="font-size: 24px; color: #fff;"></i>
+                <h3 style="margin: 5px 0 0 0; color: #fff;">Peguei Mais</h3>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #fff;">Aumentar o valor da dívida</p>
+            </div>
+            <div style="padding: 20px;">
+                <p><strong>${desc}</strong></p>
+                <p>Você está adicionando MAIS um valor que pegou de <strong>${giro.pessoa}</strong>.</p>
+                
+                <div class="form-group" style="margin: 16px 0;">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor adicional</label>
+                    <input type="text" id="adicionalValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-align-left"></i> Descrição (opcional)</label>
+                    <input type="text" id="adicionalDescricao" class="form-input" placeholder="Ex: Parcela extra, novo empréstimo...">
+                </div>
+                
+                <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="confirmarAdicionarGiro('${id}', '${desc}')" style="flex: 2;">
+                        <i class="fas fa-check"></i> Confirmar Adição
+                    </button>
+                    <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    abrirModal('Adicionar Valor', 'fa-plus-circle', conteudo);
+}
+
+// ============================================
+// CONFIRMAR ADIÇÃO DE VALOR (PEGUEI MAIS)
+// ============================================
+
+async function confirmarAdicionarGiro(id, desc) {
+    let valor = parseCurrency(document.getElementById('adicionalValor')?.value);
+    let descricao = document.getElementById('adicionalDescricao')?.value.trim();
+    
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
+    if (!valor || valor <= 0) {
+        showToast('Digite um valor válido', 'warning');
+        return;
+    }
+    
+    try {
+        // Buscar o giro atual
+        const { data: giroAtual, error: buscaError } = await App.supabase
+            .from('giros')
+            .select('*')
+            .eq('id', id)
+            .single();
+        
+        if (buscaError) throw buscaError;
+        
+        // Atualizar o valor_inicial do giro (aumentar a dívida)
+        let novoValorInicial;
+        if (giroAtual.tipo_giro === 'pegando') {
+            novoValorInicial = giroAtual.valor_inicial + valor;
+        } else {
+            novoValorInicial = giroAtual.valor_inicial - valor;
+        }
+        
+        await App.supabase
+            .from('giros')
+            .update({ valor_inicial: novoValorInicial })
+            .eq('id', id);
+        
+        // Registrar a movimentação
+        await App.supabase.from('movimentacoes_giro').insert({
+            user_id: App.currentUser.id,
+            giro_id: id,
+            tipo: giroAtual.tipo_giro === 'pegando' ? 'recebimento' : 'pagamento',
+            valor: valor,
+            descricao: descricao || `Adição: +R$ ${valor.toFixed(2).replace('.', ',')}`,
+            data: new Date().toISOString(),
+            added_by: nomeUsuario
+        });
+        
+        await registrarHistorico('adicao_giro', `Adicionado ${formatCurrency(valor)} a ${desc}`, { id, valor, usuario: nomeUsuario });
+        showToast(`✅ Adicionado R$ ${valor.toFixed(2).replace('.', ',')} ao giro!`, 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+        
+    } catch (error) {
+        console.error('Erro ao adicionar valor:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+// ============================================
+// ABRIR MODAL PARA EMPRESTAR MAIS VALOR
+// ============================================
+
+function abrirEmprestarMaisGiro(id, desc) {
+    let giro = App.dataCache.giros?.find(g => g.id == id);
+    if (!giro) {
+        showToast('Giro não encontrado', 'error');
+        return;
+    }
+    
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #28a745, #218838); padding: 12px; text-align: center;">
+                <i class="fas fa-arrow-up" style="font-size: 24px; color: #fff;"></i>
+                <h3 style="margin: 5px 0 0 0; color: #fff;">Emprestei Mais</h3>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #fff;">Aumentar o valor a receber</p>
+            </div>
+            <div style="padding: 20px;">
+                <p><strong>${desc}</strong></p>
+                <p>Você está EMPRESTANDO MAIS um valor para <strong>${giro.pessoa}</strong>.</p>
+                
+                <div class="form-group" style="margin: 16px 0;">
+                    <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor adicional</label>
+                    <input type="text" id="adicionalValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-align-left"></i> Descrição (opcional)</label>
+                    <input type="text" id="adicionalDescricao" class="form-input" placeholder="Ex: Novo empréstimo, parcela extra...">
+                </div>
+                
+                <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="confirmarEmprestarMaisGiro('${id}', '${desc}')" style="flex: 2;">
+                        <i class="fas fa-check"></i> Confirmar Adição
+                    </button>
+                    <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    abrirModal('Emprestar Mais', 'fa-plus-circle', conteudo);
+}
+
+// ============================================
+// CONFIRMAR EMPRESTAR MAIS VALOR
+// ============================================
+
+async function confirmarEmprestarMaisGiro(id, desc) {
+    let valor = parseCurrency(document.getElementById('adicionalValor')?.value);
+    let descricao = document.getElementById('adicionalDescricao')?.value.trim();
+    
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
+    if (!valor || valor <= 0) {
+        showToast('Digite um valor válido', 'warning');
+        return;
+    }
+    
+    try {
+        const { data: giroAtual, error: buscaError } = await App.supabase
+            .from('giros')
+            .select('*')
+            .eq('id', id)
+            .single();
+        
+        if (buscaError) throw buscaError;
+        
+        // Atualizar o valor_inicial do giro (aumentar o valor a receber)
+        let novoValorInicial;
+        if (giroAtual.tipo_giro === 'emprestando') {
+            novoValorInicial = giroAtual.valor_inicial - valor;
+        } else {
+            novoValorInicial = giroAtual.valor_inicial + valor;
+        }
+        
+        await App.supabase
+            .from('giros')
+            .update({ valor_inicial: novoValorInicial })
+            .eq('id', id);
+        
+        // Registrar a movimentação
+        await App.supabase.from('movimentacoes_giro').insert({
+            user_id: App.currentUser.id,
+            giro_id: id,
+            tipo: giroAtual.tipo_giro === 'emprestando' ? 'pagamento' : 'recebimento',
+            valor: valor,
+            descricao: descricao || `Empréstimo extra: R$ ${valor.toFixed(2).replace('.', ',')}`,
+            data: new Date().toISOString(),
+            added_by: nomeUsuario
+        });
+        
+        await registrarHistorico('adicao_giro', `Empréstimo extra: ${formatCurrency(valor)} para ${desc}`, { id, valor, usuario: nomeUsuario });
+        showToast(`✅ Adicionado R$ ${valor.toFixed(2).replace('.', ',')} ao giro!`, 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+        
+    } catch (error) {
+        console.error('Erro ao adicionar valor:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+
+
+// ============================================
+// ABRIR MODAL PARA DELETAR MOVIMENTAÇÃO DO GIRO
+// ============================================
+
+function abrirDeletarMovimentacaoGiro(giroId) {
+    let giro = App.dataCache.giros?.find(g => g.id == giroId);
+    if (!giro) {
+        showToast('Giro não encontrado', 'error');
+        return;
+    }
+    
+    let movimentacoes = App.dataCache.movimentacoesGiro?.filter(m => m.giro_id == giroId) || [];
+    movimentacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
+    
+    if (movimentacoes.length === 0) {
+        showToast('Nenhuma movimentação para deletar', 'warning');
+        return;
+    }
+    
+    let movimentacoesHtml = '';
+    movimentacoes.forEach(m => {
+        const dataFormatada = formatarDataHora(m.data);
+        const valorFormatado = formatCurrency(m.valor);
+        const tipoIcon = m.tipo === 'pagamento' ? 'fa-arrow-down' : 'fa-arrow-up';
+        const tipoCor = m.tipo === 'pagamento' ? '#dc3545' : '#28a745';
+        const tipoTexto = m.tipo === 'pagamento' ? 'Pagamento' : 'Recebimento';
+        
+        movimentacoesHtml += `
+            <div class="movimentacao-item" data-id="${m.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer;" onclick="selecionarMovimentacaoParaDeletar('${m.id}', '${m.tipo}', ${m.valor})">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: ${tipoCor}20; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas ${tipoIcon}" style="color: ${tipoCor};"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 500;">${m.descricao || tipoTexto}</div>
+                        <div style="font-size: 11px; color: var(--gray);">${dataFormatada}</div>
+                        <div style="font-size: 10px; color: var(--gray);">por: ${m.added_by || 'desconhecido'}</div>
+                    </div>
+                </div>
+                <div style="font-weight: 600; color: ${tipoCor};">
+                    ${m.tipo === 'pagamento' ? '- ' : '+ '}${valorFormatado}
+                </div>
+            </div>
+        `;
+    });
+    
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #dc3545, #c82333); padding: 12px; text-align: center;">
+                <i class="fas fa-trash-alt" style="font-size: 24px; color: #fff;"></i>
+                <h3 style="margin: 5px 0 0 0; color: #fff;">Deletar Movimentação</h3>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #fff;">Selecione a movimentação que deseja remover</p>
+            </div>
+            <div style="padding: 16px;">
+                <div style="margin-bottom: 16px;">
+                    <p><strong>Giro:</strong> ${giro.descricao}</p>
+                    <p><strong>Pessoa:</strong> ${giro.pessoa}</p>
+                </div>
+                
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px;">
+                    ${movimentacoesHtml}
+                </div>
+                
+                <div style="margin-top: 16px; padding: 10px; background: #fff3cd; border-radius: 8px; font-size: 12px;">
+                    <i class="fas fa-exclamation-triangle"></i> Ao deletar uma movimentação, o saldo do giro será recalculado automaticamente.
+                </div>
+                
+                <div class="btn-group" style="margin-top: 20px;">
+                    <button class="btn" onclick="fecharModal()" style="width: 100%; background: var(--gray); color: #fff;">Cancelar</button>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+            .movimentacao-item:hover {
+                background: #f8f9fa;
+            }
+            .movimentacao-item.selecionada {
+                background: var(--purple-light);
+                border-left: 3px solid var(--purple);
+            }
+        </style>
+    `;
+    
+    abrirModal('Deletar Movimentação', 'fa-trash-alt', conteudo);
+    
+    // Variável para armazenar a movimentação selecionada
+    window.movimentacaoSelecionada = null;
+    
+    window.selecionarMovimentacaoParaDeletar = function(movId, tipo, valor) {
+        // Remover seleção anterior
+        document.querySelectorAll('.movimentacao-item').forEach(item => {
+            item.classList.remove('selecionada');
+        });
+        
+        // Marcar a selecionada
+        const elemento = document.querySelector(`.movimentacao-item[data-id="${movId}"]`);
+        if (elemento) {
+            elemento.classList.add('selecionada');
+        }
+        
+        window.movimentacaoSelecionada = { id: movId, tipo, valor };
+        
+        // Adicionar botão de confirmar
+        const btnGroup = document.querySelector('.btn-group');
+        if (btnGroup && !document.getElementById('btnConfirmarDelete')) {
+            const btnConfirmar = document.createElement('button');
+            btnConfirmar.id = 'btnConfirmarDelete';
+            btnConfirmar.className = 'btn btn-danger';
+            btnConfirmar.style.flex = '2';
+            btnConfirmar.style.marginRight = '10px';
+            btnConfirmar.innerHTML = '<i class="fas fa-check"></i> Confirmar exclusão';
+            btnConfirmar.onclick = () => confirmarDeletarMovimentacao(giroId);
+            btnGroup.insertBefore(btnConfirmar, btnGroup.firstChild);
+        }
+    };
+}
+
+// ============================================
+// CONFIRMAR DELETAR MOVIMENTAÇÃO DO GIRO
+// ============================================
+
+async function confirmarDeletarMovimentacao(giroId) {
+    if (!window.movimentacaoSelecionada) {
+        showToast('Selecione uma movimentação para deletar', 'warning');
+        return;
+    }
+    
+    if (!confirm('Tem certeza que deseja deletar esta movimentação? O saldo do giro será recalculado.')) {
+        return;
+    }
+    
+    const { id: movId, tipo, valor } = window.movimentacaoSelecionada;
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
+    try {
+        // Buscar o giro atual
+        const { data: giroAtual, error: buscaError } = await App.supabase
+            .from('giros')
+            .select('*')
+            .eq('id', giroId)
+            .single();
+        
+        if (buscaError) throw buscaError;
+        
+        // Reverter o efeito da movimentação no valor_inicial
+        let novoValorInicial;
+        if (giroAtual.tipo_giro === 'pegando') {
+            if (tipo === 'pagamento') {
+                novoValorInicial = giroAtual.valor_inicial + valor;
+            } else {
+                novoValorInicial = giroAtual.valor_inicial - valor;
+            }
+        } else {
+            if (tipo === 'pagamento') {
+                novoValorInicial = giroAtual.valor_inicial + valor;
+            } else {
+                novoValorInicial = giroAtual.valor_inicial - valor;
+            }
+        }
+        
+        // Atualizar o valor_inicial do giro
+        await App.supabase
+            .from('giros')
+            .update({ valor_inicial: novoValorInicial })
+            .eq('id', giroId);
+        
+        // Deletar a movimentação
+        await App.supabase
+            .from('movimentacoes_giro')
+            .delete()
+            .eq('id', movId);
+        
+        await registrarHistorico('deletar_movimentacao_giro', `Movimentação deletada do giro ${giroId}`, { 
+            movId, 
+            tipo, 
+            valor, 
+            usuario: nomeUsuario 
+        });
+        
+        showToast('✅ Movimentação deletada com sucesso!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+        
+    } catch (error) {
+        console.error('Erro ao deletar movimentação:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+
+
+// ============================================
+// FUNÇÕES AUXILIARES PARA GIROS
+// ============================================
+
+// Formatar data para exibição
+function formatarDataHora(data) {
+    if (!data) return '';
+    const d = new Date(data);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Abrir modal explicativo sobre Giros
+function abrirModalExplicacaoGiros() {
+    let conteudo = `
+        <div style="padding: 0;">
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 15px; text-align: center;">
+                <i class="fas fa-hand-holding-usd" style="font-size: 32px; color: #fff;"></i>
+                <h3 style="margin: 5px 0 0 0; color: #fff;">O que são Giros?</h3>
+            </div>
+            <div style="padding: 20px;">
+                <p style="margin-bottom: 15px;"><strong>Giros</strong> é uma ferramenta para controlar <strong>empréstimos informais</strong> entre amigos, familiares ou conhecidos.</p>
+                
+                <div style="background: #e8f4fd; border-radius: 10px; padding: 12px; margin-bottom: 15px;">
+                    <p style="margin: 0 0 8px 0;"><strong>📌 Como funciona:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Estou Pegando</strong> = Você recebeu dinheiro de alguém (você tem uma dívida)</li>
+                        <li><strong>Estou Emprestando</strong> = Você deu dinheiro para alguém (alguém te deve)</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #fef7e0; border-radius: 10px; padding: 12px; margin-bottom: 15px;">
+                    <p style="margin: 0 0 8px 0;"><strong>💰 Ações disponíveis:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Paguei / Recebi</strong> - Registrar um pagamento ou recebimento</li>
+                        <li><strong>Peguei Mais / Emprestei Mais</strong> - Adicionar mais valor ao giro</li>
+                        <li><strong>Resumo</strong> - Ver todo histórico de movimentações</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #e8f5e9; border-radius: 10px; padding: 12px;">
+                    <p style="margin: 0 0 8px 0;"><strong>💡 Dica:</strong></p>
+                    <p style="margin: 0; font-size: 12px;">O saldo positivo significa que você tem a receber. Saldo negativo significa que você tem a pagar.</p>
+                </div>
+            </div>
+            <div style="padding: 16px; border-top: 1px solid #eee; text-align: center;">
+                <button class="btn" onclick="fecharModal()" style="background: var(--gray); color: #fff; padding: 10px 30px;">Entendi</button>
+            </div>
+        </div>
+    `;
+    abrirModal('Sobre Giros', 'fa-hand-holding-usd', conteudo);
+}
+
 
         function abrirAdicionarValorSaldo(id) {
             let conteudo = `
@@ -14584,4 +15459,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 014
+Edição 015
