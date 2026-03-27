@@ -6348,19 +6348,38 @@ function abrirEdicaoContaRecorrente(regraId, descricaoAtual, valorAtual, frequen
 async function salvarEdicaoContaIndividual(id, isRecorrente) {
     console.log('🔵 Salvando edição individual - ID:', id, 'isRecorrente:', isRecorrente);
     
+    // Pegar valores do formulário
     let valor = parseCurrency(document.getElementById('contaValorEdit')?.value);
     let codigo = document.getElementById('contaCodigoEdit')?.value.trim() || null;
+    let descricao = document.getElementById('contaDescricaoEdit')?.value.trim();
+    let diaNovo = parseInt(document.getElementById('contaDiaEdit')?.value);
+    let mesNovo = parseInt(document.getElementById('contaMesEdit')?.value);
+    let anoNovo = parseInt(document.getElementById('contaAnoEdit')?.value);
     
-    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    const nomeUsuario = getNomeUsuario();
     
     if (!valor) {
         showToast('Digite um valor válido', 'warning');
         return;
     }
     
+    if (!descricao) {
+        showToast('Digite uma descrição', 'warning');
+        return;
+    }
+    
+    if (!diaNovo || !mesNovo || !anoNovo) {
+        showToast('Preencha a data completa', 'warning');
+        return;
+    }
+    
+    if (!dataValida(anoNovo, mesNovo, diaNovo)) {
+        showToast('Dia inválido para o mês selecionado', 'warning');
+        return;
+    }
+    
     try {
         const isTemporaryId = typeof id === 'string' && id.startsWith('regra_');
-        
         let contaId = id;
         
         if (isTemporaryId) {
@@ -6376,65 +6395,61 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
                 return;
             }
             
-            let diaConta = parseInt(document.getElementById('contaDiaEdit')?.value);
-            let mesConta = parseInt(document.getElementById('contaMesEdit')?.value);
-            let anoConta = parseInt(document.getElementById('contaAnoEdit')?.value);
+            // Buscar a data do formulário
+            let dataPrimeiraConta = dataParaString(anoNovo, mesNovo, diaNovo);
             
-            if (!diaConta || !mesConta || !anoConta) {
-                const dataInicio = new Date(regra.data_inicio + 'T12:00:00');
-                diaConta = dataInicio.getDate();
-                mesConta = dataInicio.getMonth() + 1;
-                anoConta = dataInicio.getFullYear();
-            }
-            
-            let dataPrimeiraConta = dataParaString(anoConta, mesConta, diaConta);
-            
+            // Verificar se a conta já existe
             const { data: contaExistente } = await App.supabase
                 .from('contas')
                 .select('id')
                 .eq('regra_id', regraId)
-                .eq('dia', diaConta)
-                .eq('mes', mesConta)
-                .eq('ano', anoConta)
+                .eq('dia', diaNovo)
+                .eq('mes', mesNovo)
+                .eq('ano', anoNovo)
                 .maybeSingle();
             
             if (contaExistente) {
                 console.log('✅ Conta já existe, usando ID:', contaExistente.id);
                 contaId = contaExistente.id;
             } else {
-                const { data: novaConta, error: insertError } = await App.supabase.rpc('inserir_conta', {
-                    p_user_id: App.currentUser.id,
-                    p_descricao: regra.descricao_base,
-                    p_valor: regra.valor,
-                    p_dia: diaConta,
-                    p_mes: mesConta,
-                    p_ano: anoConta,
-                    p_data: dataPrimeiraConta,
-                    p_added_by: nomeUsuario,
-                    p_valor_pago: 0,
-                    p_status: 'pendente',
-                    p_codigo_pagamento: null,
-                    p_regra_id: regra.id
-                });
+                // Criar a conta individual
+                const { data: novaConta, error: insertError } = await App.supabase
+                    .from('contas')
+                    .insert({
+                        user_id: App.currentUser.id,
+                        descricao: descricao,
+                        valor: valor,
+                        dia: diaNovo,
+                        mes: mesNovo,
+                        ano: anoNovo,
+                        data: dataPrimeiraConta,
+                        added_by: nomeUsuario,
+                        valor_pago: 0,
+                        status: 'pendente',
+                        codigo_pagamento: codigo,
+                        regra_id: regraId
+                    })
+                    .select();
                 
                 if (insertError) {
-                    console.error('❌ Erro ao criar conta via RPC:', insertError);
+                    console.error('❌ Erro ao criar conta:', insertError);
                     showToast('Erro ao criar conta: ' + insertError.message, 'error');
                     return;
                 }
                 
-                if (!novaConta || !novaConta.id) {
-                    console.error('❌ Resposta da RPC inválida:', novaConta);
+                if (!novaConta || !novaConta[0] || !novaConta[0].id) {
+                    console.error('❌ Resposta da inserção inválida:', novaConta);
                     showToast('Erro ao criar conta', 'error');
                     return;
                 }
                 
-                contaId = novaConta.id;
+                contaId = novaConta[0].id;
                 console.log('✅ Conta criada com ID:', contaId);
                 
+                // Criar exceção para não duplicar
                 await App.supabase.from('excecoes_recorrencia').insert({
                     user_id: App.currentUser.id,
-                    regra_id: regra.id,
+                    regra_id: regraId,
                     data_excecao: dataPrimeiraConta,
                     acao: 'excluir',
                     added_by: nomeUsuario
@@ -6442,38 +6457,18 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
             }
         }
         
+        // Atualizar a conta com os novos valores
         let updateData = {
+            descricao: descricao,
             valor: valor,
+            dia: diaNovo,
+            mes: mesNovo,
+            ano: anoNovo,
+            data: dataParaString(anoNovo, mesNovo, diaNovo),
             codigo_pagamento: codigo
         };
         
-        if (!isRecorrente) {
-            let descricao = document.getElementById('contaDescricaoEdit')?.value.trim();
-            let diaNovo = parseInt(document.getElementById('contaDiaEdit')?.value);
-            let mesNovo = parseInt(document.getElementById('contaMesEdit')?.value);
-            let anoNovo = parseInt(document.getElementById('contaAnoEdit')?.value);
-            
-            if (!descricao) {
-                showToast('Digite uma descrição', 'warning');
-                return;
-            }
-            
-            if (!diaNovo || !mesNovo || !anoNovo) {
-                showToast('Preencha a data completa', 'warning');
-                return;
-            }
-            
-            if (!dataValida(anoNovo, mesNovo, diaNovo)) {
-                showToast('Dia inválido para o mês selecionado', 'warning');
-                return;
-            }
-            
-            updateData.descricao = descricao;
-            updateData.dia = diaNovo;
-            updateData.mes = mesNovo;
-            updateData.ano = anoNovo;
-            updateData.data = dataParaString(anoNovo, mesNovo, diaNovo);
-        }
+        console.log('📝 Atualizando conta ID:', contaId, updateData);
         
         const { error } = await App.supabase
             .from('contas')
@@ -6485,12 +6480,11 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
         await registrarHistorico(
             'edicao_conta_individual', 
             `Conta ID ${contaId} editada`, 
-            { id: contaId, isRecorrente, valor, codigo: codigo || 'removido', usuario: nomeUsuario }
+            { id: contaId, isRecorrente, valor, descricao, usuario: nomeUsuario }
         );
         
-        showToast(isRecorrente ? '✅ Valor e código salvos nesta conta!' : '✅ Conta atualizada!', 'success');
+        showToast(isRecorrente ? '✅ Conta salva como conta única!' : '✅ Conta atualizada!', 'success');
         
-        // 🔴 SINCRONIZAÇÃO AUTOMÁTICA
         await sincronizarGoogleAutomatico();
         
         fecharModal();
@@ -6535,17 +6529,14 @@ function confirmarEdicaoRecorrente(regraId) {
         return;
     }
     
-    // Fechar o modal atual
     fecharModal();
     
-    // Buscar a regra
     let regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
     if (!regra) {
         showToast('Regra não encontrada', 'error');
         return;
     }
     
-    // Buscar todas as contas futuras desta regra
     let todasContas = App.dataCache.contas.filter(c => c.regra_id == regraId);
     let hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -6557,20 +6548,19 @@ function confirmarEdicaoRecorrente(regraId) {
     
     console.log(`📊 Encontradas ${contasFuturo.length} contas futuras para atualizar`);
     
-    // Mostrar loading
     showToast('Atualizando contas...', 'info');
     
     (async () => {
         try {
             // Deletar as contas FUTURAS
             if (contasFuturo.length > 0) {
-                console.log(`🗑️ Deletando ${contasFuturo.length} contas futuras`);
                 for (let conta of contasFuturo) {
                     await App.supabase
                         .from('contas')
                         .delete()
                         .eq('id', conta.id);
                 }
+                console.log(`🗑️ Deletadas ${contasFuturo.length} contas futuras`);
             }
             
             // Deletar a regra antiga
@@ -6584,7 +6574,6 @@ function confirmarEdicaoRecorrente(regraId) {
             dataInicio.setDate(novoDia);
             dataInicio.setHours(12, 0, 0);
             
-            // Se a data de início já passou, usar o próximo mês
             if (dataInicio < hoje) {
                 dataInicio.setMonth(dataInicio.getMonth() + 1);
             }
@@ -6597,7 +6586,6 @@ function confirmarEdicaoRecorrente(regraId) {
             
             const nomeUsuario = getNomeUsuario();
             
-            // Criar nova regra
             let novaRegraData = {
                 user_id: App.currentUser.id,
                 descricao_base: novaDescricao,
@@ -6609,7 +6597,6 @@ function confirmarEdicaoRecorrente(regraId) {
                 added_by: nomeUsuario
             };
             
-            // Manter data_fim se existia
             if (regra.data_fim) {
                 novaRegraData.data_fim = regra.data_fim;
             }
@@ -6623,20 +6610,18 @@ function confirmarEdicaoRecorrente(regraId) {
             
             console.log('✅ Nova regra criada com ID:', novaRegra[0].id);
             
-            // 🔴 FORÇAR RECARREGAMENTO COMPLETO DOS DADOS
+            // Recarregar dados
             await carregarDados(true);
             await atualizarCalendario();
             await mostrarConteudo();
             
             showToast('✅ Contas atualizadas com sucesso!', 'success');
             
-            // Sincronizar com Google (se conectado)
             await sincronizarGoogleAutomatico();
             
         } catch (error) {
             console.error('Erro ao atualizar contas:', error);
             showToast('Erro: ' + error.message, 'error');
-            // Recarregar dados para restaurar estado anterior
             await carregarDados(true);
             await atualizarCalendario();
             await mostrarConteudo();
