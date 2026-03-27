@@ -3281,125 +3281,245 @@ function abrirModalAssinatura() {
             ` : ''}
             
             <div style="padding: 16px;">
-                <!-- CABEÇALHO DA TABELA -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; background: #f8f9fa; border-radius: 12px 12px 0 0; margin-bottom: 2px;">
-                    <div style="padding: 14px; text-align: center; font-weight: 700; font-size: 16px; background: #e9ecef; border-radius: 12px 0 0 0;">Grátis</div>
-                    <div style="padding: 14px; text-align: center; font-weight: 700; font-size: 16px; background: linear-gradient(135deg, #f39c12, #e67e22); color: #fff; border-radius: 0 12px 0 0;">Premium</div>
-                </div>
-                
-                <!-- TABELA DE COMPARAÇÃO -->
-                <div style="background: #fff; border-radius: 0 0 12px 12px; overflow: hidden; border: 1px solid #e9ecef; margin-bottom: 20px;">
+                <!-- DUAS COLUNAS LADO A LADO -->
+                <div style="display: flex; gap: 12px; margin-bottom: 20px;">
                     
-                    <!-- PUBLICIDADE -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Publicidade</div>
-                        <div style="padding: 12px 12px; background: #fffae6;">Com anúncios</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;">Sem anúncios</div>
+                    <!-- COLUNA GRÁTIS -->
+                    <div style="flex: 1; background: #f5f5f5; border-radius: 16px; overflow: hidden;">
+                        <div style="background: #e0e0e0; padding: 14px; text-align: center;">
+                            <span style="font-weight: 700; font-size: 18px;">Grátis</span>
+                        </div>
+                        <div style="padding: 8px 0;">
+                            <!-- Publicidade -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Publicidade</div>
+                                <div>Com anúncios</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Contas Únicas -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Contas Únicas</div>
+                                <div>5 por mês</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Contas Recorrentes -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Contas Recorrentes</div>
+                                <div>5 por mês</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Eventos Únicos -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Eventos Únicos</div>
+                                <div>5 por mês</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Eventos Recorrentes -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Eventos Recorrentes</div>
+                                <div>2 por mês</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Lista de Compras -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Lista de Compras</div>
+                                <div>10 itens</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Notas e Anotações -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Notas e Anotações</div>
+                                <div>3 anotações</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Gastos -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Gastos (Lançamentos)</div>
+                                <div>8 por mês</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Usuários Simultâneos -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Usuários Simultâneos</div>
+                                <div>2 usuários</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Sync Google Calendar -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Sync Google Calendar</div>
+                                <div><span style="color: #dc3545;">✗</span> Não disponível</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Calendários Assinados -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Calendários Assinados</div>
+                                <div><span style="color: #dc3545;">✗</span> Não disponível</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Importar .ics -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Importar .ics</div>
+                                <div><span style="color: #dc3545;">✗</span> Não disponível</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Notificações -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Notificações</div>
+                                <div><span style="color: #dc3545;">✗</span> Não disponível</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Tarefas com Agendamentos -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Tarefas com Agendamentos</div>
+                                <div><span style="color: #dc3545;">✗</span> Não disponível</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Controle de Saldos -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Controle de Saldos</div>
+                                <div><span style="color: #dc3545;">✗</span> Não disponível</div>
+                            </div>
+                            <div style="height: 1px; background: #d0d0d0; margin: 4px 12px;"></div>
+                            
+                            <!-- Giros -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px;">Giros (Empréstimos)</div>
+                                <div><span style="color: #dc3545;">✗</span> Não disponível</div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <!-- CONTAS ÚNICAS -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Contas únicas</div>
-                        <div style="padding: 12px 12px;">5 por mês</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
-                    </div>
-                    
-                    <!-- CONTAS RECORRENTES -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Contas recorrentes</div>
-                        <div style="padding: 12px 12px;">5 por mês</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
-                    </div>
-                    
-                    <!-- EVENTOS ÚNICOS -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Eventos únicos</div>
-                        <div style="padding: 12px 12px;">5 por mês</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
-                    </div>
-                    
-                    <!-- EVENTOS RECORRENTES -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Eventos recorrentes</div>
-                        <div style="padding: 12px 12px;">2 por mês</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
-                    </div>
-                    
-                    <!-- LISTA DE COMPRAS -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Lista de compras</div>
-                        <div style="padding: 12px 12px;">10 itens</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
-                    </div>
-                    
-                    <!-- NOTAS E ANOTAÇÕES -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Notas e anotações</div>
-                        <div style="padding: 12px 12px;">3 por mês</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
-                    </div>
-                    
-                    <!-- GASTOS -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Gastos (lançamentos)</div>
-                        <div style="padding: 12px 12px;">8 por mês</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
-                    </div>
-                    
-                    <!-- USUÁRIOS SIMULTÂNEOS -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Usuários simultâneos</div>
-                        <div style="padding: 12px 12px;">2 usuários</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
-                    </div>
-                    
-                    <!-- SINCRONIZAÇÃO GOOGLE CALENDAR -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Sync Google Calendar</div>
-                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Completo</div>
-                    </div>
-                    
-                    <!-- CALENDÁRIOS ASSINADOS -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Calendários assinados</div>
-                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Completo</div>
-                    </div>
-                    
-                    <!-- IMPORTAR .ICS -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Importar .ics</div>
-                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Liberado</div>
-                    </div>
-                    
-                    <!-- NOTIFICAÇÕES -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Notificações</div>
-                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Completo</div>
-                    </div>
-                    
-                    <!-- TAREFAS COM AGENDAMENTOS -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Tarefas com agendamentos</div>
-                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
-                    </div>
-                    
-                    <!-- CONTROLE DE SALDOS -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Controle de saldos e extratos</div>
-                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Completo</div>
-                    </div>
-                    
-                    <!-- GIROS (EMPRÉSTIMOS) -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr;">
-                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Giros (controle de empréstimos)</div>
-                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
-                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
+                    <!-- COLUNA PREMIUM -->
+                    <div style="flex: 1; background: linear-gradient(135deg, #f39c12, #e67e22); border-radius: 16px; overflow: hidden;">
+                        <div style="background: linear-gradient(135deg, #e67e22, #d35400); padding: 14px; text-align: center;">
+                            <span style="font-weight: 700; font-size: 18px; color: #fff;">Premium</span>
+                        </div>
+                        <div style="padding: 8px 0;">
+                            <!-- Publicidade -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Publicidade</div>
+                                <div style="color: #fff;">Sem anúncios</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Contas Únicas -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Contas Únicas</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Ilimitado</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Contas Recorrentes -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Contas Recorrentes</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Ilimitado</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Eventos Únicos -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Eventos Únicos</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Ilimitado</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Eventos Recorrentes -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Eventos Recorrentes</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Ilimitado</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Lista de Compras -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Lista de Compras</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Ilimitado</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Notas e Anotações -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Notas e Anotações</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Ilimitado</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Gastos -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Gastos (Lançamentos)</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Ilimitado</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Usuários Simultâneos -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Usuários Simultâneos</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Ilimitado</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Sync Google Calendar -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Sync Google Calendar</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Completo</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Calendários Assinados -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Calendários Assinados</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Completo</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Importar .ics -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Importar .ics</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Liberado</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Notificações -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Notificações</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Completo</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Tarefas com Agendamentos -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Tarefas com Agendamentos</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Ilimitado</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Controle de Saldos -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Controle de Saldos</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Completo</div>
+                            </div>
+                            <div style="height: 1px; background: rgba(255,255,255,0.3); margin: 4px 12px;"></div>
+                            
+                            <!-- Giros -->
+                            <div style="padding: 12px 12px 4px 12px;">
+                                <div style="font-weight: 700; margin-bottom: 4px; color: #fff;">Giros (Empréstimos)</div>
+                                <div style="color: #fff;"><span style="color: #fff;">✓</span> Ilimitado</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
