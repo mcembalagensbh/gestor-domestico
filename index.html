@@ -6348,7 +6348,6 @@ function abrirEdicaoContaRecorrente(regraId, descricaoAtual, valorAtual, frequen
 async function salvarEdicaoContaIndividual(id, isRecorrente) {
     console.log('🔵 Salvando edição individual - ID:', id, 'isRecorrente:', isRecorrente);
     
-    // Pegar valores do formulário
     let valor = parseCurrency(document.getElementById('contaValorEdit')?.value);
     let codigo = document.getElementById('contaCodigoEdit')?.value.trim() || null;
     let descricao = document.getElementById('contaDescricaoEdit')?.value.trim();
@@ -6358,18 +6357,8 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
     
     const nomeUsuario = getNomeUsuario();
     
-    if (!valor) {
-        showToast('Digite um valor válido', 'warning');
-        return;
-    }
-    
-    if (!descricao) {
-        showToast('Digite uma descrição', 'warning');
-        return;
-    }
-    
-    if (!diaNovo || !mesNovo || !anoNovo) {
-        showToast('Preencha a data completa', 'warning');
+    if (!valor || !descricao || !diaNovo || !mesNovo || !anoNovo) {
+        showToast('Preencha todos os campos', 'warning');
         return;
     }
     
@@ -6390,15 +6379,13 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
             
             const regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
             if (!regra) {
-                console.error('❌ Regra não encontrada');
                 showToast('Regra não encontrada', 'error');
                 return;
             }
             
-            // Buscar a data do formulário
             let dataPrimeiraConta = dataParaString(anoNovo, mesNovo, diaNovo);
             
-            // Verificar se a conta já existe
+            // Verificar se já existe uma conta editada nesta data
             const { data: contaExistente } = await App.supabase
                 .from('contas')
                 .select('id')
@@ -6409,7 +6396,6 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
                 .maybeSingle();
             
             if (contaExistente) {
-                console.log('✅ Conta já existe, usando ID:', contaExistente.id);
                 contaId = contaExistente.id;
             } else {
                 // Criar a conta individual
@@ -6431,33 +6417,24 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
                     })
                     .select();
                 
-                if (insertError) {
-                    console.error('❌ Erro ao criar conta:', insertError);
-                    showToast('Erro ao criar conta: ' + insertError.message, 'error');
-                    return;
-                }
-                
-                if (!novaConta || !novaConta[0] || !novaConta[0].id) {
-                    console.error('❌ Resposta da inserção inválida:', novaConta);
-                    showToast('Erro ao criar conta', 'error');
-                    return;
-                }
+                if (insertError) throw insertError;
                 
                 contaId = novaConta[0].id;
                 console.log('✅ Conta criada com ID:', contaId);
                 
-                // Criar exceção para não duplicar
+                // Criar exceção para excluir a original da série
+                let dataOriginal = dataParaString(diaNovo, mesNovo, anoNovo);
                 await App.supabase.from('excecoes_recorrencia').insert({
                     user_id: App.currentUser.id,
                     regra_id: regraId,
-                    data_excecao: dataPrimeiraConta,
+                    data_excecao: dataOriginal,
                     acao: 'excluir',
                     added_by: nomeUsuario
                 });
             }
         }
         
-        // Atualizar a conta com os novos valores
+        // Atualizar a conta
         let updateData = {
             descricao: descricao,
             valor: valor,
@@ -6468,8 +6445,6 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
             codigo_pagamento: codigo
         };
         
-        console.log('📝 Atualizando conta ID:', contaId, updateData);
-        
         const { error } = await App.supabase
             .from('contas')
             .update(updateData)
@@ -6477,23 +6452,16 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
         
         if (error) throw error;
         
-        await registrarHistorico(
-            'edicao_conta_individual', 
-            `Conta ID ${contaId} editada`, 
-            { id: contaId, isRecorrente, valor, descricao, usuario: nomeUsuario }
-        );
-        
         showToast(isRecorrente ? '✅ Conta salva como conta única!' : '✅ Conta atualizada!', 'success');
         
         await sincronizarGoogleAutomatico();
-        
         fecharModal();
         await carregarDados(true);
         await atualizarCalendario();
         await mostrarConteudo();
         
     } catch (error) {
-        console.error('❌ Erro ao salvar edição:', error);
+        console.error('❌ Erro:', error);
         showToast('Erro: ' + error.message, 'error');
     }
 }
@@ -6529,14 +6497,17 @@ function confirmarEdicaoRecorrente(regraId) {
         return;
     }
     
+    // Fechar o modal atual
     fecharModal();
     
+    // Buscar a regra
     let regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
     if (!regra) {
         showToast('Regra não encontrada', 'error');
         return;
     }
     
+    // Buscar todas as contas futuras desta regra
     let todasContas = App.dataCache.contas.filter(c => c.regra_id == regraId);
     let hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -6546,8 +6517,7 @@ function confirmarEdicaoRecorrente(regraId) {
         return dataConta >= hoje;
     });
     
-    console.log(`📊 Encontradas ${contasFuturo.length} contas futuras para atualizar`);
-    
+    // Mostrar loading
     showToast('Atualizando contas...', 'info');
     
     (async () => {
@@ -6560,7 +6530,6 @@ function confirmarEdicaoRecorrente(regraId) {
                         .delete()
                         .eq('id', conta.id);
                 }
-                console.log(`🗑️ Deletadas ${contasFuturo.length} contas futuras`);
             }
             
             // Deletar a regra antiga
@@ -6569,11 +6538,12 @@ function confirmarEdicaoRecorrente(regraId) {
                 .delete()
                 .eq('id', regraId);
             
-            // Calcular nova data de início
+            // Criar nova regra com os dados atualizados
             let dataInicio = new Date();
             dataInicio.setDate(novoDia);
             dataInicio.setHours(12, 0, 0);
             
+            // Se a data de início já passou, usar o próximo mês
             if (dataInicio < hoje) {
                 dataInicio.setMonth(dataInicio.getMonth() + 1);
             }
@@ -6597,6 +6567,7 @@ function confirmarEdicaoRecorrente(regraId) {
                 added_by: nomeUsuario
             };
             
+            // Se tinha data_fim, manter
             if (regra.data_fim) {
                 novaRegraData.data_fim = regra.data_fim;
             }
@@ -6608,23 +6579,19 @@ function confirmarEdicaoRecorrente(regraId) {
             
             if (regraError) throw regraError;
             
-            console.log('✅ Nova regra criada com ID:', novaRegra[0].id);
+            showToast('✅ Contas atualizadas com sucesso!', 'success');
+            
+            // Sincronizar com Google
+            await sincronizarGoogleAutomatico();
             
             // Recarregar dados
             await carregarDados(true);
             await atualizarCalendario();
             await mostrarConteudo();
             
-            showToast('✅ Contas atualizadas com sucesso!', 'success');
-            
-            await sincronizarGoogleAutomatico();
-            
         } catch (error) {
             console.error('Erro ao atualizar contas:', error);
             showToast('Erro: ' + error.message, 'error');
-            await carregarDados(true);
-            await atualizarCalendario();
-            await mostrarConteudo();
         }
     })();
 }
@@ -14562,4 +14529,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 005
+Edição 006
