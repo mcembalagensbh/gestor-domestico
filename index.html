@@ -2464,10 +2464,13 @@
 
 function getNomeUsuario() {
     if (!App.usuarioAtual) return 'desconhecido';
-    const nome = App.usuarioAtual.apelido || App.usuarioAtual.nome;
+    // Garantir que é string e pegar o apelido ou nome
+    let nome = App.usuarioAtual.apelido || App.usuarioAtual.nome;
+    if (typeof nome === 'object') {
+        nome = nome.apelido || nome.nome || 'desconhecido';
+    }
     return String(nome || 'desconhecido');
 }
-
 
 
 
@@ -5998,40 +6001,21 @@ async function salvarNovaConta() {
         return;
     }
     
-    let conta = null;
+    // Buscar a conta
+    let conta = App.dataCache.contas?.find(c => c.id == id);
     
-    conta = App.dataCache.contas?.find(c => c.id == id);
-    
-    if (!conta && regraId && dia && mes && ano) {
-        conta = App.dataCache.contas?.find(c => 
-            c.regra_id == regraId && 
-            c.dia == dia && 
-            c.mes == mes && 
-            c.ano == ano
-        );
-    }
-    
-    if (!conta && regraId) {
+    // Se é recorrente e não encontrou a conta, criar temporária
+    if (!conta && isRecorrente && regraId) {
         let regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
         if (regra) {
-            console.log('⚠️ Conta não encontrada, mas regra existe. Criando conta temporária');
-            const dataConta = dia && mes && ano ? { dia, mes, ano } : (() => {
-                const dataInicio = new Date(regra.data_inicio + 'T12:00:00');
-                return {
-                    dia: dataInicio.getDate(),
-                    mes: dataInicio.getMonth() + 1,
-                    ano: dataInicio.getFullYear()
-                };
-            })();
-            
             conta = {
-                id: id,
+                id: `regra_${regra.id}_${Date.now()}`,
                 descricao: regra.descricao_base,
                 valor: regra.valor,
-                dia: dataConta.dia,
-                mes: dataConta.mes,
-                ano: dataConta.ano,
-                regra_id: regraId,
+                dia: dia,
+                mes: mes,
+                ano: ano,
+                regra_id: regra.id,
                 codigo_pagamento: null,
                 is_temporaria: true
             };
@@ -6039,16 +6023,13 @@ async function salvarNovaConta() {
     }
     
     if (!conta) {
-        console.error('❌ Conta não encontrada');
         showToast('Conta não encontrada', 'error');
         return;
     }
-
-    console.log('✅ Editando CONTA:', conta);
     
     const isRecorrenteConta = conta.regra_id ? true : false;
     
-    // 🔴 SE FOR CONTA RECORRENTE, MOSTRAR OPÇÕES
+    // Se for conta recorrente, mostrar opções
     if (isRecorrenteConta) {
         const regra = App.dataCache.regrasContas?.find(r => r.id == conta.regra_id);
         const frequenciaTexto = regra?.frequencia || 'recorrente';
@@ -6070,10 +6051,8 @@ async function salvarNovaConta() {
                     </div>
                     
                     <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <div onclick="abrirEdicaoContaIndividual('${conta.id}', ${isRecorrenteConta}, ${conta.dia}, ${conta.mes}, ${conta.ano})" 
-                             style="background: #fff; border: 2px solid #e9ecef; border-radius: 16px; padding: 16px; cursor: pointer; transition: all 0.2s;"
-                             onmouseover="this.style.borderColor='#667eea'; this.style.background='#f8f9fa'"
-                             onmouseout="this.style.borderColor='#e9ecef'; this.style.background='#fff'">
+                        <div onclick="abrirEdicaoContaIndividual('${conta.id}', true, ${conta.dia}, ${conta.mes}, ${conta.ano})" 
+                             style="background: #fff; border: 2px solid #e9ecef; border-radius: 16px; padding: 16px; cursor: pointer;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <div style="width: 40px; height: 40px; background: #f39c12; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                                     <i class="fas fa-calendar-day" style="color: #fff;"></i>
@@ -6087,16 +6066,14 @@ async function salvarNovaConta() {
                         </div>
                         
                         <div onclick="abrirEdicaoContaRecorrente('${conta.regra_id}', '${conta.descricao}', ${conta.valor}, '${frequenciaTexto}')" 
-                             style="background: #fff; border: 2px solid #e9ecef; border-radius: 16px; padding: 16px; cursor: pointer; transition: all 0.2s;"
-                             onmouseover="this.style.borderColor='#667eea'; this.style.background='#f8f9fa'"
-                             onmouseout="this.style.borderColor='#e9ecef'; this.style.background='#fff'">
+                             style="background: #fff; border: 2px solid #e9ecef; border-radius: 16px; padding: 16px; cursor: pointer;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <div style="width: 40px; height: 40px; background: #9b59b6; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                                     <i class="fas fa-repeat" style="color: #fff;"></i>
                                 </div>
                                 <div style="flex: 1;">
                                     <div style="font-weight: 700; font-size: 1rem;">Todas as ocorrências</div>
-                                    <div style="font-size: 11px; color: var(--gray);">Editar todas as contas desta série (descrição, valor, data de vencimento).</div>
+                                    <div style="font-size: 11px; color: var(--gray);">Editar todas as contas futuras desta série (descrição, valor, dia de vencimento).</div>
                                 </div>
                                 <i class="fas fa-chevron-right" style="color: var(--gray);"></i>
                             </div>
@@ -6116,7 +6093,7 @@ async function salvarNovaConta() {
         return;
     }
     
-    // 🔴 SE FOR CONTA ÚNICA, MOSTRAR MODAL DE EDIÇÃO NORMAL
+    // CONTA ÚNICA - mostrar modal de edição normal
     let valorExibicao = (conta.valor_original || conta.valor || 0).toFixed(2).replace('.', ',');
     let codigoAtual = conta.codigo_pagamento || '';
     let descricaoAtual = conta.descricao || '';
@@ -6130,7 +6107,7 @@ async function salvarNovaConta() {
             
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor</label>
-                <input type="text" id="contaValorEdit" class="form-input" value="${valorExibicao}" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                <input type="text" id="contaValorEdit" class="form-input" value="${valorExibicao}" inputmode="decimal">
             </div>
             
             <div class="form-group">
@@ -6146,13 +6123,12 @@ async function salvarNovaConta() {
             
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-barcode"></i> Código de Barras</label>
-                <textarea id="contaCodigoEdit" class="form-input" rows="3" autocomplete="off" inputmode="numeric" style="font-family: monospace; font-size: 14px; resize: vertical;">${codigoAtual.replace(/"/g, '&quot;')}</textarea>
-                <small style="color: var(--gray); font-size: 11px;">💡 Cole o código completo. O valor será extraído automaticamente do final.</small>
+                <textarea id="contaCodigoEdit" class="form-input" rows="3">${codigoAtual}</textarea>
             </div>
             
             <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
                 <button class="btn btn-primary" onclick="salvarEdicaoContaIndividual('${conta.id}', false)" style="flex: 2;">
-                    <i class="fas fa-save"></i> Salvar Alterações
+                    <i class="fas fa-save"></i> Salvar
                 </button>
                 <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
                     Cancelar
@@ -6172,72 +6148,37 @@ async function salvarNovaConta() {
 function abrirEdicaoContaIndividual(id, isRecorrente, dia, mes, ano) {
     fecharModal();
     
-    console.log('🔍 Buscando conta para edição individual - ID:', id, 'Data:', dia, mes, ano);
+    console.log('🔍 Editando ocorrência individual - ID:', id, 'Data:', dia, mes, ano);
     
     let conta = null;
+    let regraId = null;
     
-    // Se o ID é numérico, buscar na tabela contas
-    if (typeof id === 'number' || !isNaN(parseInt(id))) {
-        const idNum = parseInt(id);
-        conta = App.dataCache.contas?.find(c => c.id === idNum);
-    }
-    
-    // Se não encontrou e é recorrente, buscar pela regra
-    if (!conta && isRecorrente) {
-        // Extrair o regraId do ID (ex: regra_108_xxx -> 108)
-        let regraId = null;
-        if (typeof id === 'string' && id.startsWith('regra_')) {
-            const parts = id.split('_');
-            regraId = parseInt(parts[1]);
-        } else if (typeof id === 'number') {
-            regraId = id;
+    // Extrair regraId se for ID temporário
+    if (typeof id === 'string' && id.startsWith('regra_')) {
+        const parts = id.split('_');
+        regraId = parseInt(parts[1]);
+        let regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
+        if (regra) {
+            conta = {
+                id: id,
+                descricao: regra.descricao_base,
+                valor: regra.valor,
+                dia: dia,
+                mes: mes,
+                ano: ano,
+                regra_id: regra.id,
+                codigo_pagamento: null,
+                is_temporaria: true
+            };
         }
-        
-        if (regraId) {
-            // Buscar a regra
-            let regra = App.dataCache.regrasContas?.find(r => r.id === regraId);
-            if (regra) {
-                console.log('✅ Regra encontrada, criando conta temporária');
-                conta = {
-                    id: `regra_${regra.id}_${Date.now()}`,
-                    descricao: regra.descricao_base,
-                    valor: regra.valor,
-                    dia: dia,
-                    mes: mes,
-                    ano: ano,
-                    regra_id: regra.id,
-                    codigo_pagamento: null,
-                    is_temporaria: true
-                };
-            }
-        }
-    }
-    
-    // Se ainda não encontrou, buscar pelo regra_id na tabela contas
-    if (!conta && isRecorrente) {
-        let regraId = null;
-        if (typeof id === 'string' && id.startsWith('regra_')) {
-            const parts = id.split('_');
-            regraId = parseInt(parts[1]);
-        }
-        
-        if (regraId) {
-            conta = App.dataCache.contas?.find(c => 
-                c.regra_id === regraId && 
-                c.dia === dia && 
-                c.mes === mes && 
-                c.ano === ano
-            );
-        }
+    } else {
+        conta = App.dataCache.contas?.find(c => c.id == id);
     }
     
     if (!conta) {
-        console.error('❌ Conta não encontrada para ID:', id);
         showToast('Conta não encontrada', 'error');
         return;
     }
-    
-    console.log('✅ Conta encontrada:', conta);
     
     let valorExibicao = (conta.valor_original || conta.valor || 0).toFixed(2).replace('.', ',');
     let codigoAtual = conta.codigo_pagamento || '';
@@ -6245,43 +6186,39 @@ function abrirEdicaoContaIndividual(id, isRecorrente, dia, mes, ano) {
     
     let conteudo = `
         <div style="padding: 16px;">
-            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-                <i class="fas fa-exclamation-triangle" style="color: #856404;"></i>
-                <strong style="margin-left: 8px;">Editando apenas esta ocorrência</strong>
-                <p style="margin-top: 8px; font-size: 13px; color: #856404;">
-                    Esta conta se tornará <strong>independente</strong> da série recorrente.<br>
-                    As demais contas da série continuarão normalmente.
-                </p>
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 20px;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Editando apenas esta ocorrência</strong>
+                <p style="margin-top: 8px; font-size: 13px;">Esta conta se tornará <strong>independente</strong> da série recorrente.</p>
             </div>
             
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
+                <label class="form-label">Descrição</label>
                 <input type="text" id="contaDescricaoEdit" class="form-input" value="${descricaoAtual.replace(/"/g, '&quot;')}">
             </div>
             
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor</label>
-                <input type="text" id="contaValorEdit" class="form-input" value="${valorExibicao}" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                <label class="form-label">Valor</label>
+                <input type="text" id="contaValorEdit" class="form-input" value="${valorExibicao}">
             </div>
             
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-calendar-alt"></i> Data de Vencimento</label>
+                <label class="form-label">Data de Vencimento</label>
                 <div style="display: flex; gap: 8px;">
-                    <input type="number" id="contaDiaEdit" class="form-input" min="1" max="31" value="${conta.dia}" placeholder="Dia" style="flex: 1;">
+                    <input type="number" id="contaDiaEdit" class="form-input" min="1" max="31" value="${conta.dia}" style="flex: 1;">
                     <select id="contaMesEdit" class="form-select" style="flex: 2;">
                         ${CONFIG.meses.map((m, i) => `<option value="${i + 1}" ${i + 1 === conta.mes ? 'selected' : ''}>${m}</option>`).join('')}
                     </select>
-                    <input type="number" id="contaAnoEdit" class="form-input" value="${conta.ano}" placeholder="Ano" style="flex: 1;">
+                    <input type="number" id="contaAnoEdit" class="form-input" value="${conta.ano}" style="flex: 1;">
                 </div>
             </div>
             
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-barcode"></i> Código de Barras</label>
-                <textarea id="contaCodigoEdit" class="form-input" rows="3" autocomplete="off" inputmode="numeric" style="font-family: monospace; font-size: 14px; resize: vertical;">${codigoAtual.replace(/"/g, '&quot;')}</textarea>
-                <small style="color: var(--gray); font-size: 11px;">💡 Cole o código completo. O valor será extraído automaticamente do final.</small>
+                <label class="form-label">Código de Barras</label>
+                <textarea id="contaCodigoEdit" class="form-input" rows="3">${codigoAtual}</textarea>
             </div>
             
-            <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
+            <div class="btn-group" style="margin-top: 20px;">
                 <button class="btn btn-primary" onclick="salvarEdicaoContaIndividual('${conta.id}', true)" style="flex: 2;">
                     <i class="fas fa-save"></i> Salvar como Conta Única
                 </button>
@@ -6299,38 +6236,32 @@ function abrirEdicaoContaIndividual(id, isRecorrente, dia, mes, ano) {
 function abrirEdicaoContaRecorrente(regraId, descricaoAtual, valorAtual, frequencia) {
     fecharModal();
     
-    console.log('🔧 Editando série recorrente - Regra ID:', regraId);
-    
     let valorExibicao = (valorAtual || 0).toFixed(2).replace('.', ',');
     
     let conteudo = `
         <div style="padding: 16px;">
-            <div style="background: #e8f4fd; border-left: 4px solid #3498db; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-                <i class="fas fa-info-circle" style="color: #3498db;"></i>
-                <strong style="margin-left: 8px;">Editando todas as ocorrências</strong>
-                <p style="margin-top: 8px; font-size: 13px; color: #2c3e50;">
-                    As alterações serão aplicadas a <strong>todas as contas futuras</strong> desta série ${frequencia}.<br>
-                    Contas já pagas ou editadas individualmente não serão afetadas.
-                </p>
+            <div style="background: #e8f4fd; border-left: 4px solid #3498db; padding: 12px; margin-bottom: 20px;">
+                <i class="fas fa-info-circle"></i>
+                <strong>Editando todas as ocorrências futuras</strong>
+                <p style="margin-top: 8px; font-size: 13px;">As alterações serão aplicadas a <strong>todas as contas futuras</strong> desta série ${frequencia}.</p>
             </div>
             
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
+                <label class="form-label">Descrição</label>
                 <input type="text" id="contaDescricaoRecorrente" class="form-input" value="${descricaoAtual.replace(/"/g, '&quot;')}">
             </div>
             
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor</label>
-                <input type="text" id="contaValorRecorrente" class="form-input" value="${valorExibicao}" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+                <label class="form-label">Valor</label>
+                <input type="text" id="contaValorRecorrente" class="form-input" value="${valorExibicao}">
             </div>
             
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-calendar-alt"></i> Dia de Vencimento</label>
-                <input type="number" id="contaDiaRecorrente" class="form-input" min="1" max="31" value="${new Date().getDate()}" placeholder="Dia">
-                <small style="color: var(--gray); font-size: 11px;">Dia do mês em que a conta vence</small>
+                <label class="form-label">Dia de Vencimento</label>
+                <input type="number" id="contaDiaRecorrente" class="form-input" min="1" max="31" value="${new Date().getDate()}">
             </div>
             
-            <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
+            <div class="btn-group" style="margin-top: 20px;">
                 <button class="btn btn-primary" onclick="confirmarEdicaoRecorrente(${regraId})" style="flex: 2;">
                     <i class="fas fa-save"></i> Salvar em Todas
                 </button>
@@ -6346,8 +6277,6 @@ function abrirEdicaoContaRecorrente(regraId, descricaoAtual, valorAtual, frequen
 
 
 async function salvarEdicaoContaIndividual(id, isRecorrente) {
-    console.log('🔵 Salvando edição individual - ID:', id, 'isRecorrente:', isRecorrente);
-    
     let valor = parseCurrency(document.getElementById('contaValorEdit')?.value);
     let codigo = document.getElementById('contaCodigoEdit')?.value.trim() || null;
     let descricao = document.getElementById('contaDescricaoEdit')?.value.trim();
@@ -6362,97 +6291,54 @@ async function salvarEdicaoContaIndividual(id, isRecorrente) {
         return;
     }
     
-    if (!dataValida(anoNovo, mesNovo, diaNovo)) {
-        showToast('Dia inválido para o mês selecionado', 'warning');
-        return;
-    }
-    
     try {
-        const isTemporaryId = typeof id === 'string' && id.startsWith('regra_');
-        let contaId = id;
+        let regraId = null;
+        let dataOriginal = null;
         
-        if (isTemporaryId) {
-            console.log('🔵 ID temporário detectado. Criando conta individual primeiro...');
-            
+        // Se é ID temporário (veio de conta recorrente)
+        if (typeof id === 'string' && id.startsWith('regra_')) {
             const parts = id.split('_');
-            const regraId = parseInt(parts[1]);
+            regraId = parseInt(parts[1]);
+            dataOriginal = dataParaString(diaNovo, mesNovo, anoNovo);
             
-            const regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
-            if (!regra) {
-                showToast('Regra não encontrada', 'error');
-                return;
-            }
-            
-            let dataPrimeiraConta = dataParaString(anoNovo, mesNovo, diaNovo);
-            
-            // Verificar se já existe uma conta editada nesta data
-            const { data: contaExistente } = await App.supabase
+            // Criar exceção para excluir a original da série
+            await App.supabase.from('excecoes_recorrencia').insert({
+                user_id: App.currentUser.id,
+                regra_id: regraId,
+                data_excecao: dataOriginal,
+                acao: 'excluir',
+                added_by: nomeUsuario
+            });
+        } else {
+            // Conta única - deletar a original
+            await App.supabase
                 .from('contas')
-                .select('id')
-                .eq('regra_id', regraId)
-                .eq('dia', diaNovo)
-                .eq('mes', mesNovo)
-                .eq('ano', anoNovo)
-                .maybeSingle();
-            
-            if (contaExistente) {
-                contaId = contaExistente.id;
-            } else {
-                // Criar a conta individual
-                const { data: novaConta, error: insertError } = await App.supabase
-                    .from('contas')
-                    .insert({
-                        user_id: App.currentUser.id,
-                        descricao: descricao,
-                        valor: valor,
-                        dia: diaNovo,
-                        mes: mesNovo,
-                        ano: anoNovo,
-                        data: dataPrimeiraConta,
-                        added_by: nomeUsuario,
-                        valor_pago: 0,
-                        status: 'pendente',
-                        codigo_pagamento: codigo,
-                        regra_id: regraId
-                    })
-                    .select();
-                
-                if (insertError) throw insertError;
-                
-                contaId = novaConta[0].id;
-                console.log('✅ Conta criada com ID:', contaId);
-                
-                // Criar exceção para excluir a original da série
-                let dataOriginal = dataParaString(diaNovo, mesNovo, anoNovo);
-                await App.supabase.from('excecoes_recorrencia').insert({
-                    user_id: App.currentUser.id,
-                    regra_id: regraId,
-                    data_excecao: dataOriginal,
-                    acao: 'excluir',
-                    added_by: nomeUsuario
-                });
-            }
+                .delete()
+                .eq('id', id);
         }
         
-        // Atualizar a conta
-        let updateData = {
-            descricao: descricao,
-            valor: valor,
-            dia: diaNovo,
-            mes: mesNovo,
-            ano: anoNovo,
-            data: dataParaString(anoNovo, mesNovo, diaNovo),
-            codigo_pagamento: codigo
-        };
-        
-        const { error } = await App.supabase
+        // Criar a nova conta única
+        const { data: novaConta, error: insertError } = await App.supabase
             .from('contas')
-            .update(updateData)
-            .eq('id', contaId);
+            .insert({
+                user_id: App.currentUser.id,
+                descricao: descricao,
+                valor: valor,
+                dia: diaNovo,
+                mes: mesNovo,
+                ano: anoNovo,
+                data: dataParaString(anoNovo, mesNovo, diaNovo),
+                added_by: nomeUsuario,
+                valor_pago: 0,
+                status: 'pendente',
+                codigo_pagamento: codigo,
+                regra_id: regraId || null
+            })
+            .select();
         
-        if (error) throw error;
+        if (insertError) throw insertError;
         
-        showToast(isRecorrente ? '✅ Conta salva como conta única!' : '✅ Conta atualizada!', 'success');
+        showToast('✅ Conta salva como conta única!', 'success');
         
         await sincronizarGoogleAutomatico();
         fecharModal();
@@ -6497,53 +6383,27 @@ function confirmarEdicaoRecorrente(regraId) {
         return;
     }
     
-    // Fechar o modal atual
+    // Fechar o modal
     fecharModal();
     
-    // Buscar a regra
     let regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
     if (!regra) {
         showToast('Regra não encontrada', 'error');
         return;
     }
     
-    // Buscar todas as contas futuras desta regra
-    let todasContas = App.dataCache.contas.filter(c => c.regra_id == regraId);
-    let hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    
-    let contasFuturo = todasContas.filter(c => {
-        let dataConta = criarData(c.ano, c.mes, c.dia);
-        return dataConta >= hoje;
-    });
-    
-    // Mostrar loading
     showToast('Atualizando contas...', 'info');
     
     (async () => {
         try {
-            // Deletar as contas FUTURAS
-            if (contasFuturo.length > 0) {
-                for (let conta of contasFuturo) {
-                    await App.supabase
-                        .from('contas')
-                        .delete()
-                        .eq('id', conta.id);
-                }
-            }
+            // Calcular nova data de início
+            let hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
             
-            // Deletar a regra antiga
-            await App.supabase
-                .from('regras_contas')
-                .delete()
-                .eq('id', regraId);
-            
-            // Criar nova regra com os dados atualizados
             let dataInicio = new Date();
             dataInicio.setDate(novoDia);
             dataInicio.setHours(12, 0, 0);
             
-            // Se a data de início já passou, usar o próximo mês
             if (dataInicio < hoje) {
                 dataInicio.setMonth(dataInicio.getMonth() + 1);
             }
@@ -6556,41 +6416,29 @@ function confirmarEdicaoRecorrente(regraId) {
             
             const nomeUsuario = getNomeUsuario();
             
-            let novaRegraData = {
-                user_id: App.currentUser.id,
-                descricao_base: novaDescricao,
-                valor: novoValor,
-                dia_vencimento: novoDia,
-                frequencia: regra.frequencia,
-                data_inicio: dataInicioStr,
-                ativo: true,
-                added_by: nomeUsuario
-            };
-            
-            // Se tinha data_fim, manter
-            if (regra.data_fim) {
-                novaRegraData.data_fim = regra.data_fim;
-            }
-            
-            const { data: novaRegra, error: regraError } = await App.supabase
+            // Atualizar a regra existente (não deletar e recriar)
+            const { error: updateError } = await App.supabase
                 .from('regras_contas')
-                .insert(novaRegraData)
-                .select();
+                .update({
+                    descricao_base: novaDescricao,
+                    valor: novoValor,
+                    dia_vencimento: novoDia,
+                    data_inicio: dataInicioStr,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', regraId);
             
-            if (regraError) throw regraError;
+            if (updateError) throw updateError;
             
             showToast('✅ Contas atualizadas com sucesso!', 'success');
             
-            // Sincronizar com Google
             await sincronizarGoogleAutomatico();
-            
-            // Recarregar dados
             await carregarDados(true);
             await atualizarCalendario();
             await mostrarConteudo();
             
         } catch (error) {
-            console.error('Erro ao atualizar contas:', error);
+            console.error('Erro:', error);
             showToast('Erro: ' + error.message, 'error');
         }
     })();
@@ -14529,4 +14377,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 006
+Edição 007
