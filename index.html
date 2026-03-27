@@ -12704,8 +12704,19 @@ function renderizarTarefaItem(tarefa, usuarios, podeEditar, isConcluida = false)
     const prioridade = tarefa.prioridade || 'normal';
     const prioridadeHtml = prioridadeIcon[prioridade] || '';
     
+    // 🔴 FUNÇÃO AUXILIAR PARA FORMATAR DATA LOCAL CORRETAMENTE
+    function formatarDataLocal(dataStr) {
+        if (!dataStr) return '';
+        const data = new Date(dataStr);
+        // Ajustar para horário local sem alterar o dia
+        const ano = data.getUTCFullYear();
+        const mes = String(data.getUTCMonth() + 1).padStart(2, '0');
+        const dia = String(data.getUTCDate()).padStart(2, '0');
+        return `${dia}/${mes}/${ano}`;
+    }
+    
     const dataLimiteHtml = tarefa.data_limite ? 
-        `<div style="font-size: 10px; color: var(--gray); margin-top: 2px;">📅 Limite: ${new Date(tarefa.data_limite).toLocaleDateString('pt-BR')}</div>` : '';
+        `<div style="font-size: 10px; color: var(--gray); margin-top: 2px;">📅 Limite: ${formatarDataLocal(tarefa.data_limite)}</div>` : '';
     
     // Suporte a múltiplos responsáveis
     let responsaveisHtml = '';
@@ -12742,7 +12753,7 @@ function renderizarTarefaItem(tarefa, usuarios, podeEditar, isConcluida = false)
                 ${tarefa.descricao ? `<div class="item-details">${tarefa.descricao.substring(0, 80)}${tarefa.descricao.length > 80 ? '...' : ''}</div>` : ''}
                 ${dataLimiteHtml}
                 ${responsaveisHtml}
-                <div class="item-details">Criada em: ${new Date(tarefa.data_criacao).toLocaleDateString('pt-BR')}</div>
+                <div class="item-details">Criada em: ${formatarDataLocal(tarefa.data_criacao)}</div>
             </div>
             <div class="item-actions">
                 ${podeEditar ? `
@@ -14573,4 +14584,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 013
+Edição 014
