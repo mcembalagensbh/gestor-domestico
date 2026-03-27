@@ -11989,11 +11989,9 @@ async function salvarNovoGiro() {
         const responsavel = usuarios.find(u => u.id == responsavelId);
         const responsavelNome = responsavel?.apelido || responsavel?.nome || 'desconhecido';
         
-        // 🔴 CORREÇÃO: responsavel_id deve ser o UUID do usuário logado (App.currentUser.id)
-        // O responsavelId do select é o ID da tabela usuarios_familia, mas precisamos do UUID do auth.users
-        // Para simplificar, vamos usar o próprio usuário logado como gestor
-        const gestorId = App.currentUser.id; // UUID correto
+        const gestorId = App.currentUser.id;
         
+        // 🔴 valor_inicial é o valor base, NÃO adicionar movimentação
         let valorInicial = tipo === 'pegando' ? valor : -valor;
 
         const { data, error } = await App.supabase.from('giros').insert({
@@ -12002,27 +12000,15 @@ async function salvarNovoGiro() {
             valor_inicial: valorInicial,
             pessoa: pessoa,
             tipo_giro: tipo,
-            responsavel_id: gestorId,  // 🔴 USANDO O UUID DO USUÁRIO LOGADO
-            responsavel_nome: nomeUsuario,  // Nome do usuário logado
+            responsavel_id: gestorId,
+            responsavel_nome: nomeUsuario,
             observacao: observacao || null,
             added_by: nomeUsuario
         }).select();
 
         if (error) throw error;
 
-        if (data && data[0]) {
-            const giroId = data[0].id;
-            
-            await App.supabase.from('movimentacoes_giro').insert({
-                user_id: App.currentUser.id,
-                giro_id: giroId,
-                tipo: tipo === 'pegando' ? 'recebimento' : 'pagamento',
-                valor: valor,
-                descricao: `Giro criado: ${descricao}`,
-                data: new Date().toISOString(),
-                added_by: nomeUsuario
-            });
-        }
+        // 🔴 NÃO criar movimentação inicial - o valor_inicial já é o saldo base
 
         const msgValor = valor.toFixed(2).replace('.', ',');
         const msgTipo = tipo === 'pegando' ? `Você pegou R$ ${msgValor} com ${pessoa}` : `Você emprestou R$ ${msgValor} para ${pessoa}`;
@@ -12382,6 +12368,7 @@ function abrirResumoGiro(id) {
     let movimentacoes = App.dataCache.movimentacoesGiro?.filter(m => m.giro_id == id) || [];
     movimentacoes.sort((a, b) => new Date(b.data) - new Date(a.data));
     
+    // 🔴 Calcular saldo baseado APENAS nas movimentações (valor_inicial já é o base)
     let totalPago = movimentacoes.reduce((acc, m) => acc + (m.tipo === 'pagamento' ? m.valor : 0), 0);
     let totalRecebido = movimentacoes.reduce((acc, m) => acc + (m.tipo === 'recebimento' ? m.valor : 0), 0);
     
@@ -12399,7 +12386,7 @@ function abrirResumoGiro(id) {
     const tipoCorInicial = giro.tipo_giro === 'pegando' ? '#dc3545' : '#28a745';
     const tipoTextoInicial = giro.tipo_giro === 'pegando' ? 'Valor pego' : 'Valor emprestado';
     
-    // 🔴 MOVIMENTAÇÕES (COM LIXEIRA)
+    // 🔴 MOVIMENTAÇÕES (COM LIXEIRA) - APENAS AS QUE NÃO SÃO O VALOR INICIAL
     let movimentacoesHtml = '';
     if (movimentacoes.length > 0) {
         movimentacoes.forEach(m => {
@@ -12524,7 +12511,7 @@ async function deletarMovimentacaoGiro(movId, valor, tipo, giroId) {
         
         if (buscaError) throw buscaError;
         
-        // Reverter o efeito da movimentação no valor_inicial
+        // 🔴 Reverter o efeito da movimentação no valor_inicial
         let novoValorInicial;
         if (giroAtual.tipo_giro === 'pegando') {
             // Pegando: valor_inicial positivo
@@ -12532,7 +12519,7 @@ async function deletarMovimentacaoGiro(movId, valor, tipo, giroId) {
                 // Pagamento reduz a dívida, então deletar aumenta a dívida
                 novoValorInicial = giroAtual.valor_inicial + valor;
             } else {
-                // Recebimento aumenta a dívida (pegou mais), então deletar reduz a dívida
+                // Recebimento aumenta a dívida, então deletar reduz a dívida
                 novoValorInicial = giroAtual.valor_inicial - valor;
             }
         } else {
@@ -12569,7 +12556,6 @@ async function deletarMovimentacaoGiro(movId, valor, tipo, giroId) {
         
         showToast('✅ Movimentação deletada com sucesso!', 'success');
         
-        // Fechar modal atual e recarregar dados
         fecharModal();
         await carregarDados(true);
         await mostrarConteudo();
@@ -15750,4 +15736,4 @@ function validarValorRecebimentoGiro(valorMaximo) {
 </html>
 
 
-Edição 122
+Edição 123
