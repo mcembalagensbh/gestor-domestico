@@ -2148,55 +2148,88 @@
         </div>
     </div>
 </div>
-            <div class="side-menu-content">
-    <div class="side-menu-item" onclick="abrirMenuRelatorio();fecharSideMenu()"><i class="fas fa-file-alt"></i> Relatório</div>
-    <div class="side-menu-item" onclick="abrirNotificacoes();fecharSideMenu()"><i class="fas fa-bell"></i> Notificações</div>
-    <div class="side-menu-item" onclick="abrirMenuSeguranca();fecharSideMenu()"><i class="fas fa-lock"></i> Segurança</div>
-    <!-- REMOVER OU COMENTAR ESTA LINHA -->
-<!-- <div class="side-menu-item" onclick="abrirUltimasAcoes();fecharSideMenu()"><i class="fas fa-history"></i> Últimas Ações</div> -->
+           <div class="side-menu-content">
+    <!-- RELATÓRIO -->
+    <div class="side-menu-item" onclick="abrirMenuRelatorio();fecharSideMenu()">
+        <i class="fas fa-file-alt"></i> Relatório
+    </div>
+    
+    <!-- ÚLTIMAS AÇÕES (botão separado) -->
+    <div class="side-menu-item" onclick="abrirUltimasAcoes();fecharSideMenu()">
+        <i class="fas fa-history"></i> Últimas Ações
+    </div>
+    
+    <!-- NOTIFICAÇÕES -->
+    <div class="side-menu-item" onclick="abrirNotificacoes();fecharSideMenu()">
+        <i class="fas fa-bell"></i> Notificações
+    </div>
+    
+    <!-- SEGURANÇA -->
+    <div class="side-menu-item" onclick="abrirMenuSeguranca();fecharSideMenu()">
+        <i class="fas fa-lock"></i> Segurança
+    </div>
+    
+    <!-- USUÁRIOS DA FAMÍLIA (botão separado) -->
+    <div class="side-menu-item" onclick="abrirUsuariosFamilia();fecharSideMenu()">
+        <i class="fas fa-users"></i> Usuários da Família
+    </div>
+    
     <!-- POLÍTICAS E TERMOS (com submenu) -->
-<div class="side-menu-item" onclick="toggleSubmenuPoliticas()">
-    <i class="fas fa-file-contract"></i> Políticas e Termos
-    <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
-</div>
-<div id="submenuPoliticas" style="display: none; padding-left: 35px;">
-    <div class="side-menu-item" onclick="abrirPaginaModal('Política de Privacidade', 'fa-shield-alt', 'https://mylife.app.br/politicas.html'); fecharSideMenu()">
-        <i class="fas fa-shield-alt"></i> Política de Privacidade
+    <div class="side-menu-item" onclick="toggleSubmenuPoliticas()">
+        <i class="fas fa-file-contract"></i> Políticas e Termos
+        <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
     </div>
-    <div class="side-menu-item" onclick="abrirPaginaModal('Termos de Uso', 'fa-file-alt', 'https://mylife.app.br/termos.html'); fecharSideMenu()">
-        <i class="fas fa-file-alt"></i> Termos de Uso
+    <div id="submenuPoliticas" style="display: none; padding-left: 35px;">
+        <div class="side-menu-item" onclick="abrirPaginaModal('Política de Privacidade', 'fa-shield-alt', 'https://mylife.app.br/politicas.html'); fecharSideMenu()">
+            <i class="fas fa-shield-alt"></i> Política de Privacidade
+        </div>
+        <div class="side-menu-item" onclick="abrirPaginaModal('Termos de Uso', 'fa-file-alt', 'https://mylife.app.br/termos.html'); fecharSideMenu()">
+            <i class="fas fa-file-alt"></i> Termos de Uso
+        </div>
+        <div class="side-menu-item" onclick="abrirPaginaModal('Política de Cancelamento', 'fa-ban', 'https://mylife.app.br/cancelamentos.html'); fecharSideMenu()">
+            <i class="fas fa-ban"></i> Política de Cancelamento
+        </div>
     </div>
-    <div class="side-menu-item" onclick="abrirPaginaModal('Política de Cancelamento', 'fa-ban', 'https://mylife.app.br/cancelamentos.html'); fecharSideMenu()">
-        <i class="fas fa-ban"></i> Política de Cancelamento
+    
+    <!-- MANUAL RÁPIDO -->
+    <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()">
+        <i class="fas fa-book"></i> Manual Rápido
     </div>
-</div>
-    <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()"><i class="fas fa-book"></i> Manual Rápido</div>
-    <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()"><i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span></div>
-    <!-- Sync Calendários com submenu -->
-<div class="side-menu-item" onclick="toggleSubmenuCalendarios()">
-    <i class="fas fa-calendar-alt"></i> Sync Calendários
-    <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
-</div>
-<div id="submenuCalendarios" style="display: none; padding-left: 35px;">
-    <div class="side-menu-item" onclick="abrirModalGoogleAgenda();fecharSideMenu()">
-        <i class="fab fa-google"></i> Google Agenda
+    
+    <!-- PREMIUM -->
+    <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()">
+        <i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span>
     </div>
-    <div class="side-menu-item" onclick="abrirModalOutlookAgenda();fecharSideMenu()">
-        <i class="fab fa-microsoft"></i> Outlook Agenda
+    
+    <!-- SYNC CALENDÁRIOS (com submenu) -->
+    <div class="side-menu-item" onclick="toggleSubmenuCalendarios()">
+        <i class="fas fa-calendar-alt"></i> Sync Calendários
+        <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
     </div>
-    <div class="side-menu-item" onclick="abrirModalAssinarCalendario();fecharSideMenu()">
-        <i class="fas fa-rss"></i> Assinar Calendário
+    <div id="submenuCalendarios" style="display: none; padding-left: 35px;">
+        <div class="side-menu-item" onclick="abrirModalGoogleAgenda();fecharSideMenu()">
+            <i class="fab fa-google"></i> Google Agenda
+        </div>
+        <div class="side-menu-item" onclick="abrirModalOutlookAgenda();fecharSideMenu()">
+            <i class="fab fa-microsoft"></i> Outlook Agenda
+        </div>
+        <div class="side-menu-item" onclick="abrirModalAssinarCalendario();fecharSideMenu()">
+            <i class="fas fa-rss"></i> Assinar Calendário
+        </div>
+        <div class="side-menu-item" onclick="abrirModalImportarICS();fecharSideMenu()">
+            <i class="fas fa-file-import"></i> Importar .ics
+        </div>
     </div>
-    <div class="side-menu-item" onclick="abrirModalImportarICS();fecharSideMenu()">
-        <i class="fas fa-file-import"></i> Importar .ics
-    </div>
-</div>
-    <!-- 🔴 NOVO ITEM: QUER USAR NO IPHONE? -->
+    
+    <!-- QUER USAR NO IPHONE? -->
     <div class="side-menu-item" onclick="abrirModalIphone();fecharSideMenu()">
         <i class="fab fa-apple"></i> Quer usar no Iphone?
     </div>
     
-    <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'"><i class="fas fa-question-circle"></i> Ajuda</div>
+    <!-- AJUDA (ENVIAR MENSAGEM) -->
+    <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'">
+        <i class="fas fa-question-circle"></i> Ajuda
+    </div>
 </div>
 
 
@@ -2798,7 +2831,7 @@ function toggleSubmenuPoliticas() {
         if (icon) icon.style.transform = 'rotate(0deg)';
     }
 }
-        
+
 
         async function verificarECriarSaldoCentral() {
             if (!App.currentUser) return;
@@ -10363,7 +10396,7 @@ function abrirModalAssinaturaBloqueio() {
     })();
 }
 
-        function abrirMenuRelatorio() {
+     function abrirMenuRelatorio() {
     let { mes, ano } = getMesAnoAtual();
     let totalContas = App.dataCache.contas.filter(c => c.mes === mes && c.ano === ano).reduce((acc, c) => acc + (c.valor_original || c.valor || 0), 0);
     let totalPago = App.dataCache.contas.filter(c => c.mes === mes && c.ano === ano && c.valor_pago > 0).reduce((acc, c) => acc + c.valor_pago, 0);
@@ -10373,69 +10406,14 @@ function abrirModalAssinaturaBloqueio() {
     let percentualPago = totalContas > 0 ? (totalPago / totalContas * 100) : 0;
     let percentualGastos = saldoFinal > 0 ? (totalGastos / (saldoFinal + totalGastos) * 100) : 0;
     
-    // Gerar HTML das últimas ações
-    let ultimasAcoesHtml = '';
-    if (App.historicoAcoes && App.historicoAcoes.length > 0) {
-        ultimasAcoesHtml = '<div class="items-list" style="max-height: 400px; overflow-y: auto;">';
-        App.historicoAcoes.slice(0, 50).forEach(h => {
-            let data = new Date(h.data).toLocaleString('pt-BR');
-            let detalhes = '';
-            
-            if (h.tipo === 'criacao_conta') {
-                detalhes = `Conta: ${h.detalhes.descricao} - Valor: ${formatCurrency(h.detalhes.valor)} - Frequência: ${h.detalhes.frequencia}`;
-            } else if (h.tipo === 'pagamento_conta') {
-                detalhes = `Valor pago: ${formatCurrency(h.detalhes.valor)}`;
-            } else if (h.tipo === 'criacao_gasto') {
-                detalhes = `Gasto: ${h.detalhes.desc} - Valor: ${formatCurrency(h.detalhes.valor)} - Categoria: ${h.detalhes.cat}`;
-            } else if (h.tipo === 'criacao_evento') {
-                detalhes = `Evento: ${h.detalhes.titulo} - Ícone: ${h.detalhes.icone}`;
-            } else if (h.tipo === 'criacao_lista') {
-                detalhes = `Item: ${h.detalhes.desc} - Quantidade: ${h.detalhes.qtd}`;
-            } else if (h.tipo === 'criacao_giro') {
-                detalhes = `Giro: ${h.detalhes.desc} - Valor: ${formatCurrency(h.detalhes.valor)} - Pessoa: ${h.detalhes.pessoa}`;
-            } else if (h.tipo === 'pagamento_giro') {
-                detalhes = `Valor: ${formatCurrency(h.detalhes.valor)}`;
-            } else if (h.tipo === 'recebimento_giro') {
-                detalhes = `Valor: ${formatCurrency(h.detalhes.valor)}`;
-            } else if (h.tipo === 'adicao_saldo' || h.tipo === 'retirada_saldo' || h.tipo === 'atualizacao_saldo') {
-                detalhes = `Valor: ${formatCurrency(h.detalhes.valor)}`;
-            } else if (h.tipo === 'criacao_nota') {
-                detalhes = `Nota: ${h.detalhes.texto || ''}`;
-            } else if (h.detalhes && typeof h.detalhes === 'object') {
-                detalhes = JSON.stringify(h.detalhes).replace(/[{}"]/g, ' ').replace(/,/g, ', ');
-            }
-            
-            ultimasAcoesHtml += `<div class="historico-item">
-                <div class="historico-header">
-                    <span><i class="fas ${h.tipo === 'criacao_conta' ? 'fa-file-invoice-dollar' : h.tipo === 'pagamento_conta' ? 'fa-dollar-sign' : h.tipo === 'criacao_gasto' ? 'fa-shopping-bag' : h.tipo === 'criacao_evento' ? 'fa-calendar-plus' : h.tipo === 'criacao_lista' ? 'fa-shopping-cart' : h.tipo === 'criacao_giro' ? 'fa-hand-holding-usd' : h.tipo === 'criacao_nota' ? 'fa-sticky-note' : 'fa-history'}"></i> ${h.descricao}</span>
-                    <span class="historico-data">${data}</span>
-                </div>
-                <div class="historico-descricao">${detalhes}</div>
-                <div class="historico-usuario">${h.usuario || 'desconhecido'}</div>
-            </div>`;
-        });
-        ultimasAcoesHtml += '</div>';
-    } else {
-        ultimasAcoesHtml = '<div class="empty-state"><i class="fas fa-history"></i><p>Nenhuma ação registrada</p></div>';
-    }
-    
     let conteudo = `
         <div style="padding: 0;">
-            <!-- ABAS -->
-            <div style="display: flex; border-bottom: 1px solid #eee; background: #fff; position: sticky; top: 0; z-index: 10;">
-                <div id="abaRelatorio" class="aba-ativa" style="flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--purple); border-bottom: 2px solid var(--purple);">
-                    <i class="fas fa-chart-line"></i> Relatório
-                </div>
-                <div id="abaUltimasAcoes" style="flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--gray);">
-                    <i class="fas fa-history"></i> Últimas Ações
-                </div>
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 12px; text-align: center;">
+                <h3 style="margin: 0; color: #fff;"><i class="fas fa-chart-line"></i> Relatório Financeiro</h3>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #fff;">${getNomeMes(mes)}/${ano}</p>
             </div>
-            
-            <!-- CONTEÚDO DA ABA RELATÓRIO -->
-            <div id="conteudoRelatorio" style="padding: 16px;">
+            <div style="padding: 16px;">
                 <div class="report-chart">
-                    <h4 style="margin-bottom:12px">Resumo Financeiro de ${getNomeMes(mes)}/${ano}</h4>
-                    
                     <div class="chart-bar-container">
                         <div class="chart-bar-label">
                             <span>Contas Pagas</span>
@@ -10486,50 +10464,12 @@ function abrirModalAssinaturaBloqueio() {
                     </div>
                 </div>
             </div>
-            
-            <!-- CONTEÚDO DA ABA ÚLTIMAS AÇÕES (inicialmente escondido) -->
-            <div id="conteudoUltimasAcoes" style="padding: 16px; display: none;">
-                ${ultimasAcoesHtml}
-            </div>
-            
             <div class="btn-group" style="padding: 16px; border-top: 1px solid #eee;">
                 <button class="btn btn-primary" onclick="fecharModal()">Fechar</button>
             </div>
         </div>
-        
-        <style>
-            .aba-ativa {
-                color: var(--purple) !important;
-                border-bottom: 2px solid var(--purple) !important;
-            }
-        </style>
     `;
-    
-    abrirModal('Relatório e Histórico', 'fa-file-alt', conteudo);
-    
-    // Adicionar eventos de troca de aba após o modal ser aberto
-    setTimeout(() => {
-        const abaRelatorio = document.getElementById('abaRelatorio');
-        const abaUltimasAcoes = document.getElementById('abaUltimasAcoes');
-        const conteudoRelatorio = document.getElementById('conteudoRelatorio');
-        const conteudoUltimasAcoes = document.getElementById('conteudoUltimasAcoes');
-        
-        if (abaRelatorio && abaUltimasAcoes && conteudoRelatorio && conteudoUltimasAcoes) {
-            abaRelatorio.onclick = () => {
-                abaRelatorio.classList.add('aba-ativa');
-                abaUltimasAcoes.classList.remove('aba-ativa');
-                conteudoRelatorio.style.display = 'block';
-                conteudoUltimasAcoes.style.display = 'none';
-            };
-            
-            abaUltimasAcoes.onclick = () => {
-                abaUltimasAcoes.classList.add('aba-ativa');
-                abaRelatorio.classList.remove('aba-ativa');
-                conteudoRelatorio.style.display = 'none';
-                conteudoUltimasAcoes.style.display = 'block';
-            };
-        }
-    }, 100);
+    abrirModal('Relatório Financeiro', 'fa-file-alt', conteudo);
 }
 
         function abrirMenuSeguranca() {
@@ -11032,57 +10972,52 @@ function abrirModalAssinaturaBloqueio() {
         }
 
         function abrirUltimasAcoes() {
-            if (!App.historicoAcoes || App.historicoAcoes.length === 0) {
-                let conteudo = '<div class="empty-state"><i class="fas fa-history"></i><p>Nenhuma ação registrada</p></div>';
-                abrirModal('Últimas Ações', 'fa-history', conteudo);
-                return;
-            }
+    if (!App.historicoAcoes || App.historicoAcoes.length === 0) {
+        let conteudo = '<div class="empty-state"><i class="fas fa-history"></i><p>Nenhuma ação registrada</p></div>';
+        abrirModal('Últimas Ações', 'fa-history', conteudo);
+        return;
+    }
 
-            let html = '<div class="items-list">';
-            App.historicoAcoes.slice(0, 100).forEach(h => {
-                let data = new Date(h.data).toLocaleString('pt-BR');
-                let detalhes = '';
-                
-                if (h.tipo === 'criacao_conta') {
-                    detalhes = `Conta: ${h.detalhes.descricao} - Valor: ${formatCurrency(h.detalhes.valor)} - Frequência: ${h.detalhes.frequencia}`;
-                } else if (h.tipo === 'pagamento_conta') {
-                    detalhes = `Valor pago: ${formatCurrency(h.detalhes.valor)}`;
-                } else if (h.tipo === 'criacao_gasto') {
-                    detalhes = `Gasto: ${h.detalhes.desc} - Valor: ${formatCurrency(h.detalhes.valor)} - Categoria: ${h.detalhes.cat}`;
-                } else if (h.tipo === 'criacao_evento') {
-                    detalhes = `Evento: ${h.detalhes.titulo} - Ícone: ${h.detalhes.icone}`;
-                } else if (h.tipo === 'edicao_conta' || h.tipo === 'edicao_evento' || h.tipo === 'edicao_gasto' || h.tipo === 'edicao_giro' || h.tipo === 'edicao_saldo' || h.tipo === 'edicao_lista') {
-                    detalhes = 'Informações atualizadas';
-                } else if (h.tipo === 'exclusao_item') {
-                    detalhes = `Tipo: ${h.detalhes.tipo}`;
-                } else if (h.tipo === 'exclusao_evento' || h.tipo === 'exclusao_conta' || h.tipo === 'exclusao_giro' || h.tipo === 'exclusao_saldo' || h.tipo === 'exclusao_lista') {
-                    detalhes = 'Item removido';
-                } else if (h.tipo === 'criacao_lista') {
-                    detalhes = `Item: ${h.detalhes.desc} - Quantidade: ${h.detalhes.qtd}`;
-                } else if (h.tipo === 'criacao_giro') {
-                    detalhes = `Giro: ${h.detalhes.desc} - Valor: ${formatCurrency(h.detalhes.valor)} - Pessoa: ${h.detalhes.pessoa}`;
-                } else if (h.tipo === 'pagamento_giro') {
-                    detalhes = `Valor: ${formatCurrency(h.detalhes.valor)}`;
-                } else if (h.tipo === 'recebimento_giro') {
-                    detalhes = `Valor: ${formatCurrency(h.detalhes.valor)}`;
-                } else if (h.tipo === 'adicao_saldo' || h.tipo === 'retirada_saldo' || h.tipo === 'atualizacao_saldo') {
-                    detalhes = `Valor: ${formatCurrency(h.detalhes.valor)}`;
-                } else if (h.detalhes && typeof h.detalhes === 'object') {
-                    detalhes = JSON.stringify(h.detalhes).replace(/[{}"]/g, ' ').replace(/,/g, ', ');
-                }
-                
-                html += `<div class="historico-item">
-                    <div class="historico-header">
-                        <span><i class="fas ${h.tipo === 'criacao_conta' ? 'fa-file-invoice-dollar' : h.tipo === 'pagamento_conta' ? 'fa-dollar-sign' : h.tipo === 'criacao_gasto' ? 'fa-shopping-bag' : h.tipo === 'criacao_evento' ? 'fa-calendar-plus' : h.tipo === 'criacao_lista' ? 'fa-shopping-cart' : h.tipo === 'criacao_giro' ? 'fa-hand-holding-usd' : h.tipo === 'edicao' ? 'fa-edit' : h.tipo === 'exclusao' ? 'fa-trash' : 'fa-history'}"></i> ${h.descricao}</span>
-                        <span class="historico-data">${data}</span>
-                    </div>
-                    <div class="historico-descricao">${detalhes}</div>
-                    <div class="historico-usuario">${h.usuario || 'desconhecido'}</div>
-                </div>`;
-            });
-            html += '</div>';
-            abrirModal('Últimas Ações (100)', 'fa-history', html);
+    let html = '<div class="items-list" style="max-height: 60vh; overflow-y: auto;">';
+    App.historicoAcoes.slice(0, 100).forEach(h => {
+        let data = new Date(h.data).toLocaleString('pt-BR');
+        let detalhes = '';
+        
+        if (h.tipo === 'criacao_conta') {
+            detalhes = `Conta: ${h.detalhes.descricao} - Valor: ${formatCurrency(h.detalhes.valor)} - Frequência: ${h.detalhes.frequencia}`;
+        } else if (h.tipo === 'pagamento_conta') {
+            detalhes = `Valor pago: ${formatCurrency(h.detalhes.valor)}`;
+        } else if (h.tipo === 'criacao_gasto') {
+            detalhes = `Gasto: ${h.detalhes.desc} - Valor: ${formatCurrency(h.detalhes.valor)} - Categoria: ${h.detalhes.cat}`;
+        } else if (h.tipo === 'criacao_evento') {
+            detalhes = `Evento: ${h.detalhes.titulo} - Ícone: ${h.detalhes.icone}`;
+        } else if (h.tipo === 'criacao_lista') {
+            detalhes = `Item: ${h.detalhes.desc} - Quantidade: ${h.detalhes.qtd}`;
+        } else if (h.tipo === 'criacao_giro') {
+            detalhes = `Giro: ${h.detalhes.desc} - Valor: ${formatCurrency(h.detalhes.valor)} - Pessoa: ${h.detalhes.pessoa}`;
+        } else if (h.tipo === 'edicao_conta' || h.tipo === 'edicao_evento' || h.tipo === 'edicao_gasto' || h.tipo === 'edicao_giro' || h.tipo === 'edicao_saldo' || h.tipo === 'edicao_lista') {
+            detalhes = 'Informações atualizadas';
+        } else if (h.tipo === 'exclusao_item') {
+            detalhes = `Tipo: ${h.detalhes.tipo}`;
+        } else if (h.detalhes && typeof h.detalhes === 'object') {
+            detalhes = JSON.stringify(h.detalhes).replace(/[{}"]/g, ' ').replace(/,/g, ', ');
         }
+        
+        html += `<div class="historico-item">
+            <div class="historico-header">
+                <span><i class="fas ${h.tipo === 'criacao_conta' ? 'fa-file-invoice-dollar' : h.tipo === 'pagamento_conta' ? 'fa-dollar-sign' : h.tipo === 'criacao_gasto' ? 'fa-shopping-bag' : h.tipo === 'criacao_evento' ? 'fa-calendar-plus' : h.tipo === 'criacao_lista' ? 'fa-shopping-cart' : h.tipo === 'criacao_giro' ? 'fa-hand-holding-usd' : h.tipo === 'edicao' ? 'fa-edit' : h.tipo === 'exclusao' ? 'fa-trash' : 'fa-history'}"></i> ${h.descricao}</span>
+                <span class="historico-data">${data}</span>
+            </div>
+            <div class="historico-descricao">${detalhes}</div>
+            <div class="historico-usuario">${h.usuario || 'desconhecido'}</div>
+        </div>`;
+    });
+    html += '</div>';
+    abrirModal('Últimas Ações (últimas 100)', 'fa-history', html);
+}
+
+
+
 
         function abrirManual() {
             let conteudo = `
