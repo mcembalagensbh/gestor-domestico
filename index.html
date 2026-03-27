@@ -2148,60 +2148,18 @@
         </div>
     </div>
 </div>
-           <div class="side-menu-content">
-    <!-- RELATÓRIO -->
+          <div class="side-menu-content">
+    <!-- 1. RESUMO DO MÊS (antigo Relatório) -->
     <div class="side-menu-item" onclick="abrirMenuRelatorio();fecharSideMenu()">
-        <i class="fas fa-file-alt"></i> Relatório
+        <i class="fas fa-chart-line"></i> Resumo do Mês
     </div>
     
-    <!-- ÚLTIMAS AÇÕES (botão separado) -->
-    <div class="side-menu-item" onclick="abrirUltimasAcoes();fecharSideMenu()">
-        <i class="fas fa-history"></i> Últimas Ações
-    </div>
-    
-    <!-- NOTIFICAÇÕES -->
-    <div class="side-menu-item" onclick="abrirNotificacoes();fecharSideMenu()">
-        <i class="fas fa-bell"></i> Notificações
-    </div>
-    
-    <!-- SEGURANÇA -->
-    <div class="side-menu-item" onclick="abrirMenuSeguranca();fecharSideMenu()">
-        <i class="fas fa-lock"></i> Segurança
-    </div>
-    
-    <!-- USUÁRIOS DA FAMÍLIA (botão separado) -->
+    <!-- 2. USUÁRIOS DA FAMÍLIA -->
     <div class="side-menu-item" onclick="abrirUsuariosFamilia();fecharSideMenu()">
         <i class="fas fa-users"></i> Usuários da Família
     </div>
     
-    <!-- POLÍTICAS E TERMOS (com submenu) -->
-    <div class="side-menu-item" onclick="toggleSubmenuPoliticas()">
-        <i class="fas fa-file-contract"></i> Políticas e Termos
-        <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
-    </div>
-    <div id="submenuPoliticas" style="display: none; padding-left: 35px;">
-        <div class="side-menu-item" onclick="abrirPaginaModal('Política de Privacidade', 'fa-shield-alt', 'https://mylife.app.br/politicas.html'); fecharSideMenu()">
-            <i class="fas fa-shield-alt"></i> Política de Privacidade
-        </div>
-        <div class="side-menu-item" onclick="abrirPaginaModal('Termos de Uso', 'fa-file-alt', 'https://mylife.app.br/termos.html'); fecharSideMenu()">
-            <i class="fas fa-file-alt"></i> Termos de Uso
-        </div>
-        <div class="side-menu-item" onclick="abrirPaginaModal('Política de Cancelamento', 'fa-ban', 'https://mylife.app.br/cancelamentos.html'); fecharSideMenu()">
-            <i class="fas fa-ban"></i> Política de Cancelamento
-        </div>
-    </div>
-    
-    <!-- MANUAL RÁPIDO -->
-    <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()">
-        <i class="fas fa-book"></i> Manual Rápido
-    </div>
-    
-    <!-- PREMIUM -->
-    <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()">
-        <i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span>
-    </div>
-    
-    <!-- SYNC CALENDÁRIOS (com submenu) -->
+    <!-- 3. SYNC CALENDÁRIOS (com submenu) -->
     <div class="side-menu-item" onclick="toggleSubmenuCalendarios()">
         <i class="fas fa-calendar-alt"></i> Sync Calendários
         <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
@@ -2221,14 +2179,67 @@
         </div>
     </div>
     
-    <!-- QUER USAR NO IPHONE? -->
+    <!-- 4. RECLAMAÇÕES/SUGESTÕES (botão simples, será movido para dentro do Ajuda depois) -->
+    <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'">
+        <i class="fas fa-comment-dots"></i> Reclamações/Sugestões
+    </div>
+    
+    <!-- 5. PREMIUM -->
+    <div class="side-menu-item" onclick="abrirModalAssinatura();fecharSideMenu()">
+        <i class="fas fa-crown"></i> <span id="menuAssinaturaStatus">Premium</span>
+    </div>
+    
+    <!-- 6. CONFIGURAÇÕES (com submenu) -->
+    <div class="side-menu-item" onclick="toggleSubmenuConfiguracoes()">
+        <i class="fas fa-cog"></i> Configurações
+        <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
+    </div>
+    <div id="submenuConfiguracoes" style="display: none; padding-left: 35px;">
+        <div class="side-menu-item" onclick="abrirNotificacoes();fecharSideMenu()">
+            <i class="fas fa-bell"></i> Notificações
+        </div>
+        <div class="side-menu-item" onclick="abrirMenuSeguranca();fecharSideMenu()">
+            <i class="fas fa-lock"></i> Segurança
+        </div>
+        <div class="side-menu-item" onclick="abrirUltimasAcoes();fecharSideMenu()">
+            <i class="fas fa-history"></i> Últimas Ações
+        </div>
+    </div>
+    
+    <!-- 7. POLÍTICAS E TERMOS (com submenu) -->
+    <div class="side-menu-item" onclick="toggleSubmenuPoliticas()">
+        <i class="fas fa-file-contract"></i> Políticas e Termos
+        <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
+    </div>
+    <div id="submenuPoliticas" style="display: none; padding-left: 35px;">
+        <div class="side-menu-item" onclick="abrirPaginaModal('Política de Privacidade', 'fa-shield-alt', 'https://mylife.app.br/politicas.html'); fecharSideMenu()">
+            <i class="fas fa-shield-alt"></i> Política de Privacidade
+        </div>
+        <div class="side-menu-item" onclick="abrirPaginaModal('Termos de Uso', 'fa-file-alt', 'https://mylife.app.br/termos.html'); fecharSideMenu()">
+            <i class="fas fa-file-alt"></i> Termos de Uso
+        </div>
+        <div class="side-menu-item" onclick="abrirPaginaModal('Política de Cancelamento', 'fa-ban', 'https://mylife.app.br/cancelamentos.html'); fecharSideMenu()">
+            <i class="fas fa-ban"></i> Política de Cancelamento
+        </div>
+    </div>
+    
+    <!-- 8. QUER USAR NO IPHONE? -->
     <div class="side-menu-item" onclick="abrirModalIphone();fecharSideMenu()">
         <i class="fab fa-apple"></i> Quer usar no Iphone?
     </div>
     
-    <!-- AJUDA (ENVIAR MENSAGEM) -->
-    <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'">
+    <!-- 9. AJUDA (com submenu) -->
+    <div class="side-menu-item" onclick="toggleSubmenuAjuda()">
         <i class="fas fa-question-circle"></i> Ajuda
+        <i class="fas fa-chevron-down" style="margin-left: auto; font-size: 12px;"></i>
+    </div>
+    <div id="submenuAjuda" style="display: none; padding-left: 35px;">
+        <div class="side-menu-item" onclick="window.location.href='mailto:hcdtec.mylife@gmail.com'">
+            <i class="fas fa-comment-dots"></i> Reclamações/Sugestões
+        </div>
+        <div class="side-menu-item" onclick="abrirManualRapido();fecharSideMenu()">
+            <i class="fas fa-book"></i> Manual Rápido
+        </div>
     </div>
 </div>
 
@@ -3350,7 +3361,48 @@ function abrirModalAssinaturaGratis() {
     
     abrirModal('', '', conteudo);
 }
+
+
+
+function toggleSubmenuConfiguracoes() {
+    const submenu = document.getElementById('submenuConfiguracoes');
+    const icon = document.querySelector('.side-menu-item:has(i.fa-cog) .fa-chevron-down');
+    
+    if (!submenu) return;
+    
+    if (submenu.style.display === 'none' || !submenu.style.display) {
+        submenu.style.display = 'block';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+        submenu.style.display = 'none';
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+
+
+function toggleSubmenuAjuda() {
+    const submenu = document.getElementById('submenuAjuda');
+    const icon = document.querySelector('.side-menu-item:has(i.fa-question-circle) .fa-chevron-down');
+    
+    if (!submenu) return;
+    
+    if (submenu.style.display === 'none' || !submenu.style.display) {
+        submenu.style.display = 'block';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+        submenu.style.display = 'none';
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+
+
 // 🔥 NOVA FUNÇÃO: Abrir WhatsApp com identificação
+
+
+
+
 function abrirSuporteWhatsApp() {
     let email = prompt("Por favor, digite seu e-mail para identificação:", App.currentUser?.email || "");
     
@@ -10396,7 +10448,7 @@ function abrirModalAssinaturaBloqueio() {
     })();
 }
 
-     function abrirMenuRelatorio() {
+   function abrirMenuRelatorio() {
     let { mes, ano } = getMesAnoAtual();
     let totalContas = App.dataCache.contas.filter(c => c.mes === mes && c.ano === ano).reduce((acc, c) => acc + (c.valor_original || c.valor || 0), 0);
     let totalPago = App.dataCache.contas.filter(c => c.mes === mes && c.ano === ano && c.valor_pago > 0).reduce((acc, c) => acc + c.valor_pago, 0);
@@ -10409,7 +10461,7 @@ function abrirModalAssinaturaBloqueio() {
     let conteudo = `
         <div style="padding: 0;">
             <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 12px; text-align: center;">
-                <h3 style="margin: 0; color: #fff;"><i class="fas fa-chart-line"></i> Relatório Financeiro</h3>
+                <h3 style="margin: 0; color: #fff;"><i class="fas fa-chart-line"></i> Resumo do Mês</h3>
                 <p style="margin: 5px 0 0 0; font-size: 12px; color: #fff;">${getNomeMes(mes)}/${ano}</p>
             </div>
             <div style="padding: 16px;">
@@ -10469,7 +10521,7 @@ function abrirModalAssinaturaBloqueio() {
             </div>
         </div>
     `;
-    abrirModal('Relatório Financeiro', 'fa-file-alt', conteudo);
+    abrirModal('Resumo do Mês', 'fa-chart-line', conteudo);
 }
 
      function abrirMenuSeguranca() {
