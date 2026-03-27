@@ -5848,7 +5848,7 @@ async function salvarNovaConta() {
     }
 
     // 🔴 USAR O App.usuarioAtual DIRETAMENTE (sem função extra)
-    const nomeUsuario = (App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido').toString();
+        const nomeUsuario = garantirNomeUsuario(App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido');
 
     try {
         if (frequencia === 'unico') {
@@ -9194,6 +9194,37 @@ async function sincronizarGoogle() {
     }
 }
 
+
+// ============================================
+// FUNÇÃO PARA GARANTIR QUE O NOME DO USUÁRIO SEJA STRING
+// ============================================
+function garantirNomeUsuario(nome) {
+    // Se for undefined ou null, retorna desconhecido
+    if (!nome) return 'desconhecido';
+    
+    // Se já for string e não for "[object Object]", retorna
+    if (typeof nome === 'string' && nome !== '[object Object]') return nome;
+    
+    // Se for "[object Object]", buscar do App.usuarioAtual
+    if (nome === '[object Object]' && App.usuarioAtual) {
+        const nomeCorreto = App.usuarioAtual.apelido || App.usuarioAtual.nome;
+        if (nomeCorreto && typeof nomeCorreto === 'string') return nomeCorreto;
+    }
+    
+    // Último recurso: buscar do localStorage
+    if (App.currentUser) {
+        const saved = localStorage.getItem(`mylife_usuario_${App.currentUser.id}`);
+        if (saved) {
+            try {
+                const usuario = JSON.parse(saved);
+                const nomeCorreto = usuario.apelido || usuario.nome;
+                if (nomeCorreto && typeof nomeCorreto === 'string') return nomeCorreto;
+            } catch(e) {}
+        }
+    }
+    
+    return 'desconhecido';
+}
 
 
 
@@ -14537,4 +14568,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 011
+Edição 012
