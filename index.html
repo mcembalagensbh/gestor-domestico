@@ -12113,6 +12113,77 @@ async function salvarNovoGiro() {
 
 
 
+async function confirmarPagamentoGiro(id, desc) {
+    let valor = parseCurrency(document.getElementById('pagamentoValor')?.value);
+    let descricao = document.getElementById('pagamentoDescricao')?.value.trim();
+    
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
+    if (!valor || valor <= 0) {
+        showToast('Digite um valor válido', 'warning');
+        return;
+    }
+    
+    try {
+        // Registrar a movimentação
+        await App.supabase.from('movimentacoes_giro').insert({
+            user_id: App.currentUser.id,
+            giro_id: id,
+            tipo: 'pagamento',
+            valor: valor,
+            descricao: descricao || `Pagamento de ${formatCurrency(valor)} para ${desc}`,
+            data: new Date().toISOString(),
+            added_by: nomeUsuario
+        });
+        
+        await registrarHistorico('pagamento_giro', `Pagamento de ${formatCurrency(valor)} para ${desc}`, { id, valor, usuario: nomeUsuario });
+        showToast('Pagamento registrado!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+        
+    } catch (error) {
+        console.error('Erro ao registrar pagamento:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
+
+async function confirmarRecebimentoGiro(id, desc) {
+    let valor = parseCurrency(document.getElementById('recebimentoValor')?.value);
+    let descricao = document.getElementById('recebimentoDescricao')?.value.trim();
+    
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
+    if (!valor || valor <= 0) {
+        showToast('Digite um valor válido', 'warning');
+        return;
+    }
+    
+    try {
+        // Registrar a movimentação
+        await App.supabase.from('movimentacoes_giro').insert({
+            user_id: App.currentUser.id,
+            giro_id: id,
+            tipo: 'recebimento',
+            valor: valor,
+            descricao: descricao || `Recebimento de ${formatCurrency(valor)} de ${desc}`,
+            data: new Date().toISOString(),
+            added_by: nomeUsuario
+        });
+        
+        await registrarHistorico('recebimento_giro', `Recebimento de ${formatCurrency(valor)} de ${desc}`, { id, valor, usuario: nomeUsuario });
+        showToast('Recebimento registrado!', 'success');
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+        
+    } catch (error) {
+        console.error('Erro ao registrar recebimento:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
+
 
         async function salvarPagamentoGiro(id, desc) {
     let valor = parseCurrency(document.getElementById('pagamentoValor')?.value);
@@ -15689,4 +15760,4 @@ function validarValorRecebimentoGiro(valorMaximo) {
 </html>
 
 
-Edição 120
+Edição 121
