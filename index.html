@@ -3241,7 +3241,6 @@ function abrirModalAssinatura() {
     let plano = App.plano || 'gratis';
     let isAssinante = plano === 'mensal' || plano === 'anual';
     
-    // Data de expiração formatada
     let dataExpiracao = App.dataExpiracao ? App.dataExpiracao.toLocaleDateString('pt-BR') : 'Não assinado';
     let diasRestantes = '';
     
@@ -3265,169 +3264,139 @@ function abrirModalAssinatura() {
     }
     
     let conteudo = `
-        <div style="padding: 0; max-height: 90vh; overflow-y: auto;">
-            <!-- CABEÇALHO COM BANNER -->
-            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 25px 20px; text-align: center;">
-                <div style="background: rgba(255,255,255,0.2); width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                    <i class="fas fa-crown" style="font-size: 32px; color: #ffd700;"></i>
+        <div style="padding: 0; max-height: 85vh; overflow-y: auto;">
+            <!-- CABEÇALHO -->
+            <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; text-align: center;">
+                <div style="background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">
+                    <i class="fas fa-crown" style="font-size: 28px; color: #ffd700;"></i>
                 </div>
-                <h2 style="margin: 0; color: #fff; font-size: 1.8rem;">My Life Premium</h2>
-                <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9);">Gerencie sua vida financeira e familiar sem limites</p>
+                <h2 style="margin: 0; color: #fff; font-size: 1.5rem;">My Life Premium</h2>
+                <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.9); font-size: 12px;">Gerencie sua vida sem limites</p>
             </div>
             
             ${isAssinante ? `
-            <!-- STATUS DO ASSINANTE -->
-            <div style="background: #e8f5e9; padding: 12px 20px; text-align: center; border-bottom: 1px solid #c8e6c9;">
-                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fas fa-check-circle" style="color: #2e7d32;"></i>
-                    <span style="color: #2e7d32; font-weight: 500;">✅ Você é Premium!</span>
-                    <span style="color: #2e7d32;">${diasRestantes ? `(${diasRestantes})` : ''}</span>
-                </div>
+            <div style="background: #e8f5e9; padding: 10px; text-align: center; border-bottom: 1px solid #c8e6c9;">
+                <i class="fas fa-check-circle" style="color: #2e7d32;"></i> <strong style="color: #2e7d32;">Você é Premium!</strong> ${diasRestantes ? `(${diasRestantes})` : ''}
             </div>
             ` : ''}
             
-            <!-- TABELA DE COMPARAÇÃO -->
-            <div style="padding: 20px;">
-                <div style="display: flex; justify-content: space-between; gap: 12px; margin-bottom: 20px;">
-                    <!-- PLANO GRÁTIS -->
-                    <div style="flex: 1; background: #f8f9fa; border-radius: 16px; overflow: hidden; border: 1px solid #e9ecef;">
-                        <div style="background: #e9ecef; padding: 15px; text-align: center;">
-                            <i class="fas fa-gift" style="font-size: 24px; color: #6c757d;"></i>
-                            <h3 style="margin: 8px 0 0 0; color: #495057;">Grátis</h3>
-                            <div style="font-size: 12px; color: #6c757d;">Teste sem compromisso</div>
-                        </div>
-                        <div style="padding: 15px;">
-                            <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e9ecef;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-                                    <i class="fas fa-ban" style="color: #dc3545; font-size: 12px;"></i>
-                                    <span style="font-weight: 600; font-size: 13px;">Publicidade</span>
-                                </div>
-                                <div style="font-size: 11px; color: #6c757d; margin-left: 24px;">Anúncios no app</div>
-                            </div>
-                            
-                            <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e9ecef;">
-                                <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px;">📊 Limites:</div>
-                                <div style="font-size: 12px; margin-left: 8px;">
-                                    <div><i class="fas fa-file-invoice-dollar"></i> Contas: <strong>5 únicas + 5 recorrentes</strong></div>
-                                    <div><i class="fas fa-calendar-alt"></i> Eventos: <strong>5 únicos + 2 recorrentes</strong></div>
-                                    <div><i class="fas fa-hand-holding-usd"></i> Giros: <strong>❌ Não disponível</strong></div>
-                                    <div><i class="fas fa-shopping-cart"></i> Lista: <strong>10 itens</strong></div>
-                                    <div><i class="fas fa-sticky-note"></i> Notas: <strong>3 anotações</strong></div>
-                                    <div><i class="fas fa-shopping-bag"></i> Gastos: <strong>8 lançamentos</strong></div>
-                                    <div><i class="fas fa-users"></i> Usuários: <strong>2 simultâneos</strong></div>
-                                    <div><i class="fas fa-wallet"></i> Saldo: <strong>❌ Apenas visualização</strong></div>
-                                    <div><i class="fas fa-bell"></i> Notificações: <strong>❌ Não disponível</strong></div>
-                                    <div><i class="fas fa-calendar-week"></i> Sync Calendários: <strong>❌ Não disponível</strong></div>
-                                </div>
-                            </div>
-                            
-                            <div style="text-align: center; margin-top: 10px;">
-                                <div style="font-size: 24px; font-weight: 700; color: #28a745;">R$ 0</div>
-                                <div style="font-size: 11px; color: #6c757d;">/mês</div>
-                            </div>
-                        </div>
+            <div style="padding: 16px;">
+                <!-- TABELA DE COMPARAÇÃO (HORIZONTAL) -->
+                <div style="background: #f8f9fa; border-radius: 16px; overflow: hidden; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 12px; text-align: center; font-weight: 700; background: #e9ecef;">Recurso</div>
+                        <div style="padding: 12px; text-align: center; font-weight: 700; background: linear-gradient(135deg, #f39c12, #e67e22); color: #fff;">Premium</div>
                     </div>
                     
-                    <!-- PLANO PREMIUM -->
-                    <div style="flex: 1; background: linear-gradient(135deg, #fff, #fef7e0); border-radius: 16px; overflow: hidden; border: 2px solid #f39c12; position: relative;">
-                        <div style="position: absolute; top: 10px; right: -30px; background: #f39c12; color: #fff; padding: 5px 30px; font-size: 10px; font-weight: 700; transform: rotate(45deg);">
-                            RECOMENDADO
-                        </div>
-                        <div style="background: linear-gradient(135deg, #f39c12, #e67e22); padding: 15px; text-align: center;">
-                            <i class="fas fa-crown" style="font-size: 24px; color: #ffd700;"></i>
-                            <h3 style="margin: 8px 0 0 0; color: #fff;">Premium</h3>
-                            <div style="font-size: 12px; color: rgba(255,255,255,0.9);">Acesso total ilimitado</div>
-                        </div>
-                        <div style="padding: 15px;">
-                            <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #ffe0b5;">
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-                                    <i class="fas fa-check-circle" style="color: #28a745; font-size: 12px;"></i>
-                                    <span style="font-weight: 600; font-size: 13px;">Sem publicidade</span>
-                                </div>
-                                <div style="font-size: 11px; color: #6c757d; margin-left: 24px;">Experiência limpa e focada</div>
-                            </div>
-                            
-                            <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #ffe0b5;">
-                                <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px;">📊 Ilimitado:</div>
-                                <div style="font-size: 12px; margin-left: 8px;">
-                                    <div><i class="fas fa-file-invoice-dollar"></i> Contas: <strong>Ilimitadas</strong></div>
-                                    <div><i class="fas fa-calendar-alt"></i> Eventos: <strong>Ilimitados</strong></div>
-                                    <div><i class="fas fa-hand-holding-usd"></i> Giros: <strong>✅ Ilimitados</strong></div>
-                                    <div><i class="fas fa-shopping-cart"></i> Lista: <strong>Ilimitada</strong></div>
-                                    <div><i class="fas fa-sticky-note"></i> Notas: <strong>Ilimitadas</strong></div>
-                                    <div><i class="fas fa-shopping-bag"></i> Gastos: <strong>Ilimitados</strong></div>
-                                    <div><i class="fas fa-users"></i> Usuários: <strong>Ilimitados</strong></div>
-                                    <div><i class="fas fa-wallet"></i> Saldo: <strong>✅ Controle total</strong></div>
-                                    <div><i class="fas fa-bell"></i> Notificações: <strong>✅ Completas</strong></div>
-                                    <div><i class="fas fa-calendar-week"></i> Sync Calendários: <strong>✅ Completo</strong></div>
-                                </div>
-                            </div>
-                            
-                            <div style="text-align: center; margin-top: 10px;">
-                                <div style="font-size: 24px; font-weight: 700; color: #e67e22;">R$ 17,90</div>
-                                <div style="font-size: 11px; color: #6c757d;">/mês</div>
-                                <div style="font-size: 11px; color: #f39c12; margin-top: 4px;">ou R$ 189,90/ano (economize 12%)</div>
-                            </div>
-                        </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-ban" style="color: #dc3545;"></i> Publicidade</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><i class="fas fa-check-circle" style="color: #28a745;"></i> Sem anúncios</div>
                     </div>
-                </div>
-                
-                <!-- BENEFÍCIOS EXTRAS -->
-                <div style="background: #f0f7ff; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                        <i class="fas fa-star" style="color: #f39c12;"></i>
-                        <strong style="font-size: 14px;">Benefícios Premium exclusivos:</strong>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-file-invoice-dollar"></i> Contas (únicas + recorrentes)</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><span style="color: #dc3545;">5 + 5</span> → <strong style="color: #28a745;">Ilimitado</strong></div>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
-                        <div><i class="fas fa-check-circle" style="color: #28a745;"></i> Contas recorrentes ilimitadas</div>
-                        <div><i class="fas fa-check-circle" style="color: #28a745;"></i> Sincronização Google Calendar</div>
-                        <div><i class="fas fa-check-circle" style="color: #28a745;"></i> Controle total de saldos</div>
-                        <div><i class="fas fa-check-circle" style="color: #28a745;"></i> Giros (empréstimos) ilimitados</div>
-                        <div><i class="fas fa-check-circle" style="color: #28a745;"></i> Notificações em tempo real</div>
-                        <div><i class="fas fa-check-circle" style="color: #28a745;"></i> Múltiplos usuários simultâneos</div>
-                        <div><i class="fas fa-check-circle" style="color: #28a745;"></i> Importação/assinatura de calendários</div>
-                        <div><i class="fas fa-check-circle" style="color: #28a745;"></i> Sem anúncios</div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-calendar-alt"></i> Eventos (únicos + recorrentes)</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><span style="color: #dc3545;">5 + 2</span> → <strong style="color: #28a745;">Ilimitado</strong></div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-hand-holding-usd"></i> Giros (empréstimos)</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><span style="color: #dc3545;">❌ Bloqueado</span> → <strong style="color: #28a745;">Ilimitado</strong></div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-wallet"></i> Controle de Saldo</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><span style="color: #dc3545;">❌ Apenas visualização</span> → <strong style="color: #28a745;">Completo</strong></div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-shopping-cart"></i> Lista de compras</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><span style="color: #dc3545;">10 itens</span> → <strong style="color: #28a745;">Ilimitado</strong></div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-sticky-note"></i> Notas</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><span style="color: #dc3545;">3 anotações</span> → <strong style="color: #28a745;">Ilimitado</strong></div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-shopping-bag"></i> Gastos</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><span style="color: #dc3545;">8 lançamentos</span> → <strong style="color: #28a745;">Ilimitado</strong></div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-users"></i> Usuários simultâneos</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><span style="color: #dc3545;">2 usuários</span> → <strong style="color: #28a745;">Ilimitado</strong></div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #e9ecef;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-bell"></i> Notificações</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><span style="color: #dc3545;">❌ Bloqueado</span> → <strong style="color: #28a745;">Completo</strong></div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                        <div style="padding: 10px 12px; font-size: 13px;"><i class="fas fa-calendar-week"></i> Sync Calendários</div>
+                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;"><span style="color: #dc3545;">❌ Bloqueado</span> → <strong style="color: #28a745;">Completo</strong></div>
                     </div>
                 </div>
                 
                 <!-- PLANOS COM BOTÕES -->
-                <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-                    <div onclick="gerarLinkPagamento('mensal')" style="flex: 1; text-align: center; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; padding: 12px; cursor: pointer; transition: transform 0.2s;">
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Plano</div>
-                        <div style="font-weight: 700; font-size: 20px; color: #fff;">Mensal</div>
-                        <div style="font-size: 18px; font-weight: 700; color: #ffd700;">R$ 17,90</div>
-                        <div style="font-size: 10px; color: rgba(255,255,255,0.7);">/mês</div>
-                        <button style="margin-top: 8px; background: #fff; color: #667eea; border: none; padding: 6px 12px; border-radius: 30px; font-weight: 600; cursor: pointer; width: 100%;">Assinar</button>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                    <div onclick="gerarLinkPagamento('mensal')" style="background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; padding: 12px 16px; cursor: pointer;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 16px; color: #fff;">Plano Mensal</div>
+                                <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Renovação automática mensal</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 20px; font-weight: 700; color: #ffd700;">R$ 17,90</div>
+                                <div style="font-size: 10px; color: rgba(255,255,255,0.7);">/mês</div>
+                            </div>
+                        </div>
+                        <button style="margin-top: 10px; background: #fff; color: #667eea; border: none; padding: 8px; border-radius: 30px; font-weight: 600; width: 100%; cursor: pointer;">Assinar Agora</button>
                     </div>
-                    <div onclick="gerarLinkPagamento('anual')" style="flex: 1; text-align: center; background: linear-gradient(135deg, #f39c12, #e67e22); border-radius: 12px; padding: 12px; cursor: pointer; transition: transform 0.2s; position: relative;">
-                        <div style="position: absolute; top: -8px; right: 10px; background: #dc3545; color: #fff; padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;">-12%</div>
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Plano</div>
-                        <div style="font-weight: 700; font-size: 20px; color: #fff;">Anual</div>
-                        <div style="font-size: 18px; font-weight: 700; color: #ffd700;">R$ 189,90</div>
-                        <div style="font-size: 10px; color: rgba(255,255,255,0.7);">/ano (equivalente a R$ 15,83/mês)</div>
-                        <button style="margin-top: 8px; background: #fff; color: #e67e22; border: none; padding: 6px 12px; border-radius: 30px; font-weight: 600; cursor: pointer; width: 100%;">Assinar</button>
+                    
+                    <div onclick="gerarLinkPagamento('anual')" style="background: linear-gradient(135deg, #f39c12, #e67e22); border-radius: 12px; padding: 12px 16px; cursor: pointer; position: relative;">
+                        <div style="position: absolute; top: -8px; right: 12px; background: #dc3545; color: #fff; padding: 2px 12px; border-radius: 20px; font-size: 10px; font-weight: 700;">ECONOMIZE 12%</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 16px; color: #fff;">Plano Anual</div>
+                                <div style="font-size: 12px; color: rgba(255,255,255,0.8);">Renovação automática anual</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 20px; font-weight: 700; color: #ffd700;">R$ 189,90</div>
+                                <div style="font-size: 10px; color: rgba(255,255,255,0.7);">/ano (R$ 15,83/mês)</div>
+                            </div>
+                        </div>
+                        <button style="margin-top: 10px; background: #fff; color: #e67e22; border: none; padding: 8px; border-radius: 30px; font-weight: 600; width: 100%; cursor: pointer;">Assinar Agora</button>
                     </div>
                 </div>
                 
                 <!-- PAGAMENTO SEGURO -->
-                <div style="background: #eef2ff; border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 15px;">
-                    <i class="fab fa-mercadopago" style="color: #009ee3; font-size: 24px;"></i>
-                    <span style="font-size: 11px; color: #1e293b;">Pagamento seguro via Mercado Pago</span>
-                    <i class="fas fa-lock" style="color: #28a745; font-size: 12px;"></i>
+                <div style="background: #eef2ff; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 15px;">
+                    <i class="fab fa-mercadopago" style="color: #009ee3; font-size: 20px;"></i>
+                    <span style="font-size: 11px;">Pagamento seguro via Mercado Pago</span>
+                    <i class="fas fa-lock" style="color: #28a745;"></i>
                 </div>
                 
-                <!-- WHATSAPP E FECHAR -->
-                <div style="display: flex; gap: 12px;">
-                    <button onclick="abrirSuporteWhatsApp()" style="flex: 1; padding: 10px; background: #25D366; color: #fff; border: none; border-radius: 30px; font-weight: 600; cursor: pointer;">
+                <!-- BOTÕES WHATSAPP E FECHAR -->
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="abrirSuporteWhatsApp()" style="flex: 1; padding: 10px; background: #25D366; color: #fff; border: none; border-radius: 30px; font-weight: 500; cursor: pointer;">
                         <i class="fab fa-whatsapp"></i> Dúvidas?
                     </button>
-                    <button onclick="fecharModal()" style="flex: 1; padding: 10px; background: #6c757d; color: #fff; border: none; border-radius: 30px; font-weight: 600; cursor: pointer;">
+                    <button onclick="fecharModal()" style="flex: 1; padding: 10px; background: #6c757d; color: #fff; border: none; border-radius: 30px; font-weight: 500; cursor: pointer;">
                         Fechar
                     </button>
                 </div>
                 
-                <div style="margin-top: 15px; text-align: center; font-size: 10px; color: #6c757d;">
-                    Ao assinar, você concorda com os <a href="#" onclick="abrirPaginaModal('Termos de Uso', 'fa-file-alt', 'https://mylife.app.br/termos.html'); return false;" style="color: #667eea;">Termos de Uso</a> e <a href="#" onclick="abrirPaginaModal('Política de Cancelamento', 'fa-ban', 'https://mylife.app.br/cancelamentos.html'); return false;" style="color: #667eea;">Política de Cancelamento</a>
+                <div style="margin-top: 12px; text-align: center; font-size: 10px; color: #6c757d;">
+                    Ao assinar, você concorda com os 
+                    <a href="#" onclick="abrirPaginaModal('Termos de Uso', 'fa-file-alt', 'https://mylife.app.br/termos.html'); return false;" style="color: #667eea;">Termos de Uso</a> e 
+                    <a href="#" onclick="abrirPaginaModal('Política de Cancelamento', 'fa-ban', 'https://mylife.app.br/cancelamentos.html'); return false;" style="color: #667eea;">Política de Cancelamento</a>
                 </div>
             </div>
         </div>
