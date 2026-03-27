@@ -11989,7 +11989,11 @@ async function salvarNovoGiro() {
         const responsavel = usuarios.find(u => u.id == responsavelId);
         const responsavelNome = responsavel?.apelido || responsavel?.nome || 'desconhecido';
         
-        // 🔴 CORREÇÃO: valor_inicial é APENAS o valor, sem duplicar
+        // 🔴 CORREÇÃO: responsavel_id deve ser o UUID do usuário logado (App.currentUser.id)
+        // O responsavelId do select é o ID da tabela usuarios_familia, mas precisamos do UUID do auth.users
+        // Para simplificar, vamos usar o próprio usuário logado como gestor
+        const gestorId = App.currentUser.id; // UUID correto
+        
         let valorInicial = tipo === 'pegando' ? valor : -valor;
 
         const { data, error } = await App.supabase.from('giros').insert({
@@ -11998,15 +12002,14 @@ async function salvarNovoGiro() {
             valor_inicial: valorInicial,
             pessoa: pessoa,
             tipo_giro: tipo,
-            responsavel_id: responsavelId,
-            responsavel_nome: responsavelNome,
+            responsavel_id: gestorId,  // 🔴 USANDO O UUID DO USUÁRIO LOGADO
+            responsavel_nome: nomeUsuario,  // Nome do usuário logado
             observacao: observacao || null,
             added_by: nomeUsuario
         }).select();
 
         if (error) throw error;
 
-        // 🔴 CORREÇÃO: Registrar APENAS UMA movimentação inicial
         if (data && data[0]) {
             const giroId = data[0].id;
             
