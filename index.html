@@ -6299,6 +6299,8 @@ function abrirEdicaoContaIndividual(id, isRecorrente, dia, mes, ano) {
 function abrirEdicaoContaRecorrente(regraId, descricaoAtual, valorAtual, frequencia) {
     fecharModal();
     
+    console.log('🔧 Editando série recorrente - Regra ID:', regraId);
+    
     let valorExibicao = (valorAtual || 0).toFixed(2).replace('.', ',');
     
     let conteudo = `
@@ -6307,7 +6309,7 @@ function abrirEdicaoContaRecorrente(regraId, descricaoAtual, valorAtual, frequen
                 <i class="fas fa-info-circle" style="color: #3498db;"></i>
                 <strong style="margin-left: 8px;">Editando todas as ocorrências</strong>
                 <p style="margin-top: 8px; font-size: 13px; color: #2c3e50;">
-                    As alterações serão aplicadas a <strong>todas as contas</strong> desta série ${frequencia}.<br>
+                    As alterações serão aplicadas a <strong>todas as contas futuras</strong> desta série ${frequencia}.<br>
                     Contas já pagas ou editadas individualmente não serão afetadas.
                 </p>
             </div>
@@ -6329,7 +6331,7 @@ function abrirEdicaoContaRecorrente(regraId, descricaoAtual, valorAtual, frequen
             </div>
             
             <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
-                <button class="btn btn-primary" onclick="confirmarEdicaoRecorrente('${regraId}')" style="flex: 2;">
+                <button class="btn btn-primary" onclick="confirmarEdicaoRecorrente(${regraId})" style="flex: 2;">
                     <i class="fas fa-save"></i> Salvar em Todas
                 </button>
                 <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
@@ -6533,14 +6535,17 @@ function confirmarEdicaoRecorrente(regraId) {
         return;
     }
     
+    // Fechar o modal atual
     fecharModal();
     
+    // Buscar a regra
     let regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
     if (!regra) {
         showToast('Regra não encontrada', 'error');
         return;
     }
     
+    // Buscar todas as contas futuras desta regra
     let todasContas = App.dataCache.contas.filter(c => c.regra_id == regraId);
     let hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -6550,10 +6555,14 @@ function confirmarEdicaoRecorrente(regraId) {
         return dataConta >= hoje;
     });
     
+    console.log(`📊 Encontradas ${contasFuturo.length} contas futuras para atualizar`);
+    
+    // Mostrar loading
     showToast('Atualizando contas...', 'info');
     
     (async () => {
         try {
+            // Deletar as contas FUTURAS
             if (contasFuturo.length > 0) {
                 console.log(`🗑️ Deletando ${contasFuturo.length} contas futuras`);
                 for (let conta of contasFuturo) {
@@ -6564,15 +6573,18 @@ function confirmarEdicaoRecorrente(regraId) {
                 }
             }
             
+            // Deletar a regra antiga
             await App.supabase
                 .from('regras_contas')
                 .delete()
                 .eq('id', regraId);
             
+            // Calcular nova data de início
             let dataInicio = new Date();
             dataInicio.setDate(novoDia);
             dataInicio.setHours(12, 0, 0);
             
+            // Se a data de início já passou, usar o próximo mês
             if (dataInicio < hoje) {
                 dataInicio.setMonth(dataInicio.getMonth() + 1);
             }
@@ -6585,6 +6597,7 @@ function confirmarEdicaoRecorrente(regraId) {
             
             const nomeUsuario = getNomeUsuario();
             
+            // Criar nova regra
             let novaRegraData = {
                 user_id: App.currentUser.id,
                 descricao_base: novaDescricao,
@@ -6596,6 +6609,7 @@ function confirmarEdicaoRecorrente(regraId) {
                 added_by: nomeUsuario
             };
             
+            // Manter data_fim se existia
             if (regra.data_fim) {
                 novaRegraData.data_fim = regra.data_fim;
             }
@@ -6607,16 +6621,25 @@ function confirmarEdicaoRecorrente(regraId) {
             
             if (regraError) throw regraError;
             
-            showToast('✅ Contas atualizadas com sucesso!', 'success');
+            console.log('✅ Nova regra criada com ID:', novaRegra[0].id);
             
-            await sincronizarGoogleAutomatico();
+            // 🔴 FORÇAR RECARREGAMENTO COMPLETO DOS DADOS
             await carregarDados(true);
             await atualizarCalendario();
             await mostrarConteudo();
             
+            showToast('✅ Contas atualizadas com sucesso!', 'success');
+            
+            // Sincronizar com Google (se conectado)
+            await sincronizarGoogleAutomatico();
+            
         } catch (error) {
             console.error('Erro ao atualizar contas:', error);
             showToast('Erro: ' + error.message, 'error');
+            // Recarregar dados para restaurar estado anterior
+            await carregarDados(true);
+            await atualizarCalendario();
+            await mostrarConteudo();
         }
     })();
 }
