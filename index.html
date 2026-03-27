@@ -5950,6 +5950,9 @@ async function salvarNovaConta() {
             let dataInicio = new Date(dataInicioStr + 'T12:00:00');
             let diaVencimento = dataInicio.getDate();
             
+                        // 🔴 GARANTIR QUE O NOME É STRING
+            const nomeUsuarioString = String(nomeUsuario);
+            
             let regraData = {
                 user_id: App.currentUser.id,
                 descricao_base: descricao,
@@ -5958,7 +5961,7 @@ async function salvarNovaConta() {
                 frequencia: frequencia,
                 data_inicio: dataInicioStr,
                 ativo: true,
-                added_by: nomeUsuario
+                added_by: nomeUsuarioString
             };
             
             if (dataFimStr) {
@@ -14534,4 +14537,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 010
+Edição 011
