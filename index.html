@@ -4237,90 +4237,95 @@ function atualizarTarefaBadge() {
             content.innerHTML = html;
         }
 
-        function renderizarItemCard(item, mes, ano) {
-            if (!item) return '';
-            let hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-            let classe = '';
-            let titulo = '';
-            let detalhes = '';
-            let valor = '';
-            let icone = 'fa-file-invoice-dollar';
-            let botoes = '';
-            let usuario = item.added_by || item.usuario || App.usuarioAtual || 'desconhecido';
-            let usuarioBadge = `<span class="usuario-badge">${usuario}</span>`;
-            let podeEditar = App.assinaturaAtiva;
+       function renderizarItemCard(item, mes, ano) {
+    if (!item) return '';
+    let hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    let classe = '';
+    let titulo = '';
+    let detalhes = '';
+    let valor = '';
+    let icone = 'fa-file-invoice-dollar';
+    let botoes = '';
+    
+    // 🔴 CORREÇÃO: GARANTIR QUE O NOME DO USUÁRIO SEJA STRING
+    let usuarioRaw = item.added_by || item.usuario || App.usuarioAtual || 'desconhecido';
+    let usuario = (typeof usuarioRaw === 'object') 
+        ? (usuarioRaw.apelido || usuarioRaw.nome || 'desconhecido') 
+        : String(usuarioRaw);
+    let usuarioBadge = `<span class="usuario-badge">${usuario}</span>`;
+    let podeEditar = App.assinaturaAtiva;
 
-            if (item.tipo === 'conta') {
-                let venc = criarData(item.ano || ano, item.mes || mes, item.dia || item.dia_vencimento);
-                if (item.valor_pago > 0 || item.status === 'paga') {
-                    classe = 'paga';
-                } else if (venc < hoje) {
-                    classe = 'vencida';
-                } else {
-                    classe = 'pendente';
-                }
-
-                titulo = item.descricao || 'Conta sem descrição';
-                if (item.frequencia && item.frequencia !== 'unico') titulo += ` <span class="item-badge badge-recorrente">${item.frequencia}</span>`;
-                detalhes = `Vence ${item.dia || item.dia_vencimento} ${getNomeMes(item.mes || mes)}/${item.ano || ano}`;
-                
-                let valorExibicao = item.valor_pago > 0 ? item.valor_pago : (item.valor_original || item.valor || 0);
-                valor = formatCurrency(valorExibicao);
-                
-                if (podeEditar) {
-                    if (item.valor_pago > 0 || item.status === 'paga') {
-                        botoes += `<button class="action-btn undo" onclick="event.stopPropagation();verificarEAcaoEdicao(() => abrirModalDesfazerPagamento('${item.id}','${item.descricao}',${valorExibicao},'${item.regra_id || ''}',${item.dia || item.dia_vencimento},${item.mes || mes},${item.ano || ano},${item.isRecorrente || false}))"><i class="fas fa-undo-alt"></i></button>`;
-                    } else {
-                        botoes += `<button class="action-btn pay" onclick="event.stopPropagation();verificarEAcaoEdicao(() => abrirModalPagamento('${item.id}','${item.descricao}',${item.valor_original || item.valor || 0},'${item.regra_id || ''}',${item.dia || item.dia_vencimento},${item.mes || mes},${item.ano || ano},${item.isRecorrente || false}, '${item.codigo_pagamento || ''}'))"><i class="fas fa-dollar-sign"></i></button>`;
-                    }
-                    
-                    botoes += `<button class="action-btn edit" onclick="event.stopPropagation();verificarEAcaoEdicao(() => editarItem('${item.id}','${item.tipo}',${item.isRecorrente || false},'${item.regra_id || ''}',${item.isIndividual || false},'${item.individual_id || ''}',${item.dia || item.dia_vencimento},${item.mes || mes},${item.ano || ano}))"><i class="fas fa-edit"></i></button>`;
-                    
-                    botoes += `<button class="action-btn delete" onclick="event.stopPropagation();verificarEAcaoEdicao(() => confirmarExclusao('${item.id}','${item.tipo}',${item.isRecorrente || false},'${item.regra_id || ''}',${item.dia || 0},${item.mes || mes},${item.ano || ano},${item.isIndividual || false},'${item.individual_id || ''}'))"><i class="fas fa-trash"></i></button>`;
-                }
-
-                return `<div class="item-card ${classe}" ${podeEditar ? '' : 'style="cursor:default"'}>
-                    <div class="item-info">
-                        <div class="item-title"><i class="fas ${icone}"></i> ${titulo} ${usuarioBadge}</div>
-                        <div class="item-details">${detalhes}</div>
-                    </div>
-                    <div class="item-value">${valor}</div>
-                    <div class="item-actions">
-                        ${botoes}
-                    </div>
-                </div>`;
-            } else if (item.tipo === 'evento') {
-                let dataEv = criarData(item.ano, item.mes, item.dia);
-                classe = dataEv < hoje ? 'paga' : 'pendente';
-                let iconeEvento = item.icone || 'fa-star';
-                let corIcone = item.cor_icone || '#ffd700';
-                titulo = item.titulo || 'Evento sem título';
-                if (item.frequencia && item.frequencia !== 'unico') {
-                    titulo += ` <span class="item-badge badge-recorrente">${item.frequencia}</span>`;
-                }
-                detalhes = `${item.dia} ${getNomeMes(item.mes)}/${item.ano}`;
-                if (item.hora) detalhes += ` | ${item.hora}`;
-                if (item.local) detalhes += ` | ${item.local}`;
-
-                if (podeEditar) {
-                    botoes = `
-                        <button class="action-btn edit" onclick="event.stopPropagation();verificarEAcaoEdicao(() => editarItem('${item.id}','${item.tipo}',${item.isRecorrente || false},'${item.regra_id || ''}',${item.isIndividual || false},'${item.individual_id || ''}',${item.dia},${item.mes},${item.ano}))"><i class="fas fa-edit"></i></button>
-                        <button class="action-btn delete" onclick="event.stopPropagation();verificarEAcaoEdicao(() => confirmarExclusao('${item.id}','${item.tipo}',${item.isRecorrente || false},'${item.regra_id || ''}',${item.dia || 0},${item.mes || mes},${item.ano || ano},${item.isIndividual || false},'${item.individual_id || ''}'))"><i class="fas fa-trash"></i></button>
-                    `;
-                }
-
-                return `<div class="item-card ${classe}" ${podeEditar ? '' : 'style="cursor:default"'}>
-                    <div class="item-info">
-                        <div class="item-title"><span class="event-emoji"><i class="fas ${iconeEvento}" style="color:${corIcone}"></i></span> ${titulo} ${usuarioBadge}</div>
-                        <div class="item-details">${detalhes}</div>
-                    </div>
-                    <div class="item-actions">
-                        ${botoes}
-                    </div>
-                </div>`;
-            }
+    if (item.tipo === 'conta') {
+        let venc = criarData(item.ano || ano, item.mes || mes, item.dia || item.dia_vencimento);
+        if (item.valor_pago > 0 || item.status === 'paga') {
+            classe = 'paga';
+        } else if (venc < hoje) {
+            classe = 'vencida';
+        } else {
+            classe = 'pendente';
         }
+
+        titulo = item.descricao || 'Conta sem descrição';
+        if (item.frequencia && item.frequencia !== 'unico') titulo += ` <span class="item-badge badge-recorrente">${item.frequencia}</span>`;
+        detalhes = `Vence ${item.dia || item.dia_vencimento} ${getNomeMes(item.mes || mes)}/${item.ano || ano}`;
+        
+        let valorExibicao = item.valor_pago > 0 ? item.valor_pago : (item.valor_original || item.valor || 0);
+        valor = formatCurrency(valorExibicao);
+        
+        if (podeEditar) {
+            if (item.valor_pago > 0 || item.status === 'paga') {
+                botoes += `<button class="action-btn undo" onclick="event.stopPropagation();verificarEAcaoEdicao(() => abrirModalDesfazerPagamento('${item.id}','${item.descricao}',${valorExibicao},'${item.regra_id || ''}',${item.dia || item.dia_vencimento},${item.mes || mes},${item.ano || ano},${item.isRecorrente || false}))"><i class="fas fa-undo-alt"></i></button>`;
+            } else {
+                botoes += `<button class="action-btn pay" onclick="event.stopPropagation();verificarEAcaoEdicao(() => abrirModalPagamento('${item.id}','${item.descricao}',${item.valor_original || item.valor || 0},'${item.regra_id || ''}',${item.dia || item.dia_vencimento},${item.mes || mes},${item.ano || ano},${item.isRecorrente || false}, '${item.codigo_pagamento || ''}'))"><i class="fas fa-dollar-sign"></i></button>`;
+            }
+            
+            botoes += `<button class="action-btn edit" onclick="event.stopPropagation();verificarEAcaoEdicao(() => editarItem('${item.id}','${item.tipo}',${item.isRecorrente || false},'${item.regra_id || ''}',${item.isIndividual || false},'${item.individual_id || ''}',${item.dia || item.dia_vencimento},${item.mes || mes},${item.ano || ano}))"><i class="fas fa-edit"></i></button>`;
+            
+            botoes += `<button class="action-btn delete" onclick="event.stopPropagation();verificarEAcaoEdicao(() => confirmarExclusao('${item.id}','${item.tipo}',${item.isRecorrente || false},'${item.regra_id || ''}',${item.dia || 0},${item.mes || mes},${item.ano || ano},${item.isIndividual || false},'${item.individual_id || ''}'))"><i class="fas fa-trash"></i></button>`;
+        }
+
+        return `<div class="item-card ${classe}" ${podeEditar ? '' : 'style="cursor:default"'}>
+            <div class="item-info">
+                <div class="item-title"><i class="fas ${icone}"></i> ${titulo} ${usuarioBadge}</div>
+                <div class="item-details">${detalhes}</div>
+            </div>
+            <div class="item-value">${valor}</div>
+            <div class="item-actions">
+                ${botoes}
+            </div>
+        </div>`;
+    } else if (item.tipo === 'evento') {
+        let dataEv = criarData(item.ano, item.mes, item.dia);
+        classe = dataEv < hoje ? 'paga' : 'pendente';
+        let iconeEvento = item.icone || 'fa-star';
+        let corIcone = item.cor_icone || '#ffd700';
+        titulo = item.titulo || 'Evento sem título';
+        if (item.frequencia && item.frequencia !== 'unico') {
+            titulo += ` <span class="item-badge badge-recorrente">${item.frequencia}</span>`;
+        }
+        detalhes = `${item.dia} ${getNomeMes(item.mes)}/${item.ano}`;
+        if (item.hora) detalhes += ` | ${item.hora}`;
+        if (item.local) detalhes += ` | ${item.local}`;
+
+        if (podeEditar) {
+            botoes = `
+                <button class="action-btn edit" onclick="event.stopPropagation();verificarEAcaoEdicao(() => editarItem('${item.id}','${item.tipo}',${item.isRecorrente || false},'${item.regra_id || ''}',${item.isIndividual || false},'${item.individual_id || ''}',${item.dia},${item.mes},${item.ano}))"><i class="fas fa-edit"></i></button>
+                <button class="action-btn delete" onclick="event.stopPropagation();verificarEAcaoEdicao(() => confirmarExclusao('${item.id}','${item.tipo}',${item.isRecorrente || false},'${item.regra_id || ''}',${item.dia || 0},${item.mes || mes},${item.ano || ano},${item.isIndividual || false},'${item.individual_id || ''}'))"><i class="fas fa-trash"></i></button>
+            `;
+        }
+
+        return `<div class="item-card ${classe}" ${podeEditar ? '' : 'style="cursor:default"'}>
+            <div class="item-info">
+                <div class="item-title"><span class="event-emoji"><i class="fas ${iconeEvento}" style="color:${corIcone}"></i></span> ${titulo} ${usuarioBadge}</div>
+                <div class="item-details">${detalhes}</div>
+            </div>
+            <div class="item-actions">
+                ${botoes}
+            </div>
+        </div>`;
+    }
+}
 
         async function renderizarGastos(content, mes, ano) {
     let gastosMes = App.dataCache.gastos.filter(g => g.mes === mes && g.ano === ano);
@@ -14568,4 +14573,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 012
+Edição 013
