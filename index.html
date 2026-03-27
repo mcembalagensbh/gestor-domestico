@@ -5318,16 +5318,27 @@ function abrirExtratoCompleto(id) {
 // RENDERIZAR GIROS (COM NOVO LAYOUT E BOTÕES)
 // ============================================
 
+// ============================================
+// RENDERIZAR GIROS (APENAS GIROS DO GESTOR)
+// ============================================
+
 async function renderizarGiros(content) {
     let giros = App.dataCache.giros || [];
+    let usuarioAtual = App.usuarioAtual;
     let podeEditar = App.assinaturaAtiva;
     
-    if (giros.length === 0) {
+    // 🔴 FILTRAR APENAS GIROS ONDE O USUÁRIO ATUAL É O GESTOR
+    let meusGiros = [];
+    if (usuarioAtual) {
+        meusGiros = giros.filter(g => g.responsavel_id == usuarioAtual.id);
+    }
+    
+    if (meusGiros.length === 0) {
         content.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-hand-holding-usd"></i>
-                <p>Nenhum giro cadastrado</p>
-                <p style="font-size: 12px; color: var(--gray);">Use para controlar empréstimos informais com amigos e familiares</p>
+                <p>Nenhum giro para gerenciar</p>
+                <p style="font-size: 12px; color: var(--gray);">Você só vê os giros onde é o gestor.</p>
                 ${podeEditar ? '<button class="btn btn-primary" onclick="verificarEAcao(\'giro\')" style="margin-top:16px"><i class="fas fa-plus"></i> Novo Giro</button>' : ''}
             </div>
         `;
@@ -5351,11 +5362,14 @@ async function renderizarGiros(content) {
                 </button>
             ` : ''}
         </div>
+        <p style="font-size: 11px; color: var(--gray); margin: -10px 0 15px 10px;">
+            <i class="fas fa-info-circle"></i> Você é o gestor destes giros. Apenas você pode gerenciá-los.
+        </p>
     `;
     
     html += '<div class="items-list">';
     
-    for (const g of giros) {
+    for (const g of meusGiros) {
         // Buscar movimentações
         let movimentacoes = App.dataCache.movimentacoesGiro?.filter(m => m.giro_id === g.id) || [];
         let totalPago = movimentacoes.reduce((acc, m) => acc + (m.tipo === 'pagamento' ? m.valor : 0), 0);
@@ -5450,7 +5464,6 @@ async function renderizarGiros(content) {
                         <div style="font-weight: 600; font-size: 1rem;">${g.descricao}</div>
                         <div style="font-size: 12px; color: var(--gray); margin-top: 2px;">
                             <i class="fas fa-user-friends"></i> ${g.pessoa}
-                            ${g.responsavel_nome ? `<span style="margin-left: 8px;"><i class="fas fa-user-check"></i> Resp: ${g.responsavel_nome}</span>` : ''}
                         </div>
                     </div>
                     <div style="text-align: right;">
@@ -5477,6 +5490,8 @@ async function renderizarGiros(content) {
     html += '</div>';
     content.innerHTML = html;
 }
+
+
 
 // ============================================
 // FUNÇÃO PARA ADICIONAR VALOR AO GIRO (AUMENTAR SALDO)
@@ -11780,6 +11795,10 @@ window.deletarItemLista = deletarItemLista;
 // ABRIR MODAL PARA CRIAR NOVO GIRO
 // ============================================
 
+// ============================================
+// ABRIR MODAL PARA CRIAR NOVO GIRO (VERSÃO CORRIGIDA)
+// ============================================
+
 function abrirNovoGiro() {
     // Buscar usuários da família
     let usuarios = App.dataCache.usuariosFamilia || [];
@@ -11801,19 +11820,19 @@ function abrirNovoGiro() {
         </div>
     `;
     
-    // Lista de usuários para selecionar responsável
+    // Lista de usuários para selecionar gestor
     let usuariosHtml = '';
     if (usuarios.length > 0) {
         usuariosHtml = `
-            <div class="form-group">
-                <label class="form-label"><i class="fas fa-user"></i> Responsável pelo pagamento</label>
+            <div class="form-group" id="grupoResponsavel">
+                <label class="form-label"><i class="fas fa-user-cog"></i> Quem vai gerenciar esse empréstimo?</label>
                 <select id="giroResponsavel" class="form-select">
                     <option value="">Selecione...</option>
                     ${usuarios.map(u => `
                         <option value="${u.id}" ${usuarioAtual && u.id == usuarioAtual.id ? 'selected' : ''}>${u.apelido} (${u.nome})</option>
                     `).join('')}
                 </select>
-                <small style="color: var(--gray);">Quem é responsável por pagar ou receber este valor?</small>
+                <small style="color: var(--gray);">Apenas o gestor selecionado poderá ver e gerenciar este giro.</small>
             </div>
         `;
     } else {
@@ -11850,13 +11869,13 @@ function abrirNovoGiro() {
                     <input type="text" id="giroValor" class="form-input" placeholder="0,00" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
                 </div>
                 
-                <!-- PESSOA (COM QUEM) -->
-                <div class="form-group">
-                    <label class="form-label"><i class="fas fa-user-friends"></i> Com quem?</label>
+                <!-- PESSOA (COM QUEM) - DINÂMICO -->
+                <div class="form-group" id="grupoPessoa">
+                    <label class="form-label" id="labelPessoa"><i class="fas fa-user-friends"></i> Com quem você está pegando o valor?</label>
                     <input type="text" id="giroPessoa" class="form-input" placeholder="Ex: João, Maria, Tio José...">
                 </div>
                 
-                <!-- RESPONSÁVEL -->
+                <!-- RESPONSÁVEL (GESTOR) -->
                 ${usuariosHtml}
                 
                 <!-- OBSERVAÇÃO -->
@@ -11890,15 +11909,21 @@ function abrirNovoGiro() {
         const btnEmprestando = document.getElementById('tipoEmprestando');
         const inputTipo = document.getElementById('giroTipo');
         const btnSalvar = document.getElementById('btnSalvarGiro');
+        const labelPessoa = document.getElementById('labelPessoa');
+        const inputPessoa = document.getElementById('giroPessoa');
         
         if (tipo === 'pegando') {
             btnPegando.classList.add('tipo-selecionado');
             btnEmprestando.classList.remove('tipo-selecionado');
             inputTipo.value = 'pegando';
+            labelPessoa.innerHTML = '<i class="fas fa-user-friends"></i> Com quem você está pegando o valor?';
+            inputPessoa.placeholder = 'Ex: João, Maria, Tio José...';
         } else {
             btnEmprestando.classList.add('tipo-selecionado');
             btnPegando.classList.remove('tipo-selecionado');
             inputTipo.value = 'emprestando';
+            labelPessoa.innerHTML = '<i class="fas fa-user-friends"></i> Para quem você está emprestando o valor?';
+            inputPessoa.placeholder = 'Ex: João, Maria, Tio José...';
         }
         
         // Habilitar botão salvar
@@ -11908,6 +11933,10 @@ function abrirNovoGiro() {
 
        // ============================================
 // SALVAR NOVO GIRO (COM TIPO E RESPONSÁVEL)
+// ============================================
+
+// ============================================
+// SALVAR NOVO GIRO (COM TIPO E RESPONSÁVEL) - VERSÃO CORRIGIDA
 // ============================================
 
 async function salvarNovoGiro() {
@@ -11937,32 +11966,33 @@ async function salvarNovoGiro() {
     }
 
     if (!pessoa) {
-        showToast('Digite com quem é o giro', 'warning');
+        const msg = tipo === 'pegando' ? 'Digite com quem você está pegando o valor' : 'Digite para quem você está emprestando o valor';
+        showToast(msg, 'warning');
         return;
     }
 
     if (!responsavelId) {
-        showToast('Selecione o responsável pelo pagamento', 'warning');
+        showToast('Selecione quem vai gerenciar este empréstimo', 'warning');
         return;
     }
 
     try {
-        // 🔴 AJUSTAR VALOR CONFORME O TIPO
-        // Se está pegando (recebeu dinheiro), valor_inicial é positivo
-        // Se está emprestando (deu dinheiro), valor_inicial é negativo
-        let valorInicial = tipo === 'pegando' ? valor : -valor;
-        
         // Buscar nome do responsável
         const usuarios = App.dataCache.usuariosFamilia || [];
         const responsavel = usuarios.find(u => u.id == responsavelId);
         const responsavelNome = responsavel?.apelido || responsavel?.nome || 'desconhecido';
+        
+        // Calcular valor inicial baseado no tipo
+        // Pegando: valor positivo (recebeu, tem dívida)
+        // Emprestando: valor negativo (deu, tem a receber)
+        let valorInicial = tipo === 'pegando' ? valor : -valor;
 
         const { data, error } = await App.supabase.from('giros').insert({
             user_id: App.currentUser.id,
             descricao: descricao,
             valor_inicial: valorInicial,
             pessoa: pessoa,
-            tipo_giro: tipo,  // 'pegando' ou 'emprestando'
+            tipo_giro: tipo,
             responsavel_id: responsavelId,
             responsavel_nome: responsavelNome,
             observacao: observacao || null,
@@ -11979,7 +12009,7 @@ async function salvarNovoGiro() {
                 user_id: App.currentUser.id,
                 giro_id: giroId,
                 tipo: tipo === 'pegando' ? 'recebimento' : 'pagamento',
-                valor: Math.abs(valor),
+                valor: valor,
                 descricao: `Giro criado: ${descricao}`,
                 data: new Date().toISOString(),
                 added_by: nomeUsuario
@@ -11995,7 +12025,9 @@ async function salvarNovoGiro() {
             usuario: nomeUsuario 
         });
         
-        showToast(`✅ Giro criado! ${tipo === 'pegando' ? 'Você pegou' : 'Você emprestou'} R$ ${valor.toFixed(2).replace('.', ',')} com ${pessoa}`, 'success');
+        const msgValor = valor.toFixed(2).replace('.', ',');
+        const msgTipo = tipo === 'pegando' ? `Você pegou R$ ${msgValor} com ${pessoa}` : `Você emprestou R$ ${msgValor} para ${pessoa}`;
+        showToast(`✅ ${msgTipo}`, 'success');
         
         fecharModal();
         await carregarDados(true);
@@ -12006,6 +12038,8 @@ async function salvarNovoGiro() {
         showToast('Erro: ' + error.message, 'error');
     }
 }
+
+
 
         function abrirPagamentoGiro(id, desc) {
             let conteudo = `
@@ -12184,6 +12218,10 @@ async function salvarNovoGiro() {
 // ABRIR MODAL DE RESUMO DO GIRO (HISTÓRICO COMPLETO)
 // ============================================
 
+// ============================================
+// ABRIR MODAL DE RESUMO DO GIRO (COM LIXEIRA EM CADA MOVIMENTAÇÃO)
+// ============================================
+
 function abrirResumoGiro(id) {
     let giro = App.dataCache.giros?.find(g => g.id == id);
     if (!giro) {
@@ -12206,12 +12244,12 @@ function abrirResumoGiro(id) {
         saldoAtual = Math.abs(giro.valor_inicial) - totalRecebido + totalPago;
     }
     
-    // Gerar HTML das movimentações
+    // Gerar HTML das movimentações com lixeira
     let movimentacoesHtml = '';
     if (movimentacoes.length === 0) {
         movimentacoesHtml = '<div style="text-align: center; padding: 30px; color: var(--gray);">Nenhuma movimentação registrada</div>';
     } else {
-        movimentacoesHtml = '<div style="max-height: 300px; overflow-y: auto;">';
+        movimentacoesHtml = '<div style="max-height: 350px; overflow-y: auto;">';
         movimentacoes.forEach(m => {
             const dataFormatada = formatarDataHora(m.data);
             const valorFormatado = formatCurrency(m.valor);
@@ -12221,7 +12259,7 @@ function abrirResumoGiro(id) {
             
             movimentacoesHtml += `
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f0f0f0;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
                         <div style="width: 32px; height: 32px; border-radius: 50%; background: ${tipoCor}20; display: flex; align-items: center; justify-content: center;">
                             <i class="fas ${tipoIcon}" style="color: ${tipoCor};"></i>
                         </div>
@@ -12231,8 +12269,15 @@ function abrirResumoGiro(id) {
                             <div style="font-size: 10px; color: var(--gray);">por: ${m.added_by || 'desconhecido'}</div>
                         </div>
                     </div>
-                    <div style="font-weight: 600; color: ${tipoCor};">
-                        ${m.tipo === 'pagamento' ? '- ' : '+ '}${valorFormatado}
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="font-weight: 600; color: ${tipoCor}; min-width: 80px; text-align: right;">
+                            ${m.tipo === 'pagamento' ? '- ' : '+ '}${valorFormatado}
+                        </div>
+                        <button onclick="deletarMovimentacaoGiro('${m.id}', ${m.valor}, '${m.tipo}', '${giro.id}')" 
+                                style="background: none; border: none; color: var(--danger); cursor: pointer; padding: 5px;"
+                                title="Excluir esta movimentação">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     </div>
                 </div>
             `;
@@ -12287,7 +12332,7 @@ function abrirResumoGiro(id) {
                         <span style="font-weight: 500;">${formatCurrency(valorInicial)}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="color: var(--gray);"><i class="fas fa-user-check"></i> Responsável</span>
+                        <span style="color: var(--gray);"><i class="fas fa-user-cog"></i> Gestor</span>
                         <span style="font-weight: 500;">${giro.responsavel_nome || 'Não definido'}</span>
                     </div>
                     ${giro.observacao ? `
@@ -12316,14 +12361,8 @@ function abrirResumoGiro(id) {
                     ${movimentacoesHtml}
                 </div>
                 
-                <!-- BOTÕES DE AÇÃO NO RESUMO -->
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-danger" onclick="abrirDeletarMovimentacaoGiro('${giro.id}')" style="flex: 1; background: var(--danger); color: #fff;">
-                        <i class="fas fa-trash-alt"></i> Deletar movimentação
-                    </button>
-                    <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
-                        Fechar
-                    </button>
+                <div class="btn-group" style="margin-top: 20px;">
+                    <button class="btn" onclick="fecharModal()" style="width: 100%; background: var(--gray); color: #fff;">Fechar</button>
                 </div>
             </div>
         </div>
@@ -12332,6 +12371,90 @@ function abrirResumoGiro(id) {
     abrirModal(`Resumo: ${giro.descricao}`, 'fa-chart-line', conteudo);
 }
 
+
+
+
+// ============================================
+// DELETAR MOVIMENTAÇÃO DIRETAMENTE DO RESUMO
+// ============================================
+
+async function deletarMovimentacaoGiro(movId, valor, tipo, giroId) {
+    if (!confirm(`Tem certeza que deseja excluir esta movimentação?\n\nValor: ${formatCurrency(valor)}\nTipo: ${tipo === 'pagamento' ? 'Pagamento' : 'Recebimento'}\n\nO saldo do giro será recalculado automaticamente.`)) {
+        return;
+    }
+    
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
+    try {
+        // Buscar o giro atual
+        const { data: giroAtual, error: buscaError } = await App.supabase
+            .from('giros')
+            .select('*')
+            .eq('id', giroId)
+            .single();
+        
+        if (buscaError) throw buscaError;
+        
+        // Reverter o efeito da movimentação no valor_inicial
+        let novoValorInicial;
+        if (giroAtual.tipo_giro === 'pegando') {
+            // Pegando: valor_inicial positivo
+            if (tipo === 'pagamento') {
+                // Pagamento reduz a dívida, então deletar aumenta a dívida
+                novoValorInicial = giroAtual.valor_inicial + valor;
+            } else {
+                // Recebimento aumenta a dívida (pegou mais), então deletar reduz a dívida
+                novoValorInicial = giroAtual.valor_inicial - valor;
+            }
+        } else {
+            // Emprestando: valor_inicial negativo
+            if (tipo === 'pagamento') {
+                // Pagamento (recebeu) reduz o valor a receber (torna menos negativo)
+                // Deletar aumenta o valor a receber (torna mais negativo)
+                novoValorInicial = giroAtual.valor_inicial - valor;
+            } else {
+                // Recebimento (emprestou mais) aumenta o valor a receber (torna mais negativo)
+                // Deletar reduz o valor a receber (torna menos negativo)
+                novoValorInicial = giroAtual.valor_inicial + valor;
+            }
+        }
+        
+        // Atualizar o valor_inicial do giro
+        await App.supabase
+            .from('giros')
+            .update({ valor_inicial: novoValorInicial })
+            .eq('id', giroId);
+        
+        // Deletar a movimentação
+        await App.supabase
+            .from('movimentacoes_giro')
+            .delete()
+            .eq('id', movId);
+        
+        await registrarHistorico('deletar_movimentacao_giro', `Movimentação deletada do giro ${giroId}`, { 
+            movId, 
+            tipo, 
+            valor, 
+            usuario: nomeUsuario 
+        });
+        
+        showToast('✅ Movimentação deletada com sucesso!', 'success');
+        
+        // Fechar modal atual e recarregar dados
+        fecharModal();
+        await carregarDados(true);
+        await mostrarConteudo();
+        
+        // Reabrir o resumo atualizado
+        setTimeout(() => {
+            abrirResumoGiro(giroId);
+        }, 500);
+        
+    } catch (error) {
+        console.error('Erro ao deletar movimentação:', error);
+        showToast('Erro: ' + error.message, 'error');
+    }
+}
 
 
 
@@ -15459,4 +15582,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 015
+Edição 016
