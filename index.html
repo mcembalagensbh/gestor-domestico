@@ -11962,43 +11962,34 @@ async function salvarNovoGiro() {
 
     const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
-    // Validações
     if (!tipo) {
-        showToast('Selecione o tipo do giro (Pegando ou Emprestando)', 'warning');
+        showToast('Selecione o tipo do giro', 'warning');
         return;
     }
-
     if (!descricao) {
         showToast('Digite uma descrição', 'warning');
         return;
     }
-
     if (!valor || valor <= 0) {
         showToast('Digite um valor válido', 'warning');
         return;
     }
-
     if (!pessoa) {
         const msg = tipo === 'pegando' ? 'Digite com quem você está pegando o valor' : 'Digite para quem você está emprestando o valor';
         showToast(msg, 'warning');
         return;
     }
-
     if (!responsavelId) {
         showToast('Selecione quem vai gerenciar este empréstimo', 'warning');
         return;
     }
 
     try {
-        // Buscar o usuário atual (gestor) - o ID é o UUID do auth.users
-        const gestorId = App.currentUser.id; // Este é o UUID correto
-        
-        // Buscar nome do responsável (do usuário atual)
         const usuarios = App.dataCache.usuariosFamilia || [];
         const responsavel = usuarios.find(u => u.id == responsavelId);
         const responsavelNome = responsavel?.apelido || responsavel?.nome || 'desconhecido';
         
-        // Calcular valor inicial baseado no tipo
+        // 🔴 CORREÇÃO: valor_inicial é APENAS o valor, sem duplicar
         let valorInicial = tipo === 'pegando' ? valor : -valor;
 
         const { data, error } = await App.supabase.from('giros').insert({
@@ -12007,7 +11998,7 @@ async function salvarNovoGiro() {
             valor_inicial: valorInicial,
             pessoa: pessoa,
             tipo_giro: tipo,
-            responsavel_id: gestorId,  // Usar o UUID do usuário logado
+            responsavel_id: responsavelId,
             responsavel_nome: responsavelNome,
             observacao: observacao || null,
             added_by: nomeUsuario
@@ -12015,7 +12006,7 @@ async function salvarNovoGiro() {
 
         if (error) throw error;
 
-        // Registrar a movimentação inicial
+        // 🔴 CORREÇÃO: Registrar APENAS UMA movimentação inicial
         if (data && data[0]) {
             const giroId = data[0].id;
             
@@ -12030,15 +12021,6 @@ async function salvarNovoGiro() {
             });
         }
 
-        await registrarHistorico('criacao_giro', `Giro criado: ${descricao}`, { 
-            descricao, 
-            valor, 
-            pessoa, 
-            tipo, 
-            responsavel: responsavelNome,
-            usuario: nomeUsuario 
-        });
-        
         const msgValor = valor.toFixed(2).replace('.', ',');
         const msgTipo = tipo === 'pegando' ? `Você pegou R$ ${msgValor} com ${pessoa}` : `Você emprestou R$ ${msgValor} para ${pessoa}`;
         showToast(`✅ ${msgTipo}`, 'success');
@@ -12407,31 +12389,16 @@ function abrirResumoGiro(id) {
         saldoAtual = Math.abs(giro.valor_inicial) - totalRecebido + totalPago;
     }
     
-    // VALOR INICIAL (SEM LIXEIRA)
+    // 🔴 VALOR INICIAL (SEM LIXEIRA - APENAS VISUALIZAÇÃO)
     const valorInicial = giro.tipo_giro === 'pegando' ? giro.valor_inicial : Math.abs(giro.valor_inicial);
     const dataCriacao = new Date(giro.created_at).toLocaleDateString('pt-BR');
     const tipoIconInicial = giro.tipo_giro === 'pegando' ? 'fa-arrow-down' : 'fa-arrow-up';
     const tipoCorInicial = giro.tipo_giro === 'pegando' ? '#dc3545' : '#28a745';
     const tipoTextoInicial = giro.tipo_giro === 'pegando' ? 'Valor pego' : 'Valor emprestado';
     
-    let movimentacoesHtml = `
-        <div style="background: #f8f9fa; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas ${tipoIconInicial}" style="color: ${tipoCorInicial};"></i>
-                    <div>
-                        <strong>${tipoTextoInicial}</strong>
-                        <div style="font-size: 11px; color: var(--gray);">${dataCriacao}</div>
-                    </div>
-                </div>
-                <div style="font-weight: 700; color: ${tipoCorInicial};">${formatCurrency(valorInicial)}</div>
-            </div>
-        </div>
-    `;
-    
-    // MOVIMENTAÇÕES (COM LIXEIRA)
+    // 🔴 MOVIMENTAÇÕES (COM LIXEIRA)
+    let movimentacoesHtml = '';
     if (movimentacoes.length > 0) {
-        movimentacoesHtml += '<div style="margin-top: 10px;"><strong>Movimentações:</strong></div>';
         movimentacoes.forEach(m => {
             const dataFormatada = new Date(m.data).toLocaleDateString('pt-BR');
             const tipoIcon = m.tipo === 'pagamento' ? 'fa-arrow-down' : 'fa-arrow-up';
@@ -12458,9 +12425,10 @@ function abrirResumoGiro(id) {
             `;
         });
     } else {
-        movimentacoesHtml += '<div style="text-align: center; padding: 20px; color: var(--gray);">Nenhuma movimentação registrada</div>';
+        movimentacoesHtml = '<div style="text-align: center; padding: 20px; color: var(--gray);">Nenhuma movimentação registrada</div>';
     }
     
+    // Saldo e cores
     let saldoClass, saldoIcon, saldoTexto;
     if (saldoAtual > 0) {
         saldoClass = giro.tipo_giro === 'pegando' ? '#dc3545' : '#28a745';
@@ -12496,12 +12464,31 @@ function abrirResumoGiro(id) {
                     <div><i class="fas fa-user-friends"></i> <strong>Pessoa:</strong> ${giro.pessoa}</div>
                     <div><i class="fas fa-user-cog"></i> <strong>Gestor:</strong> ${giro.responsavel_nome || 'Não definido'}</div>
                 </div>
+                
+                <!-- VALOR INICIAL (SEM LIXEIRA) -->
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas ${tipoIconInicial}" style="color: ${tipoCorInicial};"></i>
+                            <div>
+                                <strong>${tipoTextoInicial}</strong>
+                                <div style="font-size: 11px; color: var(--gray);">${dataCriacao}</div>
+                            </div>
+                        </div>
+                        <div style="font-weight: 700; color: ${tipoCorInicial};">${formatCurrency(valorInicial)}</div>
+                    </div>
+                </div>
+                
+                <!-- SALDO ATUAL -->
                 <div style="background: ${saldoClass}20; border-left: 3px solid ${saldoClass}; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
                     <div><i class="fas ${saldoIcon}"></i> <strong>Saldo atual:</strong> ${formatCurrency(Math.abs(saldoAtual))}</div>
                     <div style="font-size: 12px;">${saldoTexto}</div>
                 </div>
-                <div><strong>Histórico:</strong></div>
+                
+                <!-- MOVIMENTAÇÕES (COM LIXEIRA) -->
+                <div><strong>Histórico de movimentações:</strong></div>
                 ${movimentacoesHtml}
+                
                 <button class="btn" onclick="fecharModal()" style="width: 100%; margin-top: 15px; background: var(--gray); color: #fff;">Fechar</button>
             </div>
         </div>
@@ -15760,4 +15747,4 @@ function validarValorRecebimentoGiro(valorMaximo) {
 </html>
 
 
-Edição 121
+Edição 122
