@@ -11939,6 +11939,10 @@ function abrirNovoGiro() {
 // SALVAR NOVO GIRO (COM TIPO E RESPONSÁVEL) - VERSÃO CORRIGIDA
 // ============================================
 
+// ============================================
+// SALVAR NOVO GIRO (COM TIPO E RESPONSÁVEL) - VERSÃO CORRIGIDA
+// ============================================
+
 async function salvarNovoGiro() {
     let tipo = document.getElementById('giroTipo')?.value;
     let descricao = document.getElementById('giroDescricao')?.value.trim();
@@ -11977,14 +11981,15 @@ async function salvarNovoGiro() {
     }
 
     try {
-        // Buscar nome do responsável
+        // Buscar o usuário atual (gestor) - o ID é o UUID do auth.users
+        const gestorId = App.currentUser.id; // Este é o UUID correto
+        
+        // Buscar nome do responsável (do usuário atual)
         const usuarios = App.dataCache.usuariosFamilia || [];
         const responsavel = usuarios.find(u => u.id == responsavelId);
         const responsavelNome = responsavel?.apelido || responsavel?.nome || 'desconhecido';
         
         // Calcular valor inicial baseado no tipo
-        // Pegando: valor positivo (recebeu, tem dívida)
-        // Emprestando: valor negativo (deu, tem a receber)
         let valorInicial = tipo === 'pegando' ? valor : -valor;
 
         const { data, error } = await App.supabase.from('giros').insert({
@@ -11993,7 +11998,7 @@ async function salvarNovoGiro() {
             valor_inicial: valorInicial,
             pessoa: pessoa,
             tipo_giro: tipo,
-            responsavel_id: responsavelId,
+            responsavel_id: gestorId,  // Usar o UUID do usuário logado
             responsavel_nome: responsavelNome,
             observacao: observacao || null,
             added_by: nomeUsuario
@@ -15582,4 +15587,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 016
+Edição 117
