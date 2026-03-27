@@ -2346,10 +2346,12 @@
                 <h1><i class="fas fa-home"></i> My Life</h1>
                 <div class="header-center">
                     <button class="header-today-btn" id="btnToday"><i class="fas fa-calendar-day"></i> Hoje</button>
-                    <div class="saldo-header" id="btnSaldoHeader" style="display:flex; cursor: pointer;">
-    <i class="fas fa-wallet"></i>
-    <span id="saldoHeaderValue">R$ 0,00</span>
-    <i id="saldoCoroaIcon" class="fas fa-crown" style="font-size: 10px; margin-left: 4px; color: #ffc107; display: none;"></i>
+                    <div style="display: flex; align-items: center; gap: 2px; position: relative;">
+    <div class="saldo-header" id="btnSaldoHeader" style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+        <i class="fas fa-wallet"></i>
+        <span id="saldoHeaderValue">R$ 0,00</span>
+    </div>
+    <i id="saldoCoroaIcon" class="fas fa-crown" style="font-size: 14px; color: #ffc107; display: none; transform: rotate(15deg); margin-left: -8px; position: relative; top: -4px;"></i>
 </div>
                 </div>
                 <div class="header-actions">
@@ -2815,6 +2817,9 @@ document.addEventListener('DOMContentLoaded', function() {
         function atualizarSaldoHeader() {
     const saldoElement = document.getElementById('btnSaldoHeader');
     const valorElement = document.getElementById('saldoHeaderValue');
+    const coroaIcon = document.function atualizarSaldoHeader() {
+    const saldoElement = document.getElementById('btnSaldoHeader');
+    const valorElement = document.getElementById('saldoHeaderValue');
     const coroaIcon = document.getElementById('saldoCoroaIcon');
     
     // Verificar se é assinante
@@ -2824,19 +2829,24 @@ document.addEventListener('DOMContentLoaded', function() {
         saldoElement.style.display = 'flex';
         
         if (isAssinante) {
-            // Assinante: mostra o saldo normalmente
+            // Assinante: mostra o saldo normalmente, coroa escondida
             valorElement.textContent = formatCurrency(App.saldoCentral.valor);
             if (coroaIcon) coroaIcon.style.display = 'none';
         } else {
-            // Grátis: mostra 0,00 e exibe a coroa
+            // Grátis: mostra 0,00 e exibe a coroa tombada
             valorElement.textContent = formatCurrency(0);
-            if (coroaIcon) coroaIcon.style.display = 'inline-block';
+            if (coroaIcon) {
+                coroaIcon.style.display = 'inline-block';
+                // Adicionar classe para animação sutil
+                coroaIcon.style.transform = 'rotate(15deg)';
+                coroaIcon.style.transition = 'transform 0.2s ease';
+            }
         }
     } else {
         saldoElement.style.display = 'none';
+        if (coroaIcon) coroaIcon.style.display = 'none';
     }
 }
-
 
 // ============================================
 // EXPLICAR SALDO PARA USUÁRIOS GRÁTIS
@@ -3399,7 +3409,7 @@ function abrirModalAssinatura() {
                         </div>
                     </div>
                 </div>
-                
+                <br><br>
                 <!-- PLANOS COM BOTÕES -->
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
                     <!-- PLANO ANUAL (ROXO - DESTAQUE) -->
