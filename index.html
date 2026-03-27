@@ -2143,7 +2143,7 @@
             <div onclick="abrirModalAssinatura(); fecharSideMenu()" style="background: linear-gradient(135deg, #f39c12, #e67e22); border-radius: 12px; padding: 10px 12px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <div>
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.9);">✨ Você está na Versão Grátis</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.9);">✨ Você está no plano Grátis</div>
                         <div style="font-weight: 700; font-size: 14px; color: #fff;">Clique e seja Premium</div>
                         <div style="font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 2px;"><i class="fas fa-info-circle"></i> Saiba mais</div>
                     </div>
@@ -3281,151 +3281,152 @@ function abrirModalAssinatura() {
             ` : ''}
             
             <div style="padding: 16px;">
+                <!-- CABEÇALHO DA TABELA -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; background: #f8f9fa; border-radius: 12px 12px 0 0; margin-bottom: 2px;">
+                    <div style="padding: 14px; text-align: center; font-weight: 700; font-size: 16px; background: #e9ecef; border-radius: 12px 0 0 0;">Grátis</div>
+                    <div style="padding: 14px; text-align: center; font-weight: 700; font-size: 16px; background: linear-gradient(135deg, #f39c12, #e67e22); color: #fff; border-radius: 0 12px 0 0;">Premium</div>
+                </div>
+                
                 <!-- TABELA DE COMPARAÇÃO -->
-                <div style="background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid #e9ecef; margin-bottom: 20px;">
-                    <!-- CABEÇALHO DA TABELA -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; background: #f8f9fa; border-bottom: 2px solid #e9ecef;">
-                        <div style="padding: 12px; text-align: center; font-weight: 700; font-size: 14px;">Grátis</div>
-                        <div style="padding: 12px; text-align: center; font-weight: 700; font-size: 14px; background: linear-gradient(135deg, #f39c12, #e67e22); color: #fff;">Premium</div>
-                    </div>
+                <div style="background: #fff; border-radius: 0 0 12px 12px; overflow: hidden; border: 1px solid #e9ecef; margin-bottom: 20px;">
                     
                     <!-- PUBLICIDADE -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Publicidade</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fffae6;">Com anúncios</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Sem anúncios</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Publicidade</div>
+                        <div style="padding: 12px 12px; background: #fffae6;">Com anúncios</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;">Sem anúncios</div>
                     </div>
                     
                     <!-- CONTAS ÚNICAS -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Contas únicas</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">5 por mês</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Ilimitado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Contas únicas</div>
+                        <div style="padding: 12px 12px;">5 por mês</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
                     </div>
                     
                     <!-- CONTAS RECORRENTES -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Contas recorrentes</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">5 por mês</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Ilimitado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Contas recorrentes</div>
+                        <div style="padding: 12px 12px;">5 por mês</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
                     </div>
                     
                     <!-- EVENTOS ÚNICOS -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Eventos únicos</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">5 por mês</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Ilimitado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Eventos únicos</div>
+                        <div style="padding: 12px 12px;">5 por mês</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
                     </div>
                     
                     <!-- EVENTOS RECORRENTES -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Eventos recorrentes</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">2 por mês</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Ilimitado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Eventos recorrentes</div>
+                        <div style="padding: 12px 12px;">2 por mês</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
                     </div>
                     
                     <!-- LISTA DE COMPRAS -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Lista de compras</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">10 itens</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Ilimitado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Lista de compras</div>
+                        <div style="padding: 12px 12px;">10 itens</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
                     </div>
                     
                     <!-- NOTAS E ANOTAÇÕES -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Notas e anotações</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">3 por mês</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Ilimitado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Notas e anotações</div>
+                        <div style="padding: 12px 12px;">3 por mês</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
                     </div>
                     
                     <!-- GASTOS -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Gastos (lançamentos)</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">8 por mês</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Ilimitado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Gastos (lançamentos)</div>
+                        <div style="padding: 12px 12px;">8 por mês</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
                     </div>
                     
                     <!-- USUÁRIOS SIMULTÂNEOS -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Usuários simultâneos</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">2 usuários</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Ilimitado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Usuários simultâneos</div>
+                        <div style="padding: 12px 12px;">2 usuários</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
                     </div>
                     
                     <!-- SINCRONIZAÇÃO GOOGLE CALENDAR -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Sync Google Calendar</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">Não disponível</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Completo</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Sync Google Calendar</div>
+                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Completo</div>
                     </div>
                     
                     <!-- CALENDÁRIOS ASSINADOS -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Calendários assinados</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">Não disponível</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Completo</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Calendários assinados</div>
+                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Completo</div>
                     </div>
                     
                     <!-- IMPORTAR .ICS -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Importar .ics</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">Não disponível</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Liberado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Importar .ics</div>
+                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Liberado</div>
                     </div>
                     
                     <!-- NOTIFICAÇÕES -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Notificações</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">Não disponível</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Completo</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Notificações</div>
+                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Completo</div>
                     </div>
                     
                     <!-- TAREFAS COM AGENDAMENTOS -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Tarefas com agendamentos</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">Não disponível</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Ilimitado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Tarefas com agendamentos</div>
+                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
                     </div>
                     
                     <!-- CONTROLE DE SALDOS -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #f0f0f0;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Controle de saldos e extratos</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">Não disponível</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Completo</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Controle de saldos e extratos</div>
+                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Completo</div>
                     </div>
                     
                     <!-- GIROS (EMPRÉSTIMOS) -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr;">
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fafafa;">Giros (controle de empréstimos)</div>
-                        <div style="padding: 10px 12px; font-size: 13px;">Não disponível</div>
-                        <div style="padding: 10px 12px; font-size: 13px; background: #fef7e0;">Ilimitado</div>
+                        <div style="padding: 12px 12px; background: #fafafa; font-weight: 500;">Giros (controle de empréstimos)</div>
+                        <div style="padding: 12px 12px;"><span style="color: #dc3545;">✗</span> Não disponível</div>
+                        <div style="padding: 12px 12px; background: #fef7e0;"><span style="color: #28a745;">✓</span> Ilimitado</div>
                     </div>
                 </div>
                 
                 <!-- PLANOS COM BOTÕES -->
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-                    <!-- PLANO ANUAL (DESTAQUE) -->
-                    <div onclick="gerarLinkPagamento('anual')" style="background: linear-gradient(135deg, #f39c12, #e67e22); border-radius: 12px; padding: 14px 16px; cursor: pointer; position: relative;">
-                        <div style="position: absolute; top: -10px; right: 12px; background: #dc3545; color: #fff; padding: 3px 12px; border-radius: 20px; font-size: 10px; font-weight: 700;">🔥 MAIS VENDIDO</div>
+                    <!-- PLANO ANUAL (ROXO - DESTAQUE) -->
+                    <div onclick="gerarLinkPagamento('anual')" style="background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; padding: 14px 16px; cursor: pointer; position: relative;">
+                        <div style="position: absolute; top: -10px; right: 12px; background: #f39c12; color: #fff; padding: 3px 12px; border-radius: 20px; font-size: 10px; font-weight: 700;">🔥 MAIS VENDIDO</div>
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
                             <div>
                                 <div style="font-weight: 700; font-size: 18px; color: #fff;">Plano Anual</div>
                                 <div style="font-size: 12px; color: rgba(255,255,255,0.9);">Renovação automática anual</div>
-                                <div style="font-size: 13px; color: #ffd700; margin-top: 4px;"><strong>💰 R$ 15,83/mês</strong> (equivalente)</div>
+                                <div style="font-size: 20px; font-weight: 700; color: #ffd700; margin-top: 6px;"><strong>💰 R$ 15,83/mês</strong></div>
                             </div>
                             <div style="text-align: right;">
-                                <div style="font-size: 14px; color: rgba(255,255,255,0.7); text-decoration: line-through;">R$ 214,80</div>
-                                <div style="font-size: 24px; font-weight: 700; color: #ffd700;">R$ 189,90</div>
+                                <div style="font-size: 13px; color: rgba(255,255,255,0.6); text-decoration: line-through;">R$ 214,80</div>
+                                <div style="font-size: 20px; font-weight: 700; color: #ffd700;">R$ 189,90</div>
                                 <div style="font-size: 10px; color: rgba(255,255,255,0.7);">/ano</div>
                             </div>
                         </div>
-                        <button style="margin-top: 12px; background: #fff; color: #e67e22; border: none; padding: 10px; border-radius: 30px; font-weight: 600; width: 100%; cursor: pointer; font-size: 14px;">
+                        <button style="margin-top: 12px; background: #fff; color: #667eea; border: none; padding: 10px; border-radius: 30px; font-weight: 600; width: 100%; cursor: pointer; font-size: 14px;">
                             <i class="fas fa-crown"></i> Assinar Plano Anual
                         </button>
                     </div>
                     
-                    <!-- PLANO MENSAL -->
-                    <div onclick="gerarLinkPagamento('mensal')" style="background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; padding: 14px 16px; cursor: pointer;">
+                    <!-- PLANO MENSAL (LARANJA) -->
+                    <div onclick="gerarLinkPagamento('mensal')" style="background: linear-gradient(135deg, #f39c12, #e67e22); border-radius: 12px; padding: 14px 16px; cursor: pointer;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
                             <div>
                                 <div style="font-weight: 700; font-size: 18px; color: #fff;">Plano Mensal</div>
@@ -3436,7 +3437,7 @@ function abrirModalAssinatura() {
                                 <div style="font-size: 10px; color: rgba(255,255,255,0.7);">/mês</div>
                             </div>
                         </div>
-                        <button style="margin-top: 12px; background: #fff; color: #667eea; border: none; padding: 10px; border-radius: 30px; font-weight: 600; width: 100%; cursor: pointer; font-size: 14px;">
+                        <button style="margin-top: 12px; background: #fff; color: #e67e22; border: none; padding: 10px; border-radius: 30px; font-weight: 600; width: 100%; cursor: pointer; font-size: 14px;">
                             <i class="fas fa-crown"></i> Assinar Plano Mensal
                         </button>
                     </div>
