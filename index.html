@@ -5322,15 +5322,22 @@ function abrirExtratoCompleto(id) {
 // RENDERIZAR GIROS (APENAS GIROS DO GESTOR)
 // ============================================
 
+// ============================================
+// RENDERIZAR GIROS (APENAS GIROS DO GESTOR) - VERSÃO CORRIGIDA
+// ============================================
+
 async function renderizarGiros(content) {
     let giros = App.dataCache.giros || [];
     let usuarioAtual = App.usuarioAtual;
     let podeEditar = App.assinaturaAtiva;
     
     // 🔴 FILTRAR APENAS GIROS ONDE O USUÁRIO ATUAL É O GESTOR
+    // O responsavel_id é o UUID do auth.users, precisamos comparar com App.currentUser.id
     let meusGiros = [];
-    if (usuarioAtual) {
-        meusGiros = giros.filter(g => g.responsavel_id == usuarioAtual.id);
+    if (usuarioAtual && App.currentUser) {
+        meusGiros = giros.filter(g => g.responsavel_id === App.currentUser.id);
+        console.log('🔍 Giros do gestor:', meusGiros.length);
+        console.log('👤 Usuário atual ID (auth):', App.currentUser.id);
     }
     
     if (meusGiros.length === 0) {
@@ -5382,7 +5389,6 @@ async function renderizarGiros(content) {
         let saldoTexto;
         
         if (g.tipo_giro === 'pegando') {
-            // PEGANDO: valor_inicial positivo, pagamentos reduzem, recebimentos aumentam
             saldoAtual = g.valor_inicial - totalPago + totalRecebido;
             if (saldoAtual > 0) {
                 saldoClass = 'var(--danger)';
@@ -5398,7 +5404,6 @@ async function renderizarGiros(content) {
                 saldoTexto = 'Giro quitado!';
             }
         } else {
-            // EMPRESTANDO: valor_inicial negativo, pagamentos aumentam (recebendo), recebimentos reduzem
             saldoAtual = Math.abs(g.valor_inicial) - totalRecebido + totalPago;
             if (saldoAtual > 0) {
                 saldoClass = 'var(--success)';
@@ -15587,4 +15592,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 117
+Edição 118
