@@ -5847,8 +5847,8 @@ async function salvarNovaConta() {
         codigoBarras = document.getElementById('contaCodigo')?.value.trim() || null;
     }
 
-    // 🔴 CORRIGIDO: Garantir que seja string
-    const nomeUsuario = getNomeUsuario();
+    // 🔴 USAR O App.usuarioAtual DIRETAMENTE (sem função extra)
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
 
     try {
         if (frequencia === 'unico') {
@@ -6001,139 +6001,141 @@ async function salvarNovaConta() {
         return;
     }
     
-    // Buscar a conta
-    let conta = App.dataCache.contas?.find(c => c.id == id);
+    let conta = null;
+    let regra = null;
     
-    // Se é recorrente e não encontrou a conta, criar temporária
-    if (!conta && isRecorrente && regraId) {
-        let regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
-        if (regra) {
-            conta = {
-                id: `regra_${regra.id}_${Date.now()}`,
-                descricao: regra.descricao_base,
-                valor: regra.valor,
-                dia: dia,
-                mes: mes,
-                ano: ano,
-                regra_id: regra.id,
-                codigo_pagamento: null,
-                is_temporaria: true
-            };
-        }
-    }
-    
-    if (!conta) {
-        showToast('Conta não encontrada', 'error');
-        return;
-    }
-    
-    const isRecorrenteConta = conta.regra_id ? true : false;
-    
-    // Se for conta recorrente, mostrar opções
-    if (isRecorrenteConta) {
-        const regra = App.dataCache.regrasContas?.find(r => r.id == conta.regra_id);
-        const frequenciaTexto = regra?.frequencia || 'recorrente';
+    // PRIORIDADE 1: Se tem regraId, é uma conta recorrente
+    if (isRecorrente && regraId) {
+        // Buscar a regra
+        regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
         
-        const opcoesHtml = `
-            <div style="padding: 0;">
-                <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; text-align: center; color: #fff;">
-                    <i class="fas fa-repeat" style="font-size: 48px; margin-bottom: 10px;"></i>
-                    <h2 style="margin: 0; font-size: 1.3rem;">Editar Conta Recorrente</h2>
-                    <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">Frequência: ${frequenciaTexto}</p>
-                </div>
-                
+        if (regra) {
+            console.log('✅ Regra encontrada:', regra);
+            
+            // Buscar a conta específica (parcela) que o usuário clicou
+            conta = App.dataCache.contas?.find(c => c.id == id);
+            
+            if (!conta) {
+                console.log('⚠️ Parcela específica NÃO encontrada no cache, mas temos a regra');
+                // Criar uma conta fictícia para usar na exibição
+                conta = {
+                    id: id,
+                    descricao: regra.descricao_base,
+                    valor: regra.valor,
+                    dia: dia,
+                    mes: mes,
+                    ano: ano,
+                    regra_id: regraId
+                };
+            }
+            
+            // Mostrar modal de confirmação para conta recorrente
+            let mensagem = `
                 <div style="padding: 20px;">
-                    <div style="background: #e8f4fd; border-radius: 12px; padding: 12px; margin-bottom: 20px;">
-                        <i class="fas fa-info-circle" style="color: #3498db;"></i>
-                        <span style="font-size: 12px; margin-left: 8px; color: #2c3e50;">
-                            Esta conta se repete ${frequenciaTexto}. Escolha como deseja editá-la:
-                        </span>
+                    <h3 style="color: var(--purple); margin-bottom: 15px;">
+                        <i class="fas fa-edit"></i> Editar Conta Recorrente
+                    </h3>
+                    
+                    <p><strong>${regra.descricao_base}</strong></p>
+                    <p>Valor: ${formatCurrency(regra.valor)}</p>
+                    <p>Frequência: ${regra.frequencia}</p>
+                    <p>Data início: ${regra.data_inicio || `${ano}-${mes}-${dia}`}</p>
+                    
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <p style="margin: 5px 0; color: #856404;">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <strong>Atenção:</strong> Ao editar uma conta recorrente:
+                        </p>
+                        <p style="margin: 10px 0 5px 20px; color: #856404;">
+                            • Os registros das contas já pagas serão removidos do seu extrato
+                        </p>
+                        <p style="margin: 5px 0 5px 20px; color: #856404;">
+                            • Seu saldo atual continuará o mesmo (não será afetado)
+                        </p>
+                        <p style="margin: 5px 0 0 20px; color: #856404;">
+                            • Você não verá mais os registros dessas contas editadas já pagas
+                        </p>
                     </div>
                     
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <div onclick="abrirEdicaoContaIndividual('${conta.id}', true, ${conta.dia}, ${conta.mes}, ${conta.ano})" 
-                             style="background: #fff; border: 2px solid #e9ecef; border-radius: 16px; padding: 16px; cursor: pointer;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 40px; height: 40px; background: #f39c12; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-calendar-day" style="color: #fff;"></i>
-                                </div>
-                                <div style="flex: 1;">
-                                    <div style="font-weight: 700; font-size: 1rem;">Apenas esta ocorrência</div>
-                                    <div style="font-size: 11px; color: var(--gray);">Editar somente esta conta (${conta.dia}/${conta.mes}/${conta.ano}). Ela se tornará uma conta única independente.</div>
-                                </div>
-                                <i class="fas fa-chevron-right" style="color: var(--gray);"></i>
-                            </div>
-                        </div>
-                        
-                        <div onclick="abrirEdicaoContaRecorrente('${conta.regra_id}', '${conta.descricao}', ${conta.valor}, '${frequenciaTexto}')" 
-                             style="background: #fff; border: 2px solid #e9ecef; border-radius: 16px; padding: 16px; cursor: pointer;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 40px; height: 40px; background: #9b59b6; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-repeat" style="color: #fff;"></i>
-                                </div>
-                                <div style="flex: 1;">
-                                    <div style="font-weight: 700; font-size: 1rem;">Todas as ocorrências</div>
-                                    <div style="font-size: 11px; color: var(--gray);">Editar todas as contas futuras desta série (descrição, valor, dia de vencimento).</div>
-                                </div>
-                                <i class="fas fa-chevron-right" style="color: var(--gray);"></i>
-                            </div>
-                        </div>
-                    </div>
+                    <p><i class="fas fa-info-circle" style="color: #3498db;"></i> 
+                    Deseja continuar com a edição?<br>
+                    AO CLICAR NO SIM ABAIXO <br>
+                    ESSAS CONTAS JÁ SERÃO DELETADAS<br>
+                    e uma nova tela abrira para recriar!</p>
                     
-                    <div style="margin-top: 20px;">
-                        <button onclick="fecharModal()" class="btn" style="width: 100%; padding: 12px; background: #6c757d; color: #fff; border: none; border-radius: 30px; cursor: pointer;">
+                    <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="confirmarEdicaoRecorrente('${regraId}')" style="flex: 2;">
+                            <i class="fas fa-check"></i> Sim, quero editar
+                        </button>
+                        <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
                             Cancelar
                         </button>
                     </div>
                 </div>
-            </div>
-        `;
-        
-        abrirModal('Editar Conta Recorrente', 'fa-edit', opcoesHtml);
-        return;
+            `;
+            
+            abrirModal('Editar Conta Recorrente', 'fa-edit', mensagem);
+            return;
+        }
     }
     
-    // CONTA ÚNICA - mostrar modal de edição normal
-    let valorExibicao = (conta.valor_original || conta.valor || 0).toFixed(2).replace('.', ',');
-    let codigoAtual = conta.codigo_pagamento || '';
-    let descricaoAtual = conta.descricao || '';
+    // PRIORIDADE 2: Se chegou aqui, é conta única ou não encontrou a regra
+    if (!conta) {
+        conta = App.dataCache.contas?.find(c => c.id == id);
+    }
+    
+    if (!conta) {
+        console.error('❌ Conta não encontrada');
+        showToast('Conta não encontrada', 'error');
+        return;
+    }
+
+    // Se chegou aqui, é uma conta única
+    console.log('✅ Conta única encontrada:', conta);
     
     let conteudo = `
-        <div style="padding: 16px;">
-            <div class="form-group">
-                <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
-                <input type="text" id="contaDescricaoEdit" class="form-input" value="${descricaoAtual.replace(/"/g, '&quot;')}">
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
+            <input type="text" id="contaDescricaoEdit" class="form-input" value="${conta.descricao}">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor</label>
+            <input type="text" id="contaValorEdit" class="form-input" value="${(conta.valor_original || conta.valor).toFixed(2).replace('.', ',')}" inputmode="decimal" onkeyup="this.value = this.value.replace(/[^0-9,]/g, '')">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label"><i class="fas fa-repeat"></i> Frequência</label>
+            <select id="contaFrequenciaEdit" class="form-select" disabled>
+                <option value="unico" selected>Único</option>
+            </select>
+        </div>
+
+        <!-- CAMPOS PARA CONTA ÚNICA -->
+        <div id="camposUnicaEdit">
+            <label class="form-label"><i class="fas fa-calendar-alt"></i> Data de Vencimento</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <input type="number" id="contaDiaEdit" class="form-input" min="1" max="31" value="${conta.dia}" placeholder="Dia" style="flex: 1;">
+                <select id="contaMesEdit" class="form-select" style="flex: 2;">
+                    ${CONFIG.meses.map((m, i) => `<option value="${i + 1}" ${i + 1 === conta.mes ? 'selected' : ''}>${m}</option>`).join('')}
+                </select>
+                <input type="number" id="contaAnoEdit" class="form-input" value="${conta.ano}" placeholder="Ano" style="flex: 1;">
             </div>
             
+            <!-- CÓDIGO DE BARRAS/PIX -->
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-dollar-sign"></i> Valor</label>
-                <input type="text" id="contaValorEdit" class="form-input" value="${valorExibicao}" inputmode="decimal">
+                <label class="form-label"><i class="fas fa-barcode"></i> Código de Barras / Chave PIX (opcional)</label>
+                <input type="text" id="contaCodigoEdit" class="form-input" value="${conta.codigo_pagamento || ''}" placeholder="Digite ou cole o código">
             </div>
-            
-            <div class="form-group">
-                <label class="form-label"><i class="fas fa-calendar-alt"></i> Data de Vencimento</label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="number" id="contaDiaEdit" class="form-input" min="1" max="31" value="${conta.dia}" placeholder="Dia" style="flex: 1;">
-                    <select id="contaMesEdit" class="form-select" style="flex: 2;">
-                        ${CONFIG.meses.map((m, i) => `<option value="${i + 1}" ${i + 1 === conta.mes ? 'selected' : ''}>${m}</option>`).join('')}
-                    </select>
-                    <input type="number" id="contaAnoEdit" class="form-input" value="${conta.ano}" placeholder="Ano" style="flex: 1;">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label"><i class="fas fa-barcode"></i> Código de Barras</label>
-                <textarea id="contaCodigoEdit" class="form-input" rows="3">${codigoAtual}</textarea>
-            </div>
-            
-            <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
-                <button class="btn btn-primary" onclick="salvarEdicaoContaIndividual('${conta.id}', false)" style="flex: 2;">
-                    <i class="fas fa-save"></i> Salvar
-                </button>
-                <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
-                    Cancelar
-                </button>
-            </div>
+        </div>
+        
+        <div class="btn-group" style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="salvarEdicaoContaUnica('${id}')" style="flex: 2;">
+                <i class="fas fa-save"></i> Salvar
+            </button>
+            <button class="btn" onclick="fecharModal()" style="flex: 1; background: var(--gray); color: #fff;">
+                Cancelar
+            </button>
         </div>
     `;
     
@@ -6374,72 +6376,77 @@ function atualizarCamposContaEdit() {
 
 
 function confirmarEdicaoRecorrente(regraId) {
-    let novaDescricao = document.getElementById('contaDescricaoRecorrente')?.value.trim();
-    let novoValor = parseCurrency(document.getElementById('contaValorRecorrente')?.value);
-    let novoDia = parseInt(document.getElementById('contaDiaRecorrente')?.value);
-    
-    if (!novaDescricao || !novoValor || !novoDia) {
-        showToast('Preencha todos os campos', 'warning');
-        return;
-    }
-    
-    // Fechar o modal
     fecharModal();
     
+    // Buscar a regra
     let regra = App.dataCache.regrasContas?.find(r => r.id == regraId);
     if (!regra) {
         showToast('Regra não encontrada', 'error');
         return;
     }
     
-    showToast('Atualizando contas...', 'info');
+    // Buscar todas as contas desta regra
+    let todasContas = App.dataCache.contas.filter(c => c.regra_id == regraId);
     
+    // Separar entre passado e futuro
+    let hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    
+    let contasFuturo = todasContas.filter(c => {
+        let dataConta = criarData(c.ano, c.mes, c.dia);
+        return dataConta >= hoje;
+    });
+    
+    // Guardar no App temporariamente
+    App.edicaoRecorrente = {
+        regraId: regraId,
+        descricao: regra.descricao_base,
+        valor: regra.valor,
+        frequencia: regra.frequencia,
+        dataInicio: regra.data_inicio
+    };
+    
+    // Mostrar loading
+    showToast('Preparando edição...', 'info');
+    
+    // Deletar as contas FUTURAS
     (async () => {
         try {
-            // Calcular nova data de início
-            let hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-            
-            let dataInicio = new Date();
-            dataInicio.setDate(novoDia);
-            dataInicio.setHours(12, 0, 0);
-            
-            if (dataInicio < hoje) {
-                dataInicio.setMonth(dataInicio.getMonth() + 1);
+            if (contasFuturo.length > 0) {
+                console.log(`🗑️ Deletando ${contasFuturo.length} contas futuras`);
+                
+                for (let conta of contasFuturo) {
+                    await App.supabase
+                        .from('contas')
+                        .delete()
+                        .eq('id', conta.id);
+                }
             }
             
-            let dataInicioStr = dataParaString(
-                dataInicio.getFullYear(),
-                dataInicio.getMonth() + 1,
-                dataInicio.getDate()
-            );
-            
-            const nomeUsuario = getNomeUsuario();
-            
-            // Atualizar a regra existente (não deletar e recriar)
-            const { error: updateError } = await App.supabase
+            // Deletar a regra antiga
+            await App.supabase
                 .from('regras_contas')
-                .update({
-                    descricao_base: novaDescricao,
-                    valor: novoValor,
-                    dia_vencimento: novoDia,
-                    data_inicio: dataInicioStr,
-                    updated_at: new Date().toISOString()
-                })
+                .delete()
                 .eq('id', regraId);
             
-            if (updateError) throw updateError;
+            showToast('Contas futuras removidas. Recrie com as novas configurações.', 'success');
             
-            showToast('✅ Contas atualizadas com sucesso!', 'success');
-            
-            await sincronizarGoogleAutomatico();
-            await carregarDados(true);
-            await atualizarCalendario();
-            await mostrarConteudo();
+            // Abrir modal de NOVA CONTA com dados pré-preenchidos
+            setTimeout(() => {
+                abrirNovaContaComDados(
+                    App.edicaoRecorrente.descricao,
+                    App.edicaoRecorrente.valor,
+                    App.edicaoRecorrente.frequencia,
+                    App.edicaoRecorrente.dataInicio
+                );
+                
+                // Limpar dados temporários
+                delete App.edicaoRecorrente;
+            }, 500);
             
         } catch (error) {
-            console.error('Erro:', error);
-            showToast('Erro: ' + error.message, 'error');
+            console.error('Erro ao deletar contas futuras:', error);
+            showToast('Erro ao preparar edição', 'error');
         }
     })();
 }
@@ -6459,7 +6466,7 @@ function abrirNovaContaComDados(descricao, valor, frequencia, dataInicioStr) {
     let conteudo = `
         <div class="form-group">
             <label class="form-label"><i class="fas fa-heading"></i> Descrição</label>
-            <input type="text" id="contaDescricao" class="form-input" value="${descricao}" placeholder="Ex: Energia, Água..." autocomplete="off">
+            <input type="text" id="contaDescricao" class="form-input" value="${descricao}" placeholder="Ex: Energia, Água...">
         </div>
         
         <div class="form-group">
@@ -6472,11 +6479,6 @@ function abrirNovaContaComDados(descricao, valor, frequencia, dataInicioStr) {
             <select id="contaFrequencia" class="form-select" onchange="atualizarCamposConta()">
                 ${frequenciasHtml}
             </select>
-        </div>
-
-        <!-- CAMPOS PARA CONTA ÚNICA -->
-        <div id="camposUnica" style="display: none;">
-            <!-- Não usado para recorrente -->
         </div>
 
         <!-- CAMPOS PARA CONTAS RECORRENTES -->
@@ -6554,41 +6556,53 @@ async function salvarEdicaoContaUnica(id) {
     let mesNovo = parseInt(document.getElementById('contaMesEdit')?.value);
     let anoNovo = parseInt(document.getElementById('contaAnoEdit')?.value);
     
-    if (!descricao || !valor || !diaNovo || !mesNovo || !anoNovo) {
-        showToast('Preencha todos os campos', 'warning');
+    if (!descricao || !valor) {
+        showToast('Preencha descrição e valor', 'warning');
         return;
     }
-
+    
+    if (!diaNovo || !mesNovo || !anoNovo) {
+        showToast('Preencha data completa', 'warning');
+        return;
+    }
+    
     if (!dataValida(anoNovo, mesNovo, diaNovo)) {
         showToast('Dia inválido para o mês selecionado', 'warning');
         return;
     }
-
+    
+    const nomeUsuario = App.usuarioAtual?.apelido || App.usuarioAtual?.nome || 'desconhecido';
+    
     try {
-        let dataInicio = dataParaString(anoNovo, mesNovo, diaNovo);
+        // Deletar a antiga
+        await App.supabase.from('contas').delete().eq('id', id);
         
-        await App.supabase
-            .from('contas')
-            .update({
-                descricao: descricao,
-                valor: valor,
-                dia: diaNovo,
-                mes: mesNovo,
-                ano: anoNovo,
-                data: dataInicio,
-                codigo_pagamento: codigo
-            })
-            .eq('id', id);
-
-        await registrarHistorico('edicao_conta', `Conta editada: ${descricao}`, { id, usuario: App.usuarioAtual });
+        // Criar nova
+        let dataInicio = dataParaString(anoNovo, mesNovo, diaNovo);
+        await App.supabase.from('contas').insert({
+            user_id: App.currentUser.id,
+            descricao: descricao,
+            valor: valor,
+            valor_pago: 0,
+            dia: diaNovo,
+            mes: mesNovo,
+            ano: anoNovo,
+            data: dataInicio,
+            status: 'pendente',
+            added_by: nomeUsuario,
+            codigo_pagamento: codigo
+        });
+        
         showToast('Conta atualizada!', 'success');
+        
+        await sincronizarGoogleAutomatico();
         fecharModal();
         await carregarDados(true);
         await atualizarCalendario();
         await mostrarConteudo();
         
     } catch (error) {
-        console.error('Erro ao editar conta:', error);
+        console.error('Erro:', error);
         showToast('Erro: ' + error.message, 'error');
     }
 }
@@ -14377,4 +14391,4 @@ async function forcarPushNotificationGoogle() {
 </html>
 
 
-Edição 007
+Edição 009
